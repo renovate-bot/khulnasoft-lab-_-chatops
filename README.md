@@ -8,6 +8,8 @@ GitLab.com such as getting the `EXPLAIN ANALYZE` output of a database query.
 * Ruby 2.4 or newer
 * Bundler
 * GitLab EE Ultimate for chatops support
+* A Slack API token for a bot integration
+* A Grafana API token
 
 # License
 

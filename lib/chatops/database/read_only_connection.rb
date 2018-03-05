@@ -1,0 +1,37 @@
+# frozen_string_literal: true
+
+module Chatops
+  module Database
+    # A read-only database connection for executing SQL queries.
+    class ReadOnlyConnection
+      # host - The host to connect to.
+      # port - The port to connect to.
+      # user - The user to connect as, if any.
+      # password - The password to use if authentication is required.
+      # database - The database to connect to.
+      def initialize(
+        host: 'localhost',
+        port: 5432,
+        user: nil,
+        password: nil,
+        database:
+      )
+        @connection = PG.connect(
+          host: host,
+          port: port,
+          user: user,
+          password: password,
+          dbname: database
+        )
+      end
+
+      def execute(query)
+        @connection.transaction do |conn|
+          conn.exec('SET TRANSACTION READ ONLY')
+          conn.exec("SET STATEMENT_TIMEOUT TO '5s'")
+          conn.exec(query)
+        end
+      end
+    end
+  end
+end

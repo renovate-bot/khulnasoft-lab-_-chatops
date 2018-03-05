@@ -1,0 +1,35 @@
+---
+image: ruby:2.4-alpine
+
+.chatops: &chatops
+  only:
+    - chat
+  before_script:
+    - gem install bundler --no-ri --no-rdoc
+    - bundle install --path vendor --retry 3 --deployment --without development
+  cache:
+    paths:
+      - vendor/bundle
+  script:
+    - ./bin/chatops $CI_JOB_NAME
+
+rspec:
+  except:
+    - chat
+  before_script:
+    - gem install bundler --no-ri --no-rdoc
+    - ruby --version
+    - gem --version
+    - bundle --version
+    - bundle install --path vendor --retry=3
+  script:
+    - bundle exec rspec spec
+  cache:
+    paths:
+      - vendor/ruby
+
+explain:
+  <<: *chatops
+
+help:
+  <<: *chatops
