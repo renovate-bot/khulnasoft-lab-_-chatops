@@ -3,6 +3,9 @@
 module Chatops
   CommandError = Class.new(StandardError)
 
+  # The name of the trace section to wrap output in.
+  SECTION = 'chat_reply'
+
   # All commands that have been registered and should thus be available to the
   # user.
   def self.commands
@@ -41,8 +44,10 @@ module Chatops
   # Wraps the output of the block in a custom trace section. This allows us to
   # get rid of the "before_script" output in the least hacky way.
   def self.with_trace_section
-    puts "section_start:#{Time.now.to_i}:chat_output\r\033[0K"
+    puts "section_start:#{Time.now.to_i}:#{SECTION}\r\033[0K"
+
     yield
-    puts "section_end:#{Time.now.to_i}:chat_output\r\033[0K"
+  ensure
+    puts "section_end:#{Time.now.to_i}:#{SECTION}\r\033[0K"
   end
 end
