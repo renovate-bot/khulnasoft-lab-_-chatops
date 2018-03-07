@@ -17,7 +17,7 @@ rspec:
   except:
     - chat
   before_script:
-    - apk add --update build-base postgresql-libs postgresql-client
+    - apk add --update build-base postgresql
     - gem install bundler --no-ri --no-rdoc
     - ruby --version
     - gem --version
