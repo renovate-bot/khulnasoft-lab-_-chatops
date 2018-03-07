@@ -5,10 +5,10 @@ module Chatops
     attr_reader :arguments, :options, :env
 
     # by - The class this module was included into.
-    def self.included(by)
-      by.extend(ClassMethods)
+    def self.included(mod)
+      mod.extend(ClassMethods)
 
-      Chatops.commands[by.command_name] = by
+      Chatops.commands[mod.command_name] = mod
     end
 
     def initialize(arguments = [], options = {}, env = {})
@@ -48,13 +48,21 @@ module Chatops
         end
       end
 
+      def usage(value = nil)
+        if value
+          @usage = value
+        else
+          @usage || "#{command_name} [OPTIONS]"
+        end
+      end
+
       # Executes the command.
       #
       # argv - The arguments parse.
       # env - The environment variables to pass to the command.
       def perform(argv = [], env = {})
         opts = Slop.parse(argv) do |o|
-          o.banner = "#{@description}\n\nUsage: #{command_name} [OPTIONS]"
+          o.banner = "#{@description}\n\nUsage: #{usage}"
 
           o.separator "\nOptions:"
 

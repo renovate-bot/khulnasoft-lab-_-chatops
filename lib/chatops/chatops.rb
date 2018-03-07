@@ -50,4 +50,8 @@ module Chatops
   ensure
     puts "section_end:#{Time.now.to_i}:#{SECTION}\r\033[0K"
   end
+
+  def self.configuration_directory
+    File.expand_path('../../config', __dir__)
+  end
 end

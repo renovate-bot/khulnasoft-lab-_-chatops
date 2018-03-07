@@ -6,59 +6,50 @@ module Chatops
     class Graph
       include Command
 
+      DEFAULT_SINCE = 6
+
+      usage "#{command_name} [CATEGORY] [GRAPH] [OPTIONS]"
       description 'Uploads a graph from Grafana to Slack'
-
-      # Error raised when the image could not be downloaded from Grafana.
-      DownloadError = Class.new(StandardError)
-
-      # Error raised when the image could not be uploaded.
-      UploadError = Class.new(StandardError)
-
-      # The host to use for generating graphs.
-      GRAFANA_HOST = 'https://performance.gitlab.net'
-
-      # The URL to upload images to.
-      SLACK_UPLOAD_URL = 'https://slack.com/api/files.upload'
-
-      # The ID of the Grafana organisation.
-      GRAFANA_ORG = 1
-
-      # The list of all supported graphs.
-      GRAPHS = {
-        'pg-dead-tuples' => ['postgres-tuple-statistics', 7],
-        'pg-transactions' => ['postgres-stats', 5],
-        'pg-load' => ['postgres-stats', 9],
-        'pg-cpu' => ['postgres-stats', 13]
-      }.freeze
 
       options do |o|
         o.integer(
           '--since',
           'The start time of the graph in hours leading up to the current time',
-          default: 6
+          default: DEFAULT_SINCE
+        )
+
+        o.separator(
+          "\nAvailable Graphs:\n\n#{available_graphs_description}"
         )
       end
 
+      # Returns a String describing all the categories and their graphs.
+      def self.available_graphs_description
+        categories = configuration.map do |category, graphs|
+          entries = graphs.map do |name, details|
+            "  * #{name}: #{details['description']}"
+          end
+
+          "#{category}:\n#{entries.join("\n")}"
+        end
+
+        categories.join("\n\n")
+      end
+
+      def self.configuration
+        @configuration ||= YAML
+          .load_file(File.join(Chatops.configuration_directory, 'graphs.yml'))
+      end
+
       def perform
-        name = arguments.fetch(0) do
-          raise(
-            ArgumentError,
-            'You must specify the name of the graph to render'
-          )
-        end
+        category = required_argument(0, 'category')
+        name = required_argument(1, 'name')
+        config = configuration_for(category, name)
+        graph = graph(config['dashboard'], config['panel'])
+        file = graph.download
+        url = graph.url
 
-        dashboard, panel_id = GRAPHS.fetch(name) do
-          raise(
-            ArgumentError,
-            "The graph #{name} does not exist. The following graphs " \
-            "are available: #{GRAPHS.keys.sort.join(', ')}"
-          )
-        end
-
-        url = url_for_graph(dashboard, panel_id)
-        file = download_image(name, url)
-
-        upload_image_to_slack(name, file)
+        upload(name, file)
 
         "The image has been uploaded. You can also view it in Grafana at #{url}"
       end
@@ -67,68 +58,44 @@ module Chatops
       #
       # name - The name of the graph.
       # file - A file containing the image.
-      def upload_image_to_slack(name, file)
-        response = HTTP.post(
-          SLACK_UPLOAD_URL,
-          form: {
-            token: slack_token,
-            channels: channel,
-            file: HTTP::FormData::File.new(file.path),
-            filename: "#{name}-#{Time.now.iso8601}.png",
-            filetype: :png,
-            title: "Grafana graph: #{name}"
-          }
+      def upload(name, file)
+        file_upload = Slack::FileUpload.new(
+          file: file,
+          type: :png,
+          channel: channel,
+          token: slack_token,
+          title: "Grafana graph: #{name}"
         )
 
-        unless response.status == 200
-          raise UploadError, 'Failed to upload the image to Slack'
-        end
+        file_upload.upload
       ensure
         file.close
       end
 
-      # Downloads an image to the local file system so it can be uploaded to
-      # Slack.
-      #
-      # name - The name of the graph.
-      # url - The URL of the image.
-      def download_image(name, url)
-        image_response = HTTP
-          .auth("Bearer #{grafana_token}")
-          .get(url)
-
-        unless image_response.status == 200
-          raise DownloadError, 'Failed to download the image from Grafana'
-        end
-
-        file = Tempfile.new([name, '.png'])
-
-        file.write(image_response.body.to_s)
-        file.rewind
-        file
-      end
-
-      # Returns a URL for a Grafana graph.
+      # Returns a `Grafana::Graph` for the given dashboard and panel.
       #
       # dashboard - The name of the dashboard containing the graph.
       # panel_id - The ID of the panel that displays the graph.
-      # variables - Additional variables to pass such as the environment.
-      def url_for_graph(dashboard, panel_id, variables = {})
+      def graph(dashboard, panel_id)
         stop = Time.now.utc
-        start = stop - (options[:since] * 3600)
+        since = options[:since] || DEFAULT_SINCE
+        start = stop - (since * 3_600)
 
-        variables = variables.merge(
-          from: start.to_i * 1000,
-          to: stop.to_i * 1000,
-          panelId: panel_id,
-          orgId: GRAFANA_ORG,
-          height: 500,
-          width: 1000
+        Grafana::Graph.new(
+          dashboard: dashboard,
+          panel_id: panel_id,
+          token: grafana_token,
+          variables: { from: start.to_i * 1_000, to: stop.to_i * 1_000 }
         )
+      end
 
-        params = variables.map { |k, v| "#{k}=#{v}" }.join('&')
-
-        GRAFANA_HOST + "/render/dashboard-solo/db/#{dashboard}?#{params}"
+      def required_argument(index, name)
+        arguments.fetch(index) do
+          raise(
+            ArgumentError,
+            "You must specify the #{name} of the graph to render"
+          )
+        end
       end
 
       def grafana_token
@@ -141,6 +108,16 @@ module Chatops
 
       def channel
         env.fetch('CHAT_CHANNEL')
+      end
+
+      def configuration_for(category, name)
+        entry = self.class.configuration.dig(category, name)
+
+        unless entry
+          raise ArgumentError, "The graph #{category}:#{name} does not exist"
+        end
+
+        entry
       end
     end
   end

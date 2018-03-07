@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'spec_helper'
+
 describe Chatops::Commands::Explain do
   describe '#perform' do
     context 'when using a query that is clearly too dangerous to run' do

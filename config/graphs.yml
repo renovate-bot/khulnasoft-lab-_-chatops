@@ -1,0 +1,44 @@
+---
+# This file defines the categories and graphs available in those categories.
+# The format should be as follows:
+#
+#     category-name:
+#       graph-name:
+#         dashboard: the name of the dashboard (this can be found in the URL)
+#         panel: the ID of the panel to display (this can be found in the URL)
+#         description: a short description of the graph
+#     ...
+
+postgres:
+  dead-tuples:
+    dashboard: postgres-tuple-statistics
+    panel: 7
+    description: The number of dead tuples per table.
+  transactions:
+    dashboard: postgres-stats
+    panel: 5
+    description: The number of transactions per host.
+  load:
+    dashboard: postgres-stats
+    panel: 9
+    description: The load averages per host.
+  cpu:
+    dashboard: postgres-stats
+    panel: 13
+    description: The CPU usage per host.
+
+rails:
+  timings:
+    dashboard: transaction-overview
+    panel: 2
+    description: Transaction timings across the entire fleet.
+  sql-timings:
+    dashboard: transaction-overview
+    panel: 9
+    description: SQL timings across the entire fleet.
+
+sidekiq:
+  queue-size:
+    dashboard: sidekiq-stats
+    panel: 3
+    description: The number of jobs per queue.
