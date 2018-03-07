@@ -17,6 +17,7 @@ rspec:
   except:
     - chat
   before_script:
+    - apk add --update build-base
     - gem install bundler --no-ri --no-rdoc
     - ruby --version
     - gem --version
