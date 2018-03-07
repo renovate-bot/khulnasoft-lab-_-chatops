@@ -16,7 +16,7 @@ module Chatops
   #
   # argv - The commandline arguments that were used to invoke the program.
   # env - The environment variables to use for obtaining the chat input.
-  def self.run(argv = ARGV, env = ENV)
+  def self.run(argv = [], env = {})
     name = argv.fetch(0) do
       raise(
         CommandError,
@@ -35,7 +35,7 @@ module Chatops
     command_class = commands[name]
 
     unless command_class
-      raise ArgumentError, "The command #{name.inspect} does not exist"
+      raise CommandError, "The command #{name.inspect} does not exist"
     end
 
     command_class.perform(chat_input.split, env)

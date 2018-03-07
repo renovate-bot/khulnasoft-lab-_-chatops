@@ -1,4 +1,7 @@
 ---
+require:
+  - rubocop-rspec
+
 AllCops:
   TargetRubyVersion: 2.4
 
@@ -26,6 +29,9 @@ RSpec/MultipleExpectations:
 
 RSpec/ExampleLength:
   Max: 20
+
+RSpec/MessageSpies:
+  Enabled: false
 
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented

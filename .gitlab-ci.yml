@@ -27,6 +27,16 @@ rspec:
   cache:
     paths:
       - vendor/ruby
+  services:
+    - postgres:latest
+  variables:
+    # Configure the "postgres" service itself.
+    POSTGRES_DB: chatops
+    POSTGRES_USER: runner
+    # Configure the test environment to connect to said service.
+    TEST_DATABASE_HOST: postgres
+    TEST_DATABASE_USER: runner
+    TEST_DATABASE_NAME: chatops
 
 explain:
   <<: *chatops

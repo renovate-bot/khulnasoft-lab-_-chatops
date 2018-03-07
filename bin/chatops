@@ -8,7 +8,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'chatops'
 
 Chatops.with_trace_section do
-  if (output = Chatops.run)
+  if (output = Chatops.run(ARGV, ENV))
     puts(output)
   end
 end
