@@ -9,6 +9,8 @@ if ENV['COVERAGE']
     project_name 'chatops'
 
     add_filter 'spec'
+    add_filter 'vendor'
+
     add_group 'Commands', 'lib/chatops/commands'
     add_group 'Database', 'lib/chatops/database'
     add_group 'Grafana', 'lib/chatops/grafana'
