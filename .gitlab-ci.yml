@@ -41,7 +41,7 @@ rspec:
     TEST_DATABASE_HOST: postgres
     TEST_DATABASE_USER: runner
     TEST_DATABASE_NAME: chatops
-    COVERAGE: true
+    COVERAGE: 'true'
 
 rubocop:
   <<: *ruby
