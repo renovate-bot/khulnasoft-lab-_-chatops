@@ -27,6 +27,22 @@ describe Chatops::Commands::Graph do
     }
   end
 
+  describe '.perform' do
+    it 'supports a --since option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[foo bar], { since: 5 }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[foo bar --since=5])
+    end
+  end
+
   describe '.available_graphs' do
     it 'returns a String describing the available graphs per category' do
       expect(described_class)

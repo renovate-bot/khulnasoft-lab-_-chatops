@@ -3,6 +3,22 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Explain do
+  describe '.perform' do
+    it 'supports a --visual option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[SELECT 1], { visual: true }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[SELECT 1 --visual])
+    end
+  end
+
   describe '#perform' do
     context 'when using a query that is clearly too dangerous to run' do
       it 'raises UnsafeQueryError' do
@@ -92,6 +108,32 @@ describe Chatops::Commands::Explain do
         expect { command.url_for_visualised_plan('Foo') }
           .to raise_error(described_class::QueryVisualisationError)
       end
+    end
+  end
+
+  describe '#database_connection' do
+    it 'returns a new database connection' do
+      expect(Chatops::Database::ReadOnlyConnection)
+        .to receive(:new)
+        .with(
+          host: 'hostname',
+          port: 1234,
+          user: 'alice',
+          password: 'hunter2',
+          database: 'database'
+        )
+
+      command = described_class.new(
+        [],
+        {},
+        'DATABASE_HOST' => 'hostname',
+        'DATABASE_PORT' => 1234,
+        'DATABASE_USER' => 'alice',
+        'DATABASE_PASSWORD' => 'hunter2',
+        'DATABASE_NAME' => 'database'
+      )
+
+      command.database_connection
     end
   end
 
