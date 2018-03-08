@@ -13,7 +13,7 @@ image: ruby:2.4-alpine
   script:
     - ./bin/chatops $CI_JOB_NAME
 
-rspec:
+.ruby: &ruby
   except:
     - chat
   before_script:
@@ -23,11 +23,14 @@ rspec:
     - gem --version
     - bundle --version
     - bundle install --path vendor --retry=3
-  script:
-    - bundle exec rspec spec
   cache:
     paths:
       - vendor/ruby
+
+rspec:
+  <<: *ruby
+  script:
+    - bundle exec rspec spec
   services:
     - postgres:latest
   variables:
@@ -38,6 +41,11 @@ rspec:
     TEST_DATABASE_HOST: postgres
     TEST_DATABASE_USER: runner
     TEST_DATABASE_NAME: chatops
+
+rubocop:
+  <<: *ruby
+  script:
+    - bundle exec rubocop
 
 explain:
   <<: *chatops
