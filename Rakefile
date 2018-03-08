@@ -47,8 +47,8 @@ SPEC_TEMPLATE
 
 CI_TEMPLATE = <<~CI_TEMPLATE
 
-%<name>s:
-  <<: *chatops
+  %<name>s:
+    <<: *chatops
 CI_TEMPLATE
 
 desc 'Runs all the tests'
