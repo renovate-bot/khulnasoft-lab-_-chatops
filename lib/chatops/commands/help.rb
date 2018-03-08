@@ -18,7 +18,7 @@ module Chatops
         commands = Markdown::List.new(values)
 
         "The following commands are available:\n\n#{commands}\n\n" \
-          'For more information about a command you can it and pass the ' \
+          'For more information about a command you can run it and pass the ' \
           '--help option.'
       end
 
