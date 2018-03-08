@@ -30,7 +30,7 @@ image: ruby:2.4-alpine
 rspec:
   <<: *ruby
   script:
-    - bundle exec rspec spec
+    - bundle exec rake coverage
   services:
     - postgres:latest
   variables:
