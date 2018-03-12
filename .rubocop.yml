@@ -28,7 +28,7 @@ RSpec/MultipleExpectations:
   Max: 5
 
 RSpec/ExampleLength:
-  Max: 20
+  Max: 30
 
 RSpec/MessageSpies:
   Enabled: false

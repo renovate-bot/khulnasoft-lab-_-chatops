@@ -8,6 +8,9 @@ GEM
     docile (1.1.5)
     domain_name (0.5.20170404)
       unf (>= 0.0.5, < 1.0.0)
+    gitlab (4.3.0)
+      httparty
+      terminal-table
     http (3.0.0)
       addressable (~> 2.3)
       http-cookie (~> 1.0)
@@ -17,7 +20,10 @@ GEM
       domain_name (~> 0.5)
     http-form_data (2.1.0)
     http_parser.rb (0.6.0)
+    httparty (0.16.0)
+      multi_xml (>= 0.5.2)
     json (2.1.0)
+    multi_xml (0.6.0)
     parallel (1.12.1)
     parser (2.5.0.3)
       ast (~> 2.4.0)
@@ -54,7 +60,9 @@ GEM
       json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
     simplecov-html (0.10.2)
-    slop (4.6.1)
+    slop (4.6.2)
+    terminal-table (1.8.0)
+      unicode-display_width (~> 1.1, >= 1.1.1)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.5)
@@ -64,6 +72,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  gitlab
   http
   pg
   rake
