@@ -38,7 +38,7 @@ module Chatops
       raise CommandError, "The command #{name.inspect} does not exist"
     end
 
-    command_class.perform(chat_input.split, env)
+    command_class.perform(split_input(chat_input), env)
   end
 
   # Wraps the output of the block in a custom trace section. This allows us to
@@ -53,5 +53,9 @@ module Chatops
 
   def self.configuration_directory
     File.expand_path('../../config', __dir__)
+  end
+
+  def self.split_input(string)
+    Shellwords.split(string)
   end
 end

@@ -6,6 +6,7 @@ require 'slop'
 require 'time'
 require 'yaml'
 require 'tempfile'
+require 'shellwords'
 
 require 'chatops/chatops'
 require 'chatops/command'

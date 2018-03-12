@@ -72,4 +72,14 @@ describe Chatops do
       described_class.with_trace_section { 10 }
     end
   end
+
+  describe '.split_input' do
+    it 'splits a string into an ARGV array' do
+      expect(described_class.split_input('foo bar')).to eq(%w[foo bar])
+    end
+
+    it 'supports quoting of words to treat them as a single value' do
+      expect(described_class.split_input('"foo bar"')).to eq(['foo bar'])
+    end
+  end
 end
