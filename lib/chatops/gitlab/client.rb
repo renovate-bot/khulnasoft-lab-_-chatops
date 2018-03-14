@@ -26,6 +26,20 @@ module Chatops
       def set_feature(name, value)
         internal_client.post("/features/#{name}", body: { value: value })
       end
+
+      # Adds a broadcast message.
+      #
+      # message - The message to add.
+      # starts_at - The start time of the message.
+      # ends_at - The stop time of the message.
+      def add_broadcast_message(message, starts_at: nil, ends_at: nil)
+        body = { message: message }
+
+        body[:starts_at] = starts_at if starts_at
+        body[:ends_at] = ends_at if ends_at
+
+        internal_client.post('/broadcast_messages', body: body)
+      end
     end
   end
 end

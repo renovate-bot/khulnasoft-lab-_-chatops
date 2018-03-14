@@ -30,4 +30,29 @@ describe Chatops::Gitlab::Client do
       client.set_feature('foo', 'true')
     end
   end
+
+  describe '#add_broadcast_message' do
+    context 'without a start and end date' do
+      it 'adds a broadcast message without an explicit start and end date' do
+        expect(client.internal_client)
+          .to receive(:post)
+          .with('/broadcast_messages', body: { message: 'hello' })
+
+        client.add_broadcast_message('hello')
+      end
+    end
+
+    context 'with a start and end date' do
+      it 'adds a broadcast message with the given start and end date' do
+        expect(client.internal_client)
+          .to receive(:post)
+          .with(
+            '/broadcast_messages',
+            body: { message: 'hello', starts_at: 'foo', ends_at: 'bar' }
+          )
+
+        client.add_broadcast_message('hello', starts_at: 'foo', ends_at: 'bar')
+      end
+    end
+  end
 end

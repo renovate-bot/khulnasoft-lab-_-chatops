@@ -59,3 +59,6 @@ graph:
 
 feature:
   <<: *chatops
+
+broadcast:
+  <<: *chatops
