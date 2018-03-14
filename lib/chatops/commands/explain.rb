@@ -15,8 +15,29 @@ module Chatops
       description 'Obtains the query plan of a SQL query, ' \
         'optionally visualising it using explain.depesz.com'
 
+      usage "#{command_name} [QUERY | URL] [OPTIONS]"
+
       options do |o|
         o.bool '--visual', 'Visualises the query plan'
+
+        o.separator <<~HELP.chomp
+
+          Examples:
+
+            Obtaining the query plan of a SQL query:
+
+              explain SELECT COUNT(*) FROM users
+
+            If a query contains single or double quotes then you must quote the
+            entire query:
+
+              explain "SELECT COUNT(*) FROM users WHERE username = 'alice'"
+
+            You can also get an EXPLAIN plan for a URL. This can be useful when
+            the input URL is too large to be sent as a Slack message:
+
+              explain https://example.com/my-query.sql
+        HELP
       end
 
       # A regex indicating clearly dangerous queries that should never be

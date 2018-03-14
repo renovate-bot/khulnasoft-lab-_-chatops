@@ -64,10 +64,10 @@ module Chatops
         opts = Slop.parse(argv) do |o|
           o.banner = "#{@description}\n\nUsage: #{usage}"
 
-          o.separator "\nOptions:"
+          o.separator "\nOptions:\n"
 
           o.on('-h', '--help', 'Shows this help message') do
-            return Markdown::Code.new(o.to_s).to_s
+            return Markdown::Code.new(o.to_s(prefix: '  ')).to_s
           end
 
           @options_block&.call(o)
