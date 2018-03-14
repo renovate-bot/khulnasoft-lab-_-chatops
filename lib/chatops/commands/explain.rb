@@ -28,6 +28,7 @@ module Chatops
 
       def perform
         query = arguments.join(' ').strip
+        query = download_query(query) if query.start_with?('http')
 
         if clearly_dangerous?(query)
           raise(
@@ -36,27 +37,21 @@ module Chatops
           )
         end
 
-        explain_plan_for(query)
+        upload_explain_plan_for(query)
       end
 
-      # Returns the EXPLAIN output for the given query.
+      # Submits the EXPLAIN output for the given query.
       #
       # query - The SQL query to explain.
-      def explain_plan_for(query)
+      def upload_explain_plan_for(query)
         plan = database_connection
           .execute("EXPLAIN (ANALYZE, BUFFERS) #{query}")
           .map { |row| row['QUERY PLAN'] }
           .join("\n")
 
-        output = Markdown::Code.new(plan).to_s
+        url = url_for_visualised_plan(plan) if options[:visual]
 
-        if options[:visual]
-          url = url_for_visualised_plan(plan)
-
-          output += "\n\nVisualised: #{url}"
-        end
-
-        output
+        upload_plan(plan, url)
       end
 
       # Returns the URL for a visualised query plan.
@@ -85,6 +80,33 @@ module Chatops
         )
       end
 
+      # Uploads a query plan to Slack.
+      #
+      # plan - The query plan to upload as a String.
+      # url - An optional URL to explain.depesz.com.
+      def upload_plan(plan, url = nil)
+        comment =
+          if url
+            "A visual representation of the plan can be found <#{url}|here>."
+          end
+
+        Slack::FileUpload
+          .new(
+            file: plan,
+            type: :text,
+            channel: channel,
+            token: slack_token,
+            title: 'EXPLAIN output',
+            comment: comment
+          )
+          .upload
+      end
+
+      # Downloads a query to execute from the given URL.
+      def download_query(url)
+        HTTP.get(url).body.to_s
+      end
+
       # Checks if a query is clearly dangerous or not.
       #
       # While queries are executed in read-only mode this method serves as a
@@ -92,6 +114,14 @@ module Chatops
       # (e.g. a query that deletes data).
       def clearly_dangerous?(query)
         query.match?(UNSAFE_PATTERN)
+      end
+
+      def channel
+        env.fetch('CHAT_CHANNEL')
+      end
+
+      def slack_token
+        env.fetch('SLACK_TOKEN')
       end
     end
   end

@@ -34,7 +34,24 @@ describe Chatops::Commands::Explain do
         command = described_class.new(%w[SELECT 1])
 
         expect(command)
-          .to receive(:explain_plan_for)
+          .to receive(:upload_explain_plan_for)
+          .with('SELECT 1')
+
+        command.perform
+      end
+    end
+
+    context 'when using a URL as the input' do
+      it 'downloads and executes the plan located at the URL' do
+        command = described_class.new(%w[http://example.com])
+
+        expect(command)
+          .to receive(:download_query)
+          .with('http://example.com')
+          .and_return('SELECT 1')
+
+        expect(command)
+          .to receive(:upload_explain_plan_for)
           .with('SELECT 1')
 
         command.perform
@@ -42,7 +59,7 @@ describe Chatops::Commands::Explain do
     end
   end
 
-  describe '#explain_plan_for' do
+  describe '#upload_explain_plan_for' do
     let(:command) { described_class.new(%w[SELECT 1]) }
     let(:connection) { instance_double('connection') }
 
@@ -58,8 +75,11 @@ describe Chatops::Commands::Explain do
     end
 
     it 'obtains the EXPLAIN plan of a query' do
-      expect(command.explain_plan_for('SELECT 1'))
-        .to eq("```\nFoo\nBar\n```")
+      expect(command)
+        .to receive(:upload_plan)
+        .with("Foo\nBar", nil)
+
+      command.upload_explain_plan_for('SELECT 1')
     end
 
     it 'visualises the query plan when the :visual option is set' do
@@ -70,8 +90,11 @@ describe Chatops::Commands::Explain do
         .with("Foo\nBar")
         .and_return('http://example.com')
 
-      expect(command.explain_plan_for('SELECT 1'))
-        .to eq("```\nFoo\nBar\n```\n\nVisualised: http://example.com")
+      expect(command)
+        .to receive(:upload_plan)
+        .with("Foo\nBar", 'http://example.com')
+
+      command.upload_explain_plan_for('SELECT 1')
     end
   end
 
@@ -134,6 +157,73 @@ describe Chatops::Commands::Explain do
       )
 
       command.database_connection
+    end
+  end
+
+  describe '#upload_plan' do
+    let(:command) do
+      described_class
+        .new([], {}, 'SLACK_TOKEN' => '123', 'CHAT_CHANNEL' => '456')
+    end
+
+    context 'with a URL' do
+      it 'uploads the plan to Slack' do
+        upload = instance_double('upload')
+
+        expect(Chatops::Slack::FileUpload)
+          .to receive(:new)
+          .with(
+            file: 'foo',
+            type: :text,
+            channel: '456',
+            token: '123',
+            title: 'EXPLAIN output',
+            comment: 'A visual representation of the plan can be found ' \
+              '<http://example.com|here>.'
+          )
+          .and_return(upload)
+
+        expect(upload).to receive(:upload)
+
+        command.upload_plan('foo', 'http://example.com')
+      end
+    end
+
+    context 'without a URL' do
+      it 'uploads the plan to Slack' do
+        upload = instance_double('upload')
+
+        expect(Chatops::Slack::FileUpload)
+          .to receive(:new)
+          .with(
+            file: 'foo',
+            type: :text,
+            channel: '456',
+            token: '123',
+            title: 'EXPLAIN output',
+            comment: nil
+          )
+          .and_return(upload)
+
+        expect(upload).to receive(:upload)
+
+        command.upload_plan('foo')
+      end
+    end
+  end
+
+  describe '#download_query' do
+    it 'downloads a query from a URL' do
+      command = described_class.new
+
+      response = instance_double('response', body: 'hello')
+
+      expect(HTTP)
+        .to receive(:get)
+        .with('http://example.com')
+        .and_return(response)
+
+      expect(command.download_query('http://example.com')).to eq('hello')
     end
   end
 
