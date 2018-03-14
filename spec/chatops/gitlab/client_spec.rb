@@ -21,6 +21,32 @@ describe Chatops::Gitlab::Client do
     end
   end
 
+  describe '#find_user' do
+    context 'when a user could be found' do
+      it 'returns the user' do
+        user = instance_double('user')
+
+        expect(client.internal_client)
+          .to receive(:users)
+          .with(username: 'alice')
+          .and_return([user])
+
+        expect(client.find_user('alice')).to eq(user)
+      end
+    end
+
+    context 'when a user could not be found' do
+      it 'returns nil' do
+        expect(client.internal_client)
+          .to receive(:users)
+          .with(username: 'alice')
+          .and_return([])
+
+        expect(client.find_user('alice')).to be_nil
+      end
+    end
+  end
+
   describe '#set_feature' do
     it 'sets the value of a feature flag' do
       expect(client.internal_client)

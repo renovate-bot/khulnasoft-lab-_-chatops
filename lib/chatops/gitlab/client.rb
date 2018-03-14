@@ -19,6 +19,11 @@ module Chatops
         internal_client.get('/features').auto_paginate
       end
 
+      # Returns a user for a given username.
+      def find_user(username)
+        internal_client.users(username: username).first
+      end
+
       # Sets a feature flag's state.
       #
       # name - The name of the flag.
