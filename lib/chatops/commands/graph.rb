@@ -98,18 +98,6 @@ module Chatops
         end
       end
 
-      def grafana_token
-        env.fetch('GRAFANA_TOKEN')
-      end
-
-      def slack_token
-        env.fetch('SLACK_TOKEN')
-      end
-
-      def channel
-        env.fetch('CHAT_CHANNEL')
-      end
-
       def configuration_for(category, name)
         entry = self.class.configuration.dig(category, name)
 

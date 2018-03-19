@@ -174,60 +174,6 @@ describe Chatops::Commands::Graph do
     end
   end
 
-  describe '#grafana_token' do
-    context 'without the GRAFANA_TOKEN environment variable' do
-      it 'raises KeyError' do
-        command = described_class.new
-
-        expect { command.grafana_token }.to raise_error(KeyError)
-      end
-    end
-
-    context 'with the GRAFANA_TOKEN environment variable' do
-      it 'returns the value of the variable' do
-        command = described_class.new([], {}, 'GRAFANA_TOKEN' => 'foo')
-
-        expect(command.grafana_token).to eq('foo')
-      end
-    end
-  end
-
-  describe '#slack_token' do
-    context 'without the SLACK_TOKEN environment variable' do
-      it 'raises KeyError' do
-        command = described_class.new
-
-        expect { command.slack_token }.to raise_error(KeyError)
-      end
-    end
-
-    context 'with the SLACK_TOKEN environment variable' do
-      it 'returns the value of the variable' do
-        command = described_class.new([], {}, 'SLACK_TOKEN' => 'foo')
-
-        expect(command.slack_token).to eq('foo')
-      end
-    end
-  end
-
-  describe '#channel' do
-    context 'without the CHAT_CHANNEL environment variable' do
-      it 'raises KeyError' do
-        command = described_class.new
-
-        expect { command.channel }.to raise_error(KeyError)
-      end
-    end
-
-    context 'with the CHAT_CHANNEL environment variable' do
-      it 'returns the value of the variable' do
-        command = described_class.new([], {}, 'CHAT_CHANNEL' => 'foo')
-
-        expect(command.channel).to eq('foo')
-      end
-    end
-  end
-
   describe '#configuration_for' do
     let(:command) { described_class.new }
 

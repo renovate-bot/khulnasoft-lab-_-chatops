@@ -136,14 +136,6 @@ module Chatops
       def clearly_dangerous?(query)
         query.match?(UNSAFE_PATTERN)
       end
-
-      def channel
-        env.fetch('CHAT_CHANNEL')
-      end
-
-      def slack_token
-        env.fetch('SLACK_TOKEN')
-      end
     end
   end
 end

@@ -209,18 +209,6 @@ module Chatops
         end
       end
 
-      def gitlab_token
-        env.fetch('GITLAB_TOKEN')
-      end
-
-      def slack_token
-        env.fetch('SLACK_TOKEN')
-      end
-
-      def channel
-        env.fetch('CHAT_CHANNEL')
-      end
-
       def user_not_found_error(name)
         "No user could be found for the username #{name.inspect}."
       end

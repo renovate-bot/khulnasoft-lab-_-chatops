@@ -188,18 +188,6 @@ module Chatops
           .per_state
           .map { |vals| vals.map(&:to_attachment_field) }
       end
-
-      def gitlab_token
-        env.fetch('GITLAB_TOKEN')
-      end
-
-      def slack_token
-        env.fetch('SLACK_TOKEN')
-      end
-
-      def channel
-        env.fetch('CHAT_CHANNEL')
-      end
     end
   end
 end

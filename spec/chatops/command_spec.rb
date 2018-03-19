@@ -54,4 +54,68 @@ describe Chatops::Command do
       expect { command.new.perform }.to raise_error(NotImplementedError)
     end
   end
+
+  describe '#gitlab_token' do
+    context 'when the GITLAB_TOKEN environment variable is not specified' do
+      it 'raises KeyError' do
+        expect { command.new.gitlab_token }.to raise_error(KeyError)
+      end
+    end
+
+    context 'when the GITLAB_TOKEN environment variable is specified' do
+      it 'returns the value of the environment variable' do
+        cmd = command.new([], {}, 'GITLAB_TOKEN' => '123')
+
+        expect(cmd.gitlab_token).to eq('123')
+      end
+    end
+  end
+
+  describe '#slack_token' do
+    context 'when the SLACK_TOKEN environment variable is not specified' do
+      it 'raises KeyError' do
+        expect { command.new.slack_token }.to raise_error(KeyError)
+      end
+    end
+
+    context 'when the SLACK_TOKEN environment variable is specified' do
+      it 'returns the value of the environment variable' do
+        cmd = command.new([], {}, 'SLACK_TOKEN' => '123')
+
+        expect(cmd.slack_token).to eq('123')
+      end
+    end
+  end
+
+  describe '#channel' do
+    context 'when the CHAT_CHANNEL environment variable is not specified' do
+      it 'raises KeyError' do
+        expect { command.new.channel }.to raise_error(KeyError)
+      end
+    end
+
+    context 'when the CHAT_CHANNEL environment variable is specified' do
+      it 'returns the value of the environment variable' do
+        cmd = command.new([], {}, 'CHAT_CHANNEL' => '123')
+
+        expect(cmd.channel).to eq('123')
+      end
+    end
+  end
+
+  describe '#grafana_token' do
+    context 'when the GRAFANA_TOKEN environment variable is not specified' do
+      it 'raises KeyError' do
+        expect { command.new.grafana_token }.to raise_error(KeyError)
+      end
+    end
+
+    context 'when the GRAFANA_TOKEN environment variable is specified' do
+      it 'returns the value of the environment variable' do
+        cmd = command.new([], {}, 'GRAFANA_TOKEN' => '123')
+
+        expect(cmd.grafana_token).to eq('123')
+      end
+    end
+  end
 end

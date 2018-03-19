@@ -24,6 +24,26 @@ module Chatops
       )
     end
 
+    # Returns the ID of the chat channel the command was triggered in.
+    def channel
+      env.fetch('CHAT_CHANNEL')
+    end
+
+    # Returns the API token to use for interacting with the Slack API.
+    def slack_token
+      env.fetch('SLACK_TOKEN')
+    end
+
+    # Returns the API token to use for interacting with the GitLab API.
+    def gitlab_token
+      env.fetch('GITLAB_TOKEN')
+    end
+
+    # Returns the API token to use for interacting with the Grafana API.
+    def grafana_token
+      env.fetch('GRAFANA_TOKEN')
+    end
+
     module ClassMethods
       def command_name
         @command_name ||= name

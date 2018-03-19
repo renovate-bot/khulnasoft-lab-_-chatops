@@ -62,10 +62,6 @@ module Chatops
 
         Time.strptime(string, TIME_FORMAT).iso8601 if string
       end
-
-      def gitlab_token
-        env.fetch('GITLAB_TOKEN')
-      end
     end
   end
 end
