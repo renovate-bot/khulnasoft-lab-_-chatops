@@ -21,6 +21,28 @@ describe Chatops::Database::ReadOnlyConnection do
     )
   end
 
+  describe '.from_environment' do
+    it 'returns a read-only database connection' do
+      env = {
+        'DATABASE_HOST' => 'foo',
+        'DATABASE_PORT' => 1234,
+        'DATABASE_USER' => 'admin',
+        'DATABASE_PASSWORD' => 'hunter2',
+        'DATABASE_NAME' => 'gitlab'
+      }
+
+      expect(described_class).to receive(:new).with(
+        host: 'foo',
+        port: 1234,
+        user: 'admin',
+        password: 'hunter2',
+        database: 'gitlab'
+      )
+
+      described_class.from_environment(env)
+    end
+  end
+
   describe '#execute' do
     it 'executes a read-only query' do
       result = connection.execute('SELECT 1 AS number')

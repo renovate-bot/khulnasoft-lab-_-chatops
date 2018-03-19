@@ -14,7 +14,7 @@ module Chatops
     def initialize(arguments = [], options = {}, env = {})
       @arguments = arguments
       @options = options
-      @env = env
+      @env = env.to_hash
     end
 
     def perform

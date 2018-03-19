@@ -92,13 +92,7 @@ module Chatops
       end
 
       def database_connection
-        Database::ReadOnlyConnection.new(
-          host: env['DATABASE_HOST'] || 'localhost',
-          port: env['DATABASE_PORT'] || 5432,
-          user: env['DATABASE_USER'],
-          password: env['DATABASE_PASSWORD'],
-          database: env.fetch('DATABASE_NAME')
-        )
+        Database::ReadOnlyConnection.from_environment(env)
       end
 
       # Uploads a query plan to Slack.
