@@ -109,6 +109,16 @@ like any other CLI application. These options are defined using
 [Slop](https://github.com/leejarvis/slop/), which is less painful to work with
 compared to Ruby's own OptionParser class.
 
+## Examples
+
+You can use the following existing commands as examples/reference material when
+adding new commands:
+
+* [broadcast](/lib/chatops/commands/broadcast.rb)
+* [explain](/lib/chatops/commands/explain.rb)
+* [feature](/lib/chatops/commands/feature.rb)
+* [user](/lib/chatops/commands/user.rb)
+
 # License
 
 All source code in this repository is subject to the terms of the MIT license,
