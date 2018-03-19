@@ -235,7 +235,8 @@ describe Chatops::Commands::User do
           .with(user.id)
           .and_return(false)
 
-        expect(command.unblock('alice')).to eq('The user could not be unblocked.')
+        expect(command.unblock('alice'))
+          .to eq('The user could not be unblocked.')
       end
     end
   end
