@@ -18,9 +18,17 @@ instance that is somehow publicly reachable. If you're using a development
 environment you can use [localtunnel](https://localtunnel.github.io/www/) to
 expose your development environment.
 
-Once your environment is reachable you need to set up slash Commands integration
-following the guide at [Slack slash commands](https://docs.gitlab.com/ee/user/project/integrations/slack_slash_commands.html).
-Once set up you can run commands as follows:
+Once your environment is reachable you'll need to import this repository into
+your environment so you can easily test your changes. Once done you need to set
+up slash Commands integration following the guide at [Slack slash
+commands](https://docs.gitlab.com/ee/user/project/integrations/slack_slash_commands.html).
+
+When Slash commands are set up you need to set up the CI runner in your local
+environment. The easiest way of setting this up is by using the shell executor
+as this removes the need for also setting up Docker.
+
+With everything set up (and running) you can then run chatops commands by typing
+the following into a Slack channel:
 
     /slash-prefix run COMMAND OPTIONS
 
@@ -38,6 +46,9 @@ uploads a file to Slack. For this to work you also need to:
 1. Set up a Slack bot.
 2. Make sure the bot is present in the channel.
 3. Expose the API token via the `SLACK_TOKEN` environment variable.
+
+Other commands may require additional tokens such as a GitLab or Twitter API
+token.
 
 # Adding Commands
 
