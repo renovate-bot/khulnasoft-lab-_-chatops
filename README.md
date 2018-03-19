@@ -48,7 +48,8 @@ uploads a file to Slack. For this to work you also need to:
 3. Expose the API token via the `SLACK_TOKEN` environment variable.
 
 Other commands may require additional tokens such as a GitLab or Twitter API
-token.
+token. All of these are best set using CI/CD secret variables, which can be
+configured per project under "Settings" > "CI / CD Settings".
 
 # Adding Commands
 
