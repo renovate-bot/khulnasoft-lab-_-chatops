@@ -45,6 +45,16 @@ module Chatops
 
         internal_client.post('/broadcast_messages', body: body)
       end
+
+      # id - The ID of the user to block.
+      def block_user(id)
+        internal_client.block_user(id)
+      end
+
+      # id - The ID of the user to unblock.
+      def unblock_user(id)
+        internal_client.unblock_user(id)
+      end
     end
   end
 end

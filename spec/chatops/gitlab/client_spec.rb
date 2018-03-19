@@ -81,4 +81,24 @@ describe Chatops::Gitlab::Client do
       end
     end
   end
+
+  describe '#block_user' do
+    it 'blocks a user' do
+      expect(client.internal_client)
+        .to receive(:block_user)
+        .with(1)
+
+      client.block_user(1)
+    end
+  end
+
+  describe '#unblock_user' do
+    it 'unblocks a user' do
+      expect(client.internal_client)
+        .to receive(:unblock_user)
+        .with(1)
+
+      client.unblock_user(1)
+    end
+  end
 end

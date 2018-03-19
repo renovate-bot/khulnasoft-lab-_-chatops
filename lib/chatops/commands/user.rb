@@ -51,16 +51,16 @@ module Chatops
         command = arguments[0]
 
         if COMMANDS.include?(command)
-          public_send(command)
+          public_send(command, *arguments[1..-1])
         else
           unsupported_command
         end
       end
 
       # Displays details of a single user.
-      def find
-        name = arguments[1]
-
+      #
+      # name - The username of the user.
+      def find(name = nil)
         return 'You must specify a username.' unless name
 
         user = Gitlab::Client
@@ -70,7 +70,43 @@ module Chatops
         if user
           submit_user_details(user)
         else
-          "No user could be found for the username #{name.inspect}."
+          user_not_found_error(name)
+        end
+      end
+
+      # Blocks a single user.
+      #
+      # name - The username of the user to block.
+      def block(name = nil)
+        return 'You must specify a username to block.' unless name
+
+        client = Gitlab::Client.new(token: gitlab_token)
+        user = client.find_user(name)
+
+        return user_not_found_error(name) unless user
+
+        if client.block_user(user.id)
+          'The user has been blocked.'
+        else
+          'The user could not be blocked.'
+        end
+      end
+
+      # Unblocks a single user.
+      #
+      # name - The username of the user to unblock.
+      def unblock(name = nil)
+        return 'You must specify a username to unblock.' unless name
+
+        client = Gitlab::Client.new(token: gitlab_token)
+        user = client.find_user(name)
+
+        return user_not_found_error(name) unless user
+
+        if client.unblock_user(user.id)
+          'The user has been unblocked.'
+        else
+          'The user could not be unblocked.'
         end
       end
 
@@ -183,6 +219,10 @@ module Chatops
 
       def channel
         env.fetch('CHAT_CHANNEL')
+      end
+
+      def user_not_found_error(name)
+        "No user could be found for the username #{name.inspect}."
       end
     end
   end

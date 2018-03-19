@@ -15,9 +15,11 @@ describe Chatops::Commands::User do
   describe '#perform' do
     context 'when using a valid subcommand' do
       it 'executes the subcommand' do
-        command = described_class.new(%w[find])
+        command = described_class.new(%w[find alice])
 
-        expect(command).to receive(:find)
+        expect(command)
+          .to receive(:find)
+          .with('alice')
 
         command.perform
       end
@@ -71,7 +73,7 @@ describe Chatops::Commands::User do
           .to receive(:submit_user_details)
           .with(user)
 
-        command.find
+        command.find('alice')
       end
     end
 
@@ -92,8 +94,148 @@ describe Chatops::Commands::User do
         command = described_class
           .new(%w[find alice], {}, 'GITLAB_TOKEN' => '123')
 
-        expect(command.find)
+        expect(command.find('alice'))
           .to eq('No user could be found for the username "alice".')
+      end
+    end
+  end
+
+  describe '#block' do
+    context 'without a username' do
+      it 'returns an error message' do
+        command = described_class.new(%w[find])
+
+        expect(command.block).to eq('You must specify a username to block.')
+      end
+    end
+
+    context 'with an non-existing username' do
+      it 'returns an error message' do
+        client = instance_double('client')
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[block alice], {}, 'GITLAB_TOKEN' => '123')
+
+        expect(command.block('alice'))
+          .to eq('No user could be found for the username "alice".')
+      end
+    end
+
+    context 'with a valid username' do
+      let(:client) { instance_double('client') }
+      let(:user) { instance_double('user', id: 1) }
+      let(:command) do
+        described_class.new(%w[block alice], {}, 'GITLAB_TOKEN' => '123')
+      end
+
+      before do
+        allow(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123')
+          .and_return(client)
+
+        allow(client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'blocks the user' do
+        expect(client)
+          .to receive(:block_user)
+          .with(user.id)
+          .and_return(true)
+
+        expect(command.block('alice')).to eq('The user has been blocked.')
+      end
+
+      it 'returns an error message if the user could not be blocked' do
+        expect(client)
+          .to receive(:block_user)
+          .with(user.id)
+          .and_return(false)
+
+        expect(command.block('alice')).to eq('The user could not be blocked.')
+      end
+    end
+  end
+
+  describe '#unblock' do
+    context 'without a username' do
+      it 'returns an error message' do
+        command = described_class.new(%w[find])
+
+        expect(command.unblock).to eq('You must specify a username to unblock.')
+      end
+    end
+
+    context 'with an non-existing username' do
+      it 'returns an error message' do
+        client = instance_double('client')
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[unblock alice], {}, 'GITLAB_TOKEN' => '123')
+
+        expect(command.unblock('alice'))
+          .to eq('No user could be found for the username "alice".')
+      end
+    end
+
+    context 'with a valid username' do
+      let(:client) { instance_double('client') }
+      let(:user) { instance_double('user', id: 1) }
+      let(:command) do
+        described_class.new(%w[unblock alice], {}, 'GITLAB_TOKEN' => '123')
+      end
+
+      before do
+        allow(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123')
+          .and_return(client)
+
+        allow(client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'unblocks the user' do
+        expect(client)
+          .to receive(:unblock_user)
+          .with(user.id)
+          .and_return(true)
+
+        expect(command.unblock('alice')).to eq('The user has been unblocked.')
+      end
+
+      it 'returns an error message if the user could not be unblocked' do
+        expect(client)
+          .to receive(:unblock_user)
+          .with(user.id)
+          .and_return(false)
+
+        expect(command.unblock('alice')).to eq('The user could not be unblocked.')
       end
     end
   end
