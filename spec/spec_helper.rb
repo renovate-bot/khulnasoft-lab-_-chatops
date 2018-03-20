@@ -27,3 +27,9 @@ require 'stringio'
 RSpec.configure do |config|
   config.color = true
 end
+
+# To be 100% sure production secrets aren't accidentally used for tests we wipe
+# any variable ending with "_TOKEN" (e.g. "GITLAB_TOKEN").
+ENV.keys
+  .select { |key| key.end_with?('_TOKEN') }
+  .each { |key| ENV.delete(key) }
