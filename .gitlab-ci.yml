@@ -1,16 +1,20 @@
 ---
 image: ruby:2.4-alpine
 
+services:
+- docker:dind
+
+stages:
+  - test
+  - build
+
+variables:
+  IMAGE: chatops
+
 .chatops: &chatops
+  image: registry.gitlab.com/gitlab-com/"${IMAGE}":latest
   only:
     - chat
-  before_script:
-    - apk add --update build-base postgresql-dev
-    - gem install bundler --no-ri --no-rdoc
-    - bundle install --path vendor --retry 3 --deployment --without development
-  cache:
-    paths:
-      - vendor/bundle
   script:
     - bundle exec ./bin/chatops $CI_JOB_NAME
 
@@ -28,8 +32,17 @@ image: ruby:2.4-alpine
     paths:
       - vendor/ruby
 
+build:image:
+  stage: build
+  image: docker:git
+  only:
+    - master
+  script:
+    - ./bin/docker "${IMAGE}"
+
 rspec:
   <<: *ruby
+  stage: test
   script:
     - bundle exec rake coverage
   services:
@@ -46,6 +59,7 @@ rspec:
 
 rubocop:
   <<: *ruby
+  stage: test
   script:
     - bundle exec rubocop
 
