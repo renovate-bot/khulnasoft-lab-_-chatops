@@ -5,6 +5,7 @@ image: ruby:2.4-alpine
   only:
     - chat
   before_script:
+    - apk add --update build-base postgresql-dev
     - gem install bundler --no-ri --no-rdoc
     - bundle install --path vendor --retry 3 --deployment --without development
   cache:
