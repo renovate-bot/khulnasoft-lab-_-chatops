@@ -9,10 +9,10 @@ stages:
   - build
 
 variables:
-  IMAGE: chatops
+  CHATOPS_IMAGE: registry.gitlab.com/gitlab-com/chatops:latest
 
 .chatops: &chatops
-  image: registry.gitlab.com/gitlab-com/"${IMAGE}":latest
+  image: $CHATOPS_IMAGE
   only:
     - chat
   script:
@@ -38,7 +38,7 @@ build:image:
   only:
     - master
   script:
-    - ./bin/docker "${IMAGE}"
+    - ./bin/docker "${CHATOPS_IMAGE}"
 
 rspec:
   <<: *ruby
