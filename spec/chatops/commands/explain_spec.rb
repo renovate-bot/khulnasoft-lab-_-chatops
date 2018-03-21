@@ -234,6 +234,12 @@ describe Chatops::Commands::Explain do
       expect(command.clearly_dangerous?('DROP TABLE foo')).to eq(true)
     end
 
+    it 'returns true when trying to create a table' do
+      command = described_class.new
+
+      expect(command.clearly_dangerous?('CREATE TABLE foo')).to eq(true)
+    end
+
     it 'returns false for a query that is safe to run' do
       command = described_class.new(%w[SELECT 1])
 
