@@ -29,7 +29,8 @@ RSpec.configure do |config|
 end
 
 # To be 100% sure production secrets aren't accidentally used for tests we wipe
-# any variable ending with "_TOKEN" (e.g. "GITLAB_TOKEN").
+# any variable ending with "_TOKEN" (e.g. "GITLAB_TOKEN"). We also wipe out
+# database related environment variables.
 ENV.keys
-  .select { |key| key.end_with?('_TOKEN') }
+  .select { |key| key.end_with?('_TOKEN') || key.start_with?('DATABASE_') }
   .each { |key| ENV.delete(key) }
