@@ -11,7 +11,7 @@ image: ruby:2.4-alpine
     paths:
       - vendor/bundle
   script:
-    - ./bin/chatops $CI_JOB_NAME
+    - bundle exec ./bin/chatops $CI_JOB_NAME
 
 .ruby: &ruby
   except:
