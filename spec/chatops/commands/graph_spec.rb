@@ -104,10 +104,6 @@ describe Chatops::Commands::Graph do
           .to receive(:download)
           .and_return(file)
 
-        expect(graph)
-          .to receive(:url)
-          .and_return('http://example.com')
-
         expect(command)
           .to receive(:upload)
           .with('graph-1', file)

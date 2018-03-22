@@ -47,11 +47,8 @@ module Chatops
         config = configuration_for(category, name)
         graph = graph(config['dashboard'], config['panel'])
         file = graph.download
-        url = graph.url
 
         upload(name, file)
-
-        "The image has been uploaded. You can also view it in Grafana at #{url}"
       end
 
       # Uploads the given image to slack.
