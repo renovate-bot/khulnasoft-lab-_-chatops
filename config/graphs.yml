@@ -16,7 +16,7 @@ postgres:
     description: The number of dead tuples per table.
   autovacuum:
     dashboard: postgres-tuple-statistics
-    panel: 8
+    panel: 14
     description: The rate of autovacuum runs per table.
   transactions:
     dashboard: postgres-stats
