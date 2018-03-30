@@ -10,6 +10,7 @@ stages:
 
 variables:
   CHATOPS_IMAGE: registry.gitlab.com/gitlab-com/chatops:latest
+  GIT_SUBMODULE_STRATEGY: none
 
 .chatops: &chatops
   image: $CHATOPS_IMAGE
