@@ -10,16 +10,14 @@ stages:
 
 variables:
   CHATOPS_IMAGE: registry.gitlab.com/gitlab-com/chatops:latest
+  GIT_SUBMODULE_STRATEGY: none
 
 .chatops: &chatops
   image: $CHATOPS_IMAGE
-  variables:
-    GIT_STRATEGY: none
-    GIT_SUBMODULE_STRATEGY: none
   only:
     - chat
   script:
-    - bundle exec /app/bin/chatops $CI_JOB_NAME
+    - bundle exec ./bin/chatops $CI_JOB_NAME
 
 .ruby: &ruby
   except:
