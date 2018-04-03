@@ -330,10 +330,10 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when using staging' do
-      it 'returns staging.gitlab.org' do
+      it 'returns staging.gitlab.com' do
         command = described_class.new([], staging: true)
 
-        expect(command.gitlab_host).to eq('staging.gitlab.org')
+        expect(command.gitlab_host).to eq('staging.gitlab.com')
       end
     end
 

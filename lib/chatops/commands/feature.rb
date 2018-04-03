@@ -205,7 +205,7 @@ module Chatops
         if dev?
           'dev.gitlab.org'
         elsif staging?
-          'staging.gitlab.org'
+          'staging.gitlab.com'
         else
           'gitlab.com'
         end
