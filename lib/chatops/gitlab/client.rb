@@ -9,8 +9,10 @@ module Chatops
       attr_reader :internal_client
 
       # token - The API token to use for authentication.
-      # endpoint - The API endpoint to use.
-      def initialize(token:, endpoint: DEFAULT_ENDPOINT)
+      # host - The hostname to use.
+      def initialize(token:, host: nil)
+        endpoint = host ? "https://#{host}/api/v4" : DEFAULT_ENDPOINT
+
         @internal_client = ::Gitlab::Client
           .new(endpoint: endpoint, private_token: token)
       end

@@ -9,8 +9,9 @@ module Chatops
       # token - The API token to use for retrieving the features.
       # match - When set to a String only the features including the substring
       #         will be returned.
-      def initialize(token:, match: nil)
-        @client = Client.new(token: token)
+      # host - The host to use for the API.
+      def initialize(token:, match: nil, host: nil)
+        @client = Client.new(token: token, host: host)
         @match = match
       end
 

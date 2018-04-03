@@ -9,13 +9,45 @@ describe Chatops::Commands::Feature do
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[feature list], { match: 'gitaly' }, {})
+        .with(
+          %w[feature list],
+          { match: 'gitaly', staging: false, dev: false },
+          {}
+        )
         .and_return(instance)
 
       expect(instance)
         .to receive(:perform)
 
       described_class.perform(%w[feature list --match gitaly])
+    end
+
+    it 'supports a --staging option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[feature list], { match: nil, staging: true, dev: false }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[feature list --staging])
+    end
+
+    it 'supports a --dev option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[feature list], { match: nil, staging: false, dev: true }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[feature list --dev])
     end
   end
 
@@ -76,7 +108,7 @@ describe Chatops::Commands::Feature do
 
         expect(Chatops::Gitlab::FeatureCollection)
           .to receive(:new)
-          .with(token: '123')
+          .with(token: '123', host: 'gitlab.com')
           .and_return(collection)
 
         expect(collection)
@@ -96,7 +128,7 @@ describe Chatops::Commands::Feature do
 
         expect(Chatops::Gitlab::FeatureCollection)
           .to receive(:new)
-          .with(token: '123')
+          .with(token: '123', host: 'gitlab.com')
           .and_return(collection)
 
         expect(collection)
@@ -153,7 +185,7 @@ describe Chatops::Commands::Feature do
 
         expect(Chatops::Gitlab::Client)
           .to receive(:new)
-          .with(token: '123')
+          .with(token: '123', host: 'gitlab.com')
           .and_return(client)
 
         expect(client)
@@ -239,11 +271,78 @@ describe Chatops::Commands::Feature do
 
       expect(Chatops::Gitlab::FeatureCollection)
         .to receive(:new)
-        .with(token: '123', match: 'foo')
+        .with(token: '123', match: 'foo', host: 'gitlab.com')
         .and_return(collection)
 
       expect(command.attachment_fields_per_state)
         .to eq([[], [feature.to_attachment_field]])
+    end
+  end
+
+  describe '#gitlab_token' do
+    context 'when using dev' do
+      it 'returns the value of GITLAB_DEV_TOKEN' do
+        command = described_class.new(
+          [],
+          { dev: true },
+          'GITLAB_DEV_TOKEN' => '123',
+          'GITLAB_TOKEN' => '456'
+        )
+
+        expect(command.gitlab_token).to eq('123')
+      end
+    end
+
+    context 'when using staging' do
+      it 'returns the value of GITLAB_STAGING_TOKEN' do
+        command = described_class.new(
+          [],
+          { staging: true },
+          'GITLAB_STAGING_TOKEN' => '123',
+          'GITLAB_TOKEN' => '456'
+        )
+
+        expect(command.gitlab_token).to eq('123')
+      end
+    end
+
+    context 'when using production' do
+      it 'returns the value of GITLAB_TOKEN' do
+        command = described_class.new(
+          [],
+          {},
+          'GITLAB_STAGING_TOKEN' => '123',
+          'GITLAB_TOKEN' => '456'
+        )
+
+        expect(command.gitlab_token).to eq('456')
+      end
+    end
+  end
+
+  describe '#gitlab_host' do
+    context 'when using dev' do
+      it 'returns dev.gitlab.org' do
+        command = described_class.new([], dev: true)
+
+        expect(command.gitlab_host).to eq('dev.gitlab.org')
+      end
+    end
+
+    context 'when using staging' do
+      it 'returns staging.gitlab.org' do
+        command = described_class.new([], staging: true)
+
+        expect(command.gitlab_host).to eq('staging.gitlab.org')
+      end
+    end
+
+    context 'when using production' do
+      it 'returns gitlab.com' do
+        command = described_class.new
+
+        expect(command.gitlab_host).to eq('gitlab.com')
+      end
     end
   end
 end

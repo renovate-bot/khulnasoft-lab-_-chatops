@@ -3,7 +3,13 @@
 require 'spec_helper'
 
 describe Chatops::Gitlab::Client do
-  let(:client) { described_class.new(token: '123', endpoint: 'localhost') }
+  let(:client) { described_class.new(token: '123', host: 'localhost') }
+
+  describe '#initialize' do
+    it 'sets the endpoint based on the hostname' do
+      expect(client.internal_client.endpoint).to eq('https://localhost/api/v4')
+    end
+  end
 
   describe '#features' do
     it 'returns the feature flags' do

@@ -26,6 +26,9 @@ module Chatops
           'Only displays features that contain the given substring'
         )
 
+        o.bool('--staging', 'Use staging.gitlab.com')
+        o.bool('--dev', 'Use dev.gitlab.org')
+
         o.separator("\nAvailable subcommands:\n\n#{available_subcommands}")
       end
 
@@ -85,7 +88,7 @@ module Chatops
         end
 
         feature = Gitlab::FeatureCollection
-          .new(token: gitlab_token)
+          .new(token: gitlab_token, host: gitlab_host)
           .find_by_name(name)
 
         return "The feature #{name.inspect} does not exist." unless feature
@@ -109,7 +112,7 @@ module Chatops
         end
 
         response = Gitlab::Client
-          .new(token: gitlab_token)
+          .new(token: gitlab_token, host: gitlab_host)
           .set_feature(name, value)
 
         feature = Gitlab::Feature.from_api_response(response)
@@ -133,14 +136,14 @@ module Chatops
                 text: 'These features are enabled:',
                 fields: enabled,
                 color: ENABLED_COLOR,
-                footer: "#{enabled.length} enabled features"
+                footer: "#{enabled.length} enabled features on #{gitlab_host}"
               },
               {
                 title: 'Disabled Features',
                 text: 'These features are disabled:',
                 fields: disabled,
                 color: DISABLED_COLOR,
-                footer: "#{disabled.length} disabled features"
+                footer: "#{disabled.length} disabled features on #{gitlab_host}"
               }
             ]
           )
@@ -169,14 +172,10 @@ module Chatops
                     title: 'State',
                     value: feature.state_label,
                     short: true
-                  }
-                ]
-              },
-              {
-                title: 'Gate Values',
-                text: 'This feature has the following ' \
-                  "<#{GATES_DOCUMENTATION}|Gates> and values defined:",
-                fields: feature.attachment_fields_for_gates
+                  },
+                  *feature.attachment_fields_for_gates
+                ],
+                footer: "Host: #{gitlab_host}"
               }
             ]
           )
@@ -184,9 +183,40 @@ module Chatops
 
       def attachment_fields_per_state
         Gitlab::FeatureCollection
-          .new(token: gitlab_token, match: options[:match])
+          .new(token: gitlab_token, match: options[:match], host: gitlab_host)
           .per_state
           .map { |vals| vals.map(&:to_attachment_field) }
+      end
+
+      def gitlab_token
+        name =
+          if dev?
+            'GITLAB_DEV_TOKEN'
+          elsif staging?
+            'GITLAB_STAGING_TOKEN'
+          else
+            'GITLAB_TOKEN'
+          end
+
+        env.fetch(name)
+      end
+
+      def gitlab_host
+        if dev?
+          'dev.gitlab.org'
+        elsif staging?
+          'staging.gitlab.org'
+        else
+          'gitlab.com'
+        end
+      end
+
+      def staging?
+        options[:staging] == true
+      end
+
+      def dev?
+        options[:dev] == true
       end
     end
   end
