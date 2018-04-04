@@ -63,6 +63,16 @@ describe Chatops::Gitlab::Client do
     end
   end
 
+  describe '#delete_feature' do
+    it 'removes the value of a feature flag' do
+      expect(client.internal_client)
+        .to receive(:delete)
+        .with('/features/foo')
+
+      client.delete_feature('foo')
+    end
+  end
+
   describe '#add_broadcast_message' do
     context 'without a start and end date' do
       it 'adds a broadcast message without an explicit start and end date' do

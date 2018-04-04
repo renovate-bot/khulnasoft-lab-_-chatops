@@ -34,6 +34,13 @@ module Chatops
         internal_client.post("/features/#{name}", body: { value: value })
       end
 
+      # Delete a feature flag
+      #
+      # name = The name of the flag.
+      def delete_feature(name)
+        internal_client.delete("/features/#{name}")
+      end
+
       # Adds a broadcast message.
       #
       # message - The message to add.

@@ -12,7 +12,7 @@ module Chatops
       DISABLED_COLOR = '#ccc'
 
       # All the available subcommands and the corresponding methods to invoke.
-      COMMANDS = Set.new(%w[get set list])
+      COMMANDS = Set.new(%w[get set list delete])
 
       # The URL to the Gates documentation, to be displayed when retrieving a
       # single feature.
@@ -72,6 +72,9 @@ module Chatops
 
           # To enable a feature 50% of the time:
           feature set gitaly_tags 50
+
+          # To delete a feature flag and return to default behaviour:
+          feature delete gitaly_tags
           ```
 
           For more information run `feature --help`.
@@ -147,6 +150,21 @@ module Chatops
               }
             ]
           )
+      end
+
+      # Remove a feature flag
+      #
+      # Idempotent request, deleting non existing flags seems successful
+      def delete
+        name = arguments[1]
+
+        Gitlab::Client
+          .new(token: gitlab_token, host: gitlab_host)
+          .delete_feature(name)
+
+        Slack::Message
+          .new(token: slack_token, channel: channel)
+          .send(text: "Feature flag #{name} has been removed!")
       end
 
       # Sends the details of a single feature back to Slack.

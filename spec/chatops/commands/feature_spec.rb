@@ -54,6 +54,7 @@ describe Chatops::Commands::Feature do
   describe '.available_subcommands' do
     it 'returns a Markdown list' do
       expect(described_class.available_subcommands).to eq(<<~LIST.strip)
+        * delete
         * get
         * list
         * set
@@ -227,6 +228,39 @@ describe Chatops::Commands::Feature do
       expect(message).to receive(:send)
 
       command.list
+    end
+  end
+
+  describe '#delete' do
+    it 'sends the deleted flag to Slack' do
+      command = described_class.new(
+        %w[delete foo],
+        {},
+        'GITLAB_TOKEN' => '123',
+        'SLACK_TOKEN' => '456',
+        'CHAT_CHANNEL' => 'foo'
+      )
+
+      client = instance_double('client')
+      expect(Chatops::Gitlab::Client)
+        .to receive(:new)
+        .with(token: '123', host: 'gitlab.com')
+        .and_return(client)
+
+      expect(client)
+        .to receive(:delete_feature)
+        .with('foo')
+
+      message = instance_double('message')
+      expect(Chatops::Slack::Message)
+        .to receive(:new)
+        .with(token: '456', channel: 'foo')
+        .and_return(message)
+
+      expect(message).to receive(:send)
+        .with(text: 'Feature flag foo has been removed!')
+
+      command.delete
     end
   end
 
