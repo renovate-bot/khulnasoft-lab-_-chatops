@@ -106,7 +106,7 @@ module Chatops
 
         if !name || !value
           return 'You must specify the name of the feature flag ' \
-            'and the its new value.'
+            'and its new value.'
         end
 
         unless Gitlab::Feature.valid_value?(value)
