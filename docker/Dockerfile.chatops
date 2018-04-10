@@ -4,7 +4,7 @@ COPY Gemfile .
 COPY Gemfile.lock .
 
 WORKDIR app
-ADD . app
+ADD . /app/
 
 RUN apk add --update build-base postgresql-dev
 RUN gem install bundler --no-ri --no-rdoc

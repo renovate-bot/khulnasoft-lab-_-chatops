@@ -4,6 +4,10 @@ set -e
 image_name="$1"
 
 docker build -t "${image_name}" -f ./docker/Dockerfile.chatops .
-docker login --username gitlab-ci-token --password "${CI_BUILD_TOKEN}" registry.gitlab.com
+
+# Check if we at least can run the help command
+docker run --env CHAT_INPUT=help "${image_name}" bundle exec bin/chatops help | grep 'The following commands are available'
+
+docker login --username gitlab-ci-token --password "${CI_JOB_TOKEN}" "$CI_REGISTRY"
 docker push "${image_name}"
-docker logout registry.gitlab.com
+docker logout "$CI_REGISTRY"

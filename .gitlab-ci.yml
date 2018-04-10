@@ -1,9 +1,6 @@
 ---
 image: ruby:2.4-alpine
 
-services:
-- docker:dind
-
 stages:
   - test
   - build
@@ -19,7 +16,7 @@ variables:
   only:
     - chat
   script:
-    - bundle exec /app/bin/chatops $CI_JOB_NAME
+    - bundle exec ./bin/chatops $CI_JOB_NAME
 
 .ruby: &ruby
   except:
@@ -36,6 +33,8 @@ variables:
       - vendor/ruby
 
 build:image:
+  services:
+    - docker:dind
   stage: build
   image: docker:git
   only:
