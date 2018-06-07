@@ -16,8 +16,6 @@ variables:
   only:
     - chat
   script:
-    - ls -alh
-    - bundle exec ruby -e "puts $LOAD_PATH"
     - bundle exec ruby /app/bin/chatops $CI_JOB_NAME
 
 .ruby: &ruby
