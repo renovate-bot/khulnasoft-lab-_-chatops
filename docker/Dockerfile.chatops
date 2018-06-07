@@ -9,3 +9,4 @@ ADD . /app/
 RUN apk add --update build-base postgresql-dev
 RUN gem install bundler --no-ri --no-rdoc
 RUN bundle install --path vendor --retry 3 --deployment --without development
+RUN ls -alh
