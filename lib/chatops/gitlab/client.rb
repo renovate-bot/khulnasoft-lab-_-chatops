@@ -64,6 +64,14 @@ module Chatops
       def unblock_user(id)
         internal_client.unblock_user(id)
       end
+
+      def run_trigger(project, token, ref, options = {})
+        internal_client.run_trigger(project, token, ref, options)
+      end
+
+      def pipeline_jobs(project, pipeline_id, options = {})
+        internal_client.pipeline_jobs(project, pipeline_id, options)
+      end
     end
   end
 end

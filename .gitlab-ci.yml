@@ -85,3 +85,6 @@ user:
 
 query:
   <<: *chatops
+
+release:
+  <<: *chatops

@@ -117,4 +117,24 @@ describe Chatops::Gitlab::Client do
       client.unblock_user(1)
     end
   end
+
+  describe '#run_trigger' do
+    it 'runs a trigger' do
+      expect(client.internal_client)
+        .to receive(:run_trigger)
+        .with('foo/bar', 'abcdefg', 'master', foo: :bar)
+
+      client.run_trigger('foo/bar', 'abcdefg', 'master', foo: :bar)
+    end
+  end
+
+  describe '#pipeline_jobs' do
+    it 'lists pipeline jobs' do
+      expect(client.internal_client)
+        .to receive(:pipeline_jobs)
+        .with('foo/bar', 123, foo: :bar)
+
+      client.pipeline_jobs('foo/bar', 123, foo: :bar)
+    end
+  end
 end
