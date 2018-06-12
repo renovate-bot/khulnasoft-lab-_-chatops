@@ -9,7 +9,7 @@ describe Chatops::Commands::Explain do
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[SELECT 1], { visual: true }, {})
+        .with(%w[SELECT 1], { visual: true, without_analyze: false }, {})
         .and_return(instance)
 
       expect(instance)
@@ -245,5 +245,42 @@ describe Chatops::Commands::Explain do
 
       expect(command.clearly_dangerous?('SELECT 1')).to eq(false)
     end
+  end
+
+  describe '#explain' do
+    context 'when the --without-analyze option is specified' do
+      it 'runs a regular EXPLAIN' do
+        command = described_class.new(%w[SELECT 1], { without_analyze: true })
+        connection = instance_double('connection')
+
+        expect(command)
+          .to receive(:database_connection)
+          .and_return(connection)
+
+        expect(connection)
+          .to receive(:execute)
+          .with('EXPLAIN SELECT 1')
+
+        command.explain('SELECT 1')
+      end
+    end
+
+    context 'when the --without-analyze option is not specified' do
+      it 'runs an EXPLAIN ANALYZE' do
+        command = described_class.new(%w[SELECT 1], { without_analyze: false })
+        connection = instance_double('connection')
+
+        expect(command)
+          .to receive(:database_connection)
+          .and_return(connection)
+
+        expect(connection)
+          .to receive(:execute)
+          .with('EXPLAIN (ANALYZE, BUFFERS) SELECT 1')
+
+        command.explain('SELECT 1')
+      end
+    end
+
   end
 end

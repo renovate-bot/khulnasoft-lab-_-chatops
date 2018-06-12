@@ -20,6 +20,9 @@ module Chatops
       options do |o|
         o.bool '--visual', 'Visualises the query plan'
 
+        o.bool '--without-analyze',
+               'Runs a regular EXPLAIN, instead of EXPLAIN ANALYZE'
+
         o.separator <<~HELP.chomp
 
           Examples:
@@ -65,8 +68,7 @@ module Chatops
       #
       # query - The SQL query to explain.
       def upload_explain_plan_for(query)
-        plan = database_connection
-          .execute("EXPLAIN (ANALYZE, BUFFERS) #{query}")
+        plan = explain(query)
           .map { |row| row['QUERY PLAN'] }
           .join("\n")
 
@@ -129,6 +131,17 @@ module Chatops
       # (e.g. a query that deletes data).
       def clearly_dangerous?(query)
         query.match?(UNSAFE_PATTERN)
+      end
+
+      def explain(query)
+        prefix =
+          if options[:without_analyze]
+            'EXPLAIN'
+          else
+            'EXPLAIN (ANALYZE, BUFFERS)'
+          end
+
+        database_connection.execute("#{prefix} #{query}")
       end
     end
   end
