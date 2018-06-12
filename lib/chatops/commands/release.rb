@@ -62,6 +62,7 @@ module Chatops
           TARGET_PROJECT,
           env.fetch('RELEASE_TRIGGER_TOKEN'),
           TARGET_REF,
+          RELEASE_USER: env.fetch('GITLAB_USER_LOGIN', ''),
           RELEASE_VERSION: version,
           TASK: self.class.command_name
         )

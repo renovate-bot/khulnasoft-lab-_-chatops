@@ -4,7 +4,11 @@ require 'spec_helper'
 
 describe Chatops::Commands::Release do
   def stubbed_instance(version)
-    env = { 'GITLAB_TOKEN' => 'a', 'RELEASE_TRIGGER_TOKEN' => 'b' }
+    env = {
+      'GITLAB_TOKEN' => 'a',
+      'GITLAB_USER_LOGIN' => 'j.doe',
+      'RELEASE_TRIGGER_TOKEN' => 'b'
+    }
 
     described_class.new([version], {}, env).tap do |instance|
       # Default to the happy path
@@ -45,7 +49,11 @@ describe Chatops::Commands::Release do
       expect(stubbed_client).to have_received(:run_trigger)
         .with(
           described_class::TARGET_PROJECT, 'b', described_class::TARGET_REF,
-          a_hash_including(RELEASE_VERSION: '10.9.0', TASK: 'release')
+          a_hash_including(
+            RELEASE_USER: 'j.doe',
+            RELEASE_VERSION: '10.9.0',
+            TASK: 'release'
+          )
         )
     end
 
