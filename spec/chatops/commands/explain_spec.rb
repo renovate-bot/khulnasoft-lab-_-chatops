@@ -250,7 +250,7 @@ describe Chatops::Commands::Explain do
   describe '#explain' do
     context 'when the --without-analyze option is specified' do
       it 'runs a regular EXPLAIN' do
-        command = described_class.new(%w[SELECT 1], { without_analyze: true })
+        command = described_class.new(%w[SELECT 1], without_analyze: true)
         connection = instance_double('connection')
 
         expect(command)
@@ -267,7 +267,7 @@ describe Chatops::Commands::Explain do
 
     context 'when the --without-analyze option is not specified' do
       it 'runs an EXPLAIN ANALYZE' do
-        command = described_class.new(%w[SELECT 1], { without_analyze: false })
+        command = described_class.new(%w[SELECT 1], without_analyze: false)
         connection = instance_double('connection')
 
         expect(command)
@@ -281,6 +281,5 @@ describe Chatops::Commands::Explain do
         command.explain('SELECT 1')
       end
     end
-
   end
 end
