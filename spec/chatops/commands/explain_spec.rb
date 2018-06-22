@@ -57,6 +57,18 @@ describe Chatops::Commands::Explain do
         command.perform
       end
     end
+
+    context 'when the query contains curly quotes' do
+      it 'replaces the curly quotes with straight quotes' do
+        command = described_class.new(%w[SELECT “events”.* WHERE title = ‘foo’])
+
+        expect(command)
+          .to receive(:upload_explain_plan_for)
+          .with('SELECT "events".* WHERE title = \'foo\'')
+
+        command.perform
+      end
+    end
   end
 
   describe '#upload_explain_plan_for' do

@@ -51,7 +51,13 @@ module Chatops
       EXPLAIN_HOST = 'https://explain.depesz.com'
 
       def perform
-        query = arguments.join(' ').strip
+        query =
+          arguments
+            .join(' ')
+            .strip
+            .gsub(/[“”]/, '"')
+            .gsub(/[‘’]/, "'")
+
         query = download_query(query) if query.start_with?('http')
 
         if clearly_dangerous?(query)
