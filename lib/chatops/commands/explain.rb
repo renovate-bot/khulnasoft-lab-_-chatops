@@ -50,10 +50,13 @@ module Chatops
       # The host to use for visualising query plans.
       EXPLAIN_HOST = 'https://explain.depesz.com'
 
+      # Override as we don't want people to have to quote an argument that may
+      # contain quotes.
+
       def perform
         query =
-          arguments
-            .join(' ')
+          env
+            .fetch('CHAT_INPUT', '')
             .strip
             .gsub(/[“”]/, '"')
             .gsub(/[‘’]/, "'")

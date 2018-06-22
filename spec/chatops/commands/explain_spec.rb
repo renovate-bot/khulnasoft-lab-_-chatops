@@ -20,9 +20,21 @@ describe Chatops::Commands::Explain do
   end
 
   describe '#perform' do
+    it 'uses the value of CHAT_INPUT, not the passed arguments' do
+      command = described_class
+        .new(%w[SELECT 2], {}, 'CHAT_INPUT' => 'SELECT 1')
+
+      expect(command)
+        .to receive(:upload_explain_plan_for)
+        .with('SELECT 1')
+
+      command.perform
+    end
+
     context 'when using a query that is clearly too dangerous to run' do
       it 'raises UnsafeQueryError' do
-        command = described_class.new(%w[DROP DATABASE gitlabhq_production])
+        command = described_class
+          .new([], {}, 'CHAT_INPUT' => 'DROP DATABASE gitlabhq_production')
 
         expect { command.perform }
           .to raise_error(described_class::UnsafeQueryError)
@@ -31,7 +43,8 @@ describe Chatops::Commands::Explain do
 
     context 'when using a query that is safe to execute' do
       it 'obtains the query plan' do
-        command = described_class.new(%w[SELECT 1])
+        command = described_class
+          .new([], {}, 'CHAT_INPUT' => 'SELECT 1')
 
         expect(command)
           .to receive(:upload_explain_plan_for)
@@ -43,7 +56,8 @@ describe Chatops::Commands::Explain do
 
     context 'when using a URL as the input' do
       it 'downloads and executes the plan located at the URL' do
-        command = described_class.new(%w[http://example.com])
+        command = described_class
+          .new([], {}, 'CHAT_INPUT' => 'http://example.com')
 
         expect(command)
           .to receive(:download_query)
@@ -60,7 +74,8 @@ describe Chatops::Commands::Explain do
 
     context 'when the query contains curly quotes' do
       it 'replaces the curly quotes with straight quotes' do
-        command = described_class.new(%w[SELECT “events”.* WHERE title = ‘foo’])
+        command = described_class
+          .new([], {}, 'CHAT_INPUT' => 'SELECT “events”.* WHERE title = ‘foo’')
 
         expect(command)
           .to receive(:upload_explain_plan_for)
