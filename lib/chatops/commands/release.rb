@@ -16,6 +16,10 @@ module Chatops
       usage "#{command_name} [VERSION]"
       description 'Tag a new version of GitLab.'
 
+      options do |o|
+        o.bool '--security', 'Perform a security release', default: false
+      end
+
       def perform
         version = required_argument(0, 'version')
         validate_version!(version)
@@ -64,8 +68,18 @@ module Chatops
           TARGET_REF,
           RELEASE_USER: env.fetch('GITLAB_USER_LOGIN', ''),
           RELEASE_VERSION: version,
-          TASK: self.class.command_name
+          TASK: task_name
         )
+      end
+
+      def task_name
+        task = self.class.command_name
+
+        if options[:security]
+          "security_#{task}"
+        else
+          task
+        end
       end
 
       def pipeline_jobs(pipeline_id)

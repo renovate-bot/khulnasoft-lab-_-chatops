@@ -3,14 +3,14 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Release do
-  def stubbed_instance(version)
+  def stubbed_instance(version, arguments = {})
     env = {
       'GITLAB_TOKEN' => 'a',
       'GITLAB_USER_LOGIN' => 'j.doe',
       'RELEASE_TRIGGER_TOKEN' => 'b'
     }
 
-    described_class.new([version], {}, env).tap do |instance|
+    described_class.new([version], arguments, env).tap do |instance|
       # Default to the happy path
       allow(instance).to receive(:chatops_job?).and_return(true)
     end
@@ -43,18 +43,50 @@ describe Chatops::Commands::Release do
       end
     end
 
-    it 'runs the trigger' do
-      stubbed_instance('10.9.0').perform
+    it 'supports a --security option' do
+      instance = instance_double('instance')
 
-      expect(stubbed_client).to have_received(:run_trigger)
-        .with(
-          described_class::TARGET_PROJECT, 'b', described_class::TARGET_REF,
-          a_hash_including(
-            RELEASE_USER: 'j.doe',
-            RELEASE_VERSION: '10.9.0',
-            TASK: 'release'
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[1.2.3], { security: true }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[1.2.3 --security])
+    end
+
+    context 'when performing a normal release' do
+      it 'runs the trigger' do
+        stubbed_instance('10.9.0').perform
+
+        expect(stubbed_client).to have_received(:run_trigger)
+          .with(
+            described_class::TARGET_PROJECT, 'b', described_class::TARGET_REF,
+            a_hash_including(
+              RELEASE_USER: 'j.doe',
+              RELEASE_VERSION: '10.9.0',
+              TASK: 'release'
+            )
           )
-        )
+      end
+    end
+
+    context 'when performing a security release' do
+      it 'runs the trigger' do
+        stubbed_instance('10.9.0', security: true).perform
+
+        expect(stubbed_client).to have_received(:run_trigger)
+          .with(
+            described_class::TARGET_PROJECT, 'b', described_class::TARGET_REF,
+            a_hash_including(
+              RELEASE_USER: 'j.doe',
+              RELEASE_VERSION: '10.9.0',
+              TASK: 'security_release'
+            )
+          )
+      end
     end
 
     context 'with a valid chatops job' do
