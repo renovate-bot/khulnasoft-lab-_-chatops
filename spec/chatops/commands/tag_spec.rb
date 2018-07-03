@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe Chatops::Commands::Release do
+describe Chatops::Commands::Tag do
   def stubbed_instance(version, arguments = {})
     env = {
       'GITLAB_TOKEN' => 'a',
@@ -57,7 +57,7 @@ describe Chatops::Commands::Release do
       described_class.perform(%w[1.2.3 --security])
     end
 
-    context 'when performing a normal release' do
+    context 'when tagging a normal release' do
       it 'runs the trigger' do
         stubbed_instance('10.9.0').perform
 
@@ -67,13 +67,13 @@ describe Chatops::Commands::Release do
             a_hash_including(
               RELEASE_USER: 'j.doe',
               RELEASE_VERSION: '10.9.0',
-              TASK: 'release'
+              TASK: 'tag'
             )
           )
       end
     end
 
-    context 'when performing a security release' do
+    context 'when tagging a security release' do
       it 'runs the trigger' do
         stubbed_instance('10.9.0', security: true).perform
 
@@ -83,7 +83,7 @@ describe Chatops::Commands::Release do
             a_hash_including(
               RELEASE_USER: 'j.doe',
               RELEASE_VERSION: '10.9.0',
-              TASK: 'security_release'
+              TASK: 'tag_security'
             )
           )
       end
