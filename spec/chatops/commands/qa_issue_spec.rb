@@ -46,6 +46,9 @@ describe Chatops::Commands::QaIssue do
         expect { stubbed_instance(comparison).perform }
           .to raise_error(ArgumentError, /Invalid version provided/)
       end
+
+      expect { stubbed_instance('v11.1.0-rc1').perform }
+        .to raise_error(ArgumentError, /Invalid comparison provided/)
     end
 
     it 'runs the trigger' do

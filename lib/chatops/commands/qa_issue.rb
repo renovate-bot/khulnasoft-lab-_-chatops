@@ -13,7 +13,7 @@ module Chatops
 
       def perform
         comparison = required_argument(0, 'comparison')
-        versions = comparison.split('..')
+        versions = comparison.split('..').slice(0, 2)
 
         validate_comparison!(versions)
 
@@ -37,6 +37,11 @@ module Chatops
       end
 
       def validate_comparison!(versions)
+        if versions.size != 2
+          raise ArgumentError,
+                "Invalid comparison provided: #{versions.join('..')}"
+        end
+
         versions.each do |version|
           unless TAG_REGEX.match?(version)
             raise ArgumentError, "Invalid version provided: #{version}"
