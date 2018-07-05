@@ -44,7 +44,7 @@ describe Chatops::Commands::QaIssue do
 
       invalid.each do |comparison|
         expect { stubbed_instance(comparison).perform }
-          .to raise_error(ArgumentError, /Invalid version provided/)
+          .to raise_error(ArgumentError, /Invalid tag provided/)
       end
 
       expect { stubbed_instance('v11.1.0-rc1').perform }

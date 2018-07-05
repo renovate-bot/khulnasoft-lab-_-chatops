@@ -13,11 +13,11 @@ module Chatops
 
       def perform
         comparison = required_argument(0, 'comparison')
-        versions = comparison.split('..').slice(0, 2)
+        tags = comparison.split('..').slice(0, 2)
 
-        validate_comparison!(versions)
+        validate_comparison!(tags)
 
-        pipeline = run_trigger(versions.join(','), self.class.command_name)
+        pipeline = run_trigger(tags.join(','), self.class.command_name)
         jobs = pipeline_jobs(pipeline.id)
 
         if chatops_job?(jobs)
@@ -36,15 +36,15 @@ module Chatops
         end
       end
 
-      def validate_comparison!(versions)
-        if versions.size != 2
+      def validate_comparison!(tags)
+        if tags.size != 2
           raise ArgumentError,
-                "Invalid comparison provided: #{versions.join('..')}"
+                "Invalid comparison provided: #{tags.join('..')}"
         end
 
-        versions.each do |version|
-          unless TAG_REGEX.match?(version)
-            raise ArgumentError, "Invalid version provided: #{version}"
+        tags.each do |tag|
+          unless TAG_REGEX.match?(tag)
+            raise ArgumentError, "Invalid tag provided: #{tag}"
           end
         end
       end
