@@ -84,6 +84,9 @@ broadcast:
 user:
   <<: *chatops
 
+qa_issue:
+  <<: *chatops
+
 query:
   <<: *chatops
 
