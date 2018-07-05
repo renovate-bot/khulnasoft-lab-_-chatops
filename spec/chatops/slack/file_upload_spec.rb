@@ -4,7 +4,7 @@ require 'spec_helper'
 
 describe Chatops::Slack::FileUpload do
   let(:file) do
-    file = Tempfile.new(['.txt'])
+    file = Tempfile.new(['file', '.txt'])
 
     file.write('hello')
     file.rewind

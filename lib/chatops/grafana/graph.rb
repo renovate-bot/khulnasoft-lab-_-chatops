@@ -49,7 +49,7 @@ module Chatops
           raise DownloadError, 'Failed to download the image from Grafana'
         end
 
-        file = Tempfile.new('.png')
+        file = Tempfile.new(['graph', '.png'])
 
         file.write(image_response.body.to_s)
         file.rewind

@@ -57,7 +57,7 @@ describe Chatops::Grafana::Graph do
 
         expect(Tempfile)
           .to receive(:new)
-          .with('.png')
+          .with(['graph', '.png'])
           .and_return(StringIO.new)
 
         image = graph.download
