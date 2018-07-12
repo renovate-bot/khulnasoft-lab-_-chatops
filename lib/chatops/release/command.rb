@@ -43,6 +43,12 @@ module Chatops
 
       private
 
+      def required_argument(index, name)
+        arguments.fetch(index) do
+          raise(ArgumentError, "You must specify the #{name}!")
+        end
+      end
+
       def run_trigger(version, task_name)
         client.run_trigger(
           TARGET_PROJECT,

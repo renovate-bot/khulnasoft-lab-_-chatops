@@ -22,12 +22,6 @@ module Chatops
 
       private
 
-      def required_argument(index, name)
-        arguments.fetch(index) do
-          raise(ArgumentError, "You must specify the #{name}!")
-        end
-      end
-
       def validate_comparison!(tags)
         if tags.size != 2
           raise ArgumentError,
