@@ -2,6 +2,10 @@
 
 module Chatops
   module Commands
+    # Triggers a pipeline in release-tools that creates a QA issue for the
+    # specified comparison range.
+    #
+    # See https://gitlab.com/gitlab-org/release-tools/blob/master/doc/chatops.md#qa_issue
     class QaIssue
       include Command
       include Release::Command

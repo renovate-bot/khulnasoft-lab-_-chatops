@@ -2,10 +2,9 @@
 
 module Chatops
   module Commands
-    # Triggers a pipeline in the release-tools project that tags a specified
-    # version.
+    # Triggers a pipeline in release-tools that tags a specified version.
     #
-    # See https://gitlab.com/gitlab-org/release-tools/blob/master/doc/rake-tasks.md#tagversion
+    # See https://gitlab.com/gitlab-org/release-tools/blob/master/doc/chatops.md#tag
     class Tag
       include Command
       include Release::Command
