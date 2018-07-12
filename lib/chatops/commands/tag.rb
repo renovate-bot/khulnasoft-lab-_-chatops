@@ -26,15 +26,7 @@ module Chatops
         task_name = self.class.command_name
         task_name += '_security' if options[:security]
 
-        pipeline = run_trigger(version, task_name)
-        jobs = pipeline_jobs(pipeline.id)
-
-        if chatops_job?(jobs)
-          "View `#{self.class.command_name}` progress at #{job_url(jobs.first)}"
-        else
-          'Pipeline triggered but unable to find `chatops` job: ' \
-            "#{pipeline_url(pipeline)}"
-        end
+        trigger_release(version, task_name)
       end
 
       private

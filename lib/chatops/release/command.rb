@@ -7,12 +7,38 @@ module Chatops
       TARGET_PROJECT = 'gitlab-org/release-tools'
       TARGET_REF = 'master'
 
+      TriggerResult = Struct.new(:status, :url) do
+        def success?
+          status == :success
+        end
+      end
+
       def pipeline_url(pipeline)
         "https://gitlab.com/#{TARGET_PROJECT}/pipelines/#{pipeline.id}"
       end
 
       def job_url(job)
         "https://gitlab.com/#{TARGET_PROJECT}/-/jobs/#{job.id}"
+      end
+
+      def trigger_release(version, task_name = self.class.command_name)
+        pipeline = run_trigger(version, task_name)
+        jobs = pipeline_jobs(pipeline.id)
+
+        result =
+          if chatops_job?(jobs)
+            TriggerResult.new(:success, job_url(jobs.first))
+          else
+            TriggerResult.new(:failure, pipeline_url(pipeline))
+          end
+
+        if block_given?
+          yield result
+        elsif result.success?
+          "View `#{self.class.command_name}` progress at #{result.url}"
+        else
+          "Pipeline triggered but unable to find `chatops` job: #{result.url}"
+        end
       end
 
       private

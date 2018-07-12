@@ -17,15 +17,7 @@ module Chatops
 
         validate_comparison!(tags)
 
-        pipeline = run_trigger(tags.join(','), self.class.command_name)
-        jobs = pipeline_jobs(pipeline.id)
-
-        if chatops_job?(jobs)
-          "View `#{self.class.command_name}` progress at #{job_url(jobs.first)}"
-        else
-          'Pipeline triggered but unable to find `chatops` job: ' \
-            "#{pipeline_url(pipeline)}"
-        end
+        trigger_release(tags.join(','))
       end
 
       private
