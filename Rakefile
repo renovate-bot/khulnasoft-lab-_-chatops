@@ -4,7 +4,7 @@ require 'rake/clean'
 
 CLEAN.include('coverage')
 
-COMMAND_TEMPLATE = <<~TEMPLATE.strip
+COMMAND_TEMPLATE = <<~TEMPLATE
   # frozen_string_literal: true
 
   module Chatops
@@ -33,7 +33,7 @@ COMMAND_TEMPLATE = <<~TEMPLATE.strip
   end
 TEMPLATE
 
-SPEC_TEMPLATE = <<~SPEC_TEMPLATE.strip
+SPEC_TEMPLATE = <<~SPEC_TEMPLATE
   # frozen_string_literal: true
 
   require 'spec_helper'
