@@ -2,24 +2,32 @@
 
 module Chatops
   module Commands
+    # Triggers a pipeline in release-tools that publishes packages for a
+    # specified version.
+    #
+    # See https://gitlab.com/gitlab-org/release-tools/blob/master/doc/chatops.md#publish
     class Publish
       include Command
+      include Release::Command
 
-      description 'Add a short description of the command here.'
+      VERSION_REGEX = /\A\d+\.\d+\.\d+(-rc\d+)?\z/
 
-      # The "options" method can be used to add additional options (e.g. a
-      # --version option). For more information see
-      # https://github.com/leejarvis/slop/#usage.
-      #
-      # If your command does not use any options you should just remove this
-      # comment and the block that follows it.
-      options do |o|
-      end
+      usage "#{command_name} [VERSION]"
+      description 'Publish packages for a specified version.'
 
       def perform
-        # This method is called when the command is executed. If this method
-        # returns a non-nil value it will be used as the command output
-        # (which in turn is sent back to the user).
+        version = required_argument(0, 'version')
+        validate_version!(version)
+
+        trigger_release(version)
+      end
+
+      private
+
+      def validate_version!(version)
+        return if VERSION_REGEX.match?(version)
+
+        raise ArgumentError, "Invalid version provided: #{version}"
       end
     end
   end
