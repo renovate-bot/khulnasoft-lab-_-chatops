@@ -43,9 +43,9 @@ describe Chatops::Commands::QaIssue, :release_command do
       stubbed_instance('v11.1.0-rc1..v11.1.0-rc2').perform
     end
 
-    include_examples 'with a valid chatops job',
-      version: 'v11.1.0-rc1..v11.1.0-rc2'
-    include_examples 'with an invalid chatops job',
-      version: 'v11.1.0-rc1..v11.1.0-rc2'
+    version = 'v11.1.0-rc1..v11.1.0-rc2'
+
+    include_examples 'with a valid chatops job', version: version
+    include_examples 'with an invalid chatops job', version: version
   end
 end
