@@ -66,22 +66,19 @@ rubocop:
   script:
     - bundle exec rubocop
 
+broadcast:
+  <<: *chatops
+
 explain:
-  <<: *chatops
-
-help:
-  <<: *chatops
-
-graph:
   <<: *chatops
 
 feature:
   <<: *chatops
 
-broadcast:
+graph:
   <<: *chatops
 
-user:
+help:
   <<: *chatops
 
 publish:
@@ -93,5 +90,11 @@ qa_issue:
 query:
   <<: *chatops
 
+release_issue:
+  <<: *chatops
+
 tag:
+  <<: *chatops
+
+user:
   <<: *chatops
