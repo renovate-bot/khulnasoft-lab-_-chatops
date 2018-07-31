@@ -18,6 +18,7 @@ module Chatops
       include Release::Command
 
       VERSION_REGEX = /\A\d+\.\d+\.(?<patch>\d+)(-rc(?<rc>\d+))?\z/
+      SECURITY_CHANNEL = 'CBTF82B1C' # security-release
 
       usage "#{command_name} [VERSION]"
       description 'Create a task issue for a specified version.'
@@ -26,7 +27,7 @@ module Chatops
         version = required_argument(0, 'version')
         validate_version!(version)
 
-        if channel == 'security'
+        if channel == SECURITY_CHANNEL
           task = 'security_patch_issue'
         else
           matches = version.match(VERSION_REGEX)
