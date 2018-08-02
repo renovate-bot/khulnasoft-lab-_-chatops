@@ -3,6 +3,7 @@
 module ReleaseCommandHelpers
   def stubbed_instance(version, arguments = {})
     env = {
+      'CHAT_CHANNEL' => 'channel_id',
       'GITLAB_TOKEN' => 'gitlab_token',
       'GITLAB_USER_LOGIN' => ENV['USER'],
       'RELEASE_TRIGGER_TOKEN' => 'release_trigger_token'

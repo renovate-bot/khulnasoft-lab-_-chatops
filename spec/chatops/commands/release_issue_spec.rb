@@ -35,7 +35,7 @@ describe Chatops::Commands::ReleaseIssue, :release_command do
 
         instance = stubbed_instance('10.9.0')
         # Stub the channel since we don't set the environment variable
-        expect(instance).to receive(:channel)
+        allow(instance).to receive(:channel)
           .and_return(described_class::SECURITY_CHANNEL)
 
         instance.perform
