@@ -24,23 +24,15 @@ module Chatops
         end
       end
 
-      def pipeline_url(pipeline)
-        "https://gitlab.com/#{TARGET_PROJECT}/pipelines/#{pipeline.id}"
-      end
-
-      def job_url(job)
-        "https://gitlab.com/#{TARGET_PROJECT}/-/jobs/#{job.id}"
-      end
-
       def trigger_release(version, task_name = self.class.command_name)
         pipeline = run_trigger(version, task_name)
         jobs = pipeline_jobs(pipeline.id)
 
         result =
           if chatops_job?(jobs)
-            TriggerResult.new(:success, job_url(jobs.first))
+            TriggerResult.new(:success, jobs.first.web_url)
           else
-            TriggerResult.new(:failure, pipeline_url(pipeline))
+            TriggerResult.new(:failure, pipeline.web_url)
           end
 
         if block_given?
