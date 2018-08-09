@@ -35,7 +35,7 @@ module Chatops
         if block_given?
           yield result
         elsif result.success?
-          "View `#{self.class.command_name}` progress at #{result.url}"
+          "View `#{task_name}` progress at #{result.url}"
         else
           "Pipeline triggered but unable to find `chatops` job: #{result.url}"
         end
