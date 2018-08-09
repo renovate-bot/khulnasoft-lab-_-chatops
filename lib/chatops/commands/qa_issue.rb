@@ -15,13 +15,21 @@ module Chatops
       usage "#{command_name} [from..to]"
       description 'Create a QA issue.'
 
+      options do |o|
+        o.bool '--security', 'Create a QA issue for a security release.',
+               default: false
+      end
+
       def perform
         comparison = required_argument(0, 'comparison')
         tags = comparison.split('..').slice(0, 2)
 
         validate_comparison!(tags)
 
-        trigger_release(tags.join(','))
+        task_name = self.class.command_name
+        task_name.prepend('security_') if options[:security]
+
+        trigger_release(tags.join(','), task_name)
       end
 
       private

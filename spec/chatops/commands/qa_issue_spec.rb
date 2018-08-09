@@ -34,13 +34,40 @@ describe Chatops::Commands::QaIssue, :release_command do
         .to raise_error(ArgumentError, /Invalid comparison provided/)
     end
 
-    it 'runs the trigger' do
-      expect(stubbed_client).to trigger_release(
-        RELEASE_VERSION: 'v11.1.0-rc1,v11.1.0-rc2',
-        TASK: 'qa_issue'
-      )
+    it 'supports a --security option' do
+      instance = instance_double('instance')
 
-      stubbed_instance('v11.1.0-rc1..v11.1.0-rc2').perform
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[v1.2.3], { security: true }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[v1.2.3 --security])
+    end
+
+    context 'when creating a normal issue' do
+      it 'runs the trigger' do
+        expect(stubbed_client).to trigger_release(
+          RELEASE_VERSION: 'v11.1.0-rc1,v11.1.0-rc2',
+          TASK: 'qa_issue'
+        )
+
+        stubbed_instance('v11.1.0-rc1..v11.1.0-rc2').perform
+      end
+    end
+
+    context 'when creating a security issue' do
+      it 'runs the trigger' do
+        expect(stubbed_client).to trigger_release(
+          RELEASE_VERSION: 'v11.1.0-rc1,v11.1.0-rc2',
+          TASK: 'security_qa_issue'
+        )
+
+        stubbed_instance('v11.1.0-rc1..v11.1.0-rc2', security: true).perform
+      end
     end
 
     version = 'v11.1.0-rc1..v11.1.0-rc2'
