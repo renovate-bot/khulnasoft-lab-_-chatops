@@ -8,6 +8,8 @@ gem 'pg'
 gem 'slop'
 
 group :development do
+  gem 'byebug'
+  gem 'pry'
   gem 'rake'
   gem 'rspec'
   gem 'rubocop'
