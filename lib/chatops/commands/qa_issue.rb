@@ -26,7 +26,7 @@ module Chatops
 
         validate_comparison!(tags)
 
-        task_name = self.class.command_name
+        task_name = self.class.command_name.dup
         task_name.prepend('security_') if options[:security]
 
         trigger_release(tags.join(','), task_name)

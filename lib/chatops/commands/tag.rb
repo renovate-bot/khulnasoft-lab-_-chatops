@@ -22,8 +22,8 @@ module Chatops
         version = required_argument(0, 'version')
         validate_version!(version)
 
-        task_name = self.class.command_name
-        task_name += '_security' if options[:security]
+        task_name = self.class.command_name.dup
+        task_name << '_security' if options[:security]
 
         trigger_release(version, task_name)
       end
