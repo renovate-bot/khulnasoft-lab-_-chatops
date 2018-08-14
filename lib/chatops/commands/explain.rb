@@ -60,6 +60,7 @@ module Chatops
             .strip
             .gsub(/[“”]/, '"')
             .gsub(/[‘’]/, "'")
+            .gsub(/\s*(--without-analyze|--visual)\s*/, '')
 
         query = download_query(query) if query.start_with?('http')
 

@@ -84,6 +84,30 @@ describe Chatops::Commands::Explain do
         command.perform
       end
     end
+
+    context 'when the query contains an option' do
+      it 'removes the --visual option' do
+        command = described_class
+          .new([], {}, 'CHAT_INPUT' => '--visual SELECT 1')
+
+        expect(command)
+          .to receive(:upload_explain_plan_for)
+          .with('SELECT 1')
+
+        command.perform
+      end
+
+      it 'removes the --without-analyze option' do
+        command = described_class
+          .new([], {}, 'CHAT_INPUT' => '--without-analyze SELECT 1')
+
+        expect(command)
+          .to receive(:upload_explain_plan_for)
+          .with('SELECT 1')
+
+        command.perform
+      end
+    end
   end
 
   describe '#upload_explain_plan_for' do
