@@ -5,11 +5,8 @@ stages:
   - test
   - build
 
-variables:
-  CHATOPS_IMAGE: registry.gitlab.com/gitlab-com/chatops:latest
-
 .chatops: &chatops
-  image: $CHATOPS_IMAGE
+  image: registry.ops.gitlab.net/gitlab-com/chatops:latest
   variables:
     GIT_STRATEGY: none
     GIT_SUBMODULE_STRATEGY: none
@@ -41,7 +38,11 @@ build:image:
   only:
     - master
   script:
-    - ./bin/docker "${CHATOPS_IMAGE}"
+    # When building the image, we want to push into the container registry of
+    # the project CI runs in, instead of a fixed one. This ensures that on
+    # GitLab.com we push into the GitLab.com registry, while on the ops instance
+    # we push into the ops instance's registry.
+    - ./bin/docker "${CI_REGISTRY_IMAGE}:latest"
 
 rspec:
   <<: *ruby
