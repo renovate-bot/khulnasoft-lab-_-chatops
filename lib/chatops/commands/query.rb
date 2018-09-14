@@ -41,8 +41,8 @@ module Chatops
       SQL
 
       # The base URL for Grafana links.
-      GRAFANA_URL = 'https://performance.gitlab.net/dashboard/db/' \
-        'postgres-single-query-drill-down?var-queryid=%<query_id>s'
+      GRAFANA_URL = 'https://dashboards.gitlab.net/d/000000232/' \
+        'postgresql-query-drill-down?var-queryid=%<query_id>s'
 
       def perform
         id = arguments[0]

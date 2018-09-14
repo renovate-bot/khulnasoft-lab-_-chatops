@@ -11,23 +11,23 @@
 
 postgres:
   dead-tuples:
-    dashboard: postgres-tuple-statistics
+    dashboard: postgresql-tuple-statistics
     panel: 7
     description: The number of dead tuples per table.
   autovacuum:
-    dashboard: postgres-tuple-statistics
+    dashboard: postgresql-tuple-statistics
     panel: 14
     description: The rate of autovacuum runs per table.
   transactions:
-    dashboard: postgres-stats
+    dashboard: postgresql-overview
     panel: 5
     description: The number of transactions per host.
   load:
-    dashboard: postgres-stats
+    dashboard: postgresql-overview
     panel: 9
     description: The load averages per host.
   cpu:
-    dashboard: postgres-stats
+    dashboard: postgresql-overview
     panel: 13
     description: The CPU usage per host.
 

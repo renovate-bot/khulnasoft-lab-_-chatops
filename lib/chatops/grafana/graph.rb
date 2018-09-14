@@ -6,7 +6,7 @@ module Chatops
     # it.
     class Graph
       # The host to use for generating graphs.
-      HOST = 'https://performance.gitlab.net'
+      HOST = 'https://dashboards.gitlab.net'
 
       # The ID of the Grafana organisation.
       ORGANISATION = 1
