@@ -99,3 +99,6 @@ tag:
 
 user:
   <<: *chatops
+
+deploy:
+  <<: *chatops
