@@ -12,6 +12,8 @@ stages:
     GIT_SUBMODULE_STRATEGY: none
   only:
     - chat
+  tags:
+    - chatops
   script:
     - cd /app
     - bundle exec ruby /app/bin/chatops $CI_JOB_NAME
