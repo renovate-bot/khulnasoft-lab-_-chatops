@@ -22,6 +22,13 @@ module Chatops
 
       options do |o|
         o.bool('--production', 'Deploy to production, instead of staging')
+
+        o.bool(
+          '--canary',
+          'Only deploy to a canary, instead of the entire environment'
+        )
+
+        o.bool('--warmup', 'Only perform a warmup, instead of a full deploy')
       end
 
       def perform
@@ -44,9 +51,7 @@ module Chatops
           trigger_project,
           trigger_token,
           :master,
-          'DEPLOY_ENVIRONMENT': environment,
-          'DEPLOY_VERSION': version,
-          'DEPLOY_REPO': repository
+          environment_variables_for(version)
         )
 
         url = response.web_url
@@ -54,6 +59,18 @@ module Chatops
         "The deploy has been scheduled and can be viewed <#{url}|here>"
       rescue StandardError => error
         "The deploy could not be scheduled: #{error.message}"
+      end
+
+      def environment_variables_for(version)
+        vars = {
+          'DEPLOY_ENVIRONMENT': environment,
+          'DEPLOY_VERSION': version,
+          'DEPLOY_REPO': repository
+        }
+
+        vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]
+
+        vars
       end
 
       def client
@@ -79,10 +96,17 @@ module Chatops
       end
 
       def environment
-        if options[:production]
-          'gprd'
+        base =
+          if options[:production]
+            'gprd'
+          else
+            'gstg'
+          end
+
+        if options[:canary]
+          "#{base}-cny"
         else
-          'gstg'
+          base
         end
       end
 

@@ -9,13 +9,27 @@ describe Chatops::Commands::Deploy do
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[], { production: true }, {})
+        .with(%w[], { production: true, canary: false, warmup: false }, {})
         .and_return(instance)
 
       expect(instance)
         .to receive(:perform)
 
       described_class.perform(%w[--production])
+    end
+
+    it 'supports a --canary option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], { production: false, canary: true, warmup: false }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--canary])
     end
   end
 
@@ -115,6 +129,44 @@ describe Chatops::Commands::Deploy do
     end
   end
 
+  describe '#environment_variables_for' do
+    it 'includes the DEPLOY_ENVIRONMENT variable' do
+      vars = described_class.new.environment_variables_for('1.0')
+
+      expect(vars[:DEPLOY_ENVIRONMENT]).to eq('gstg')
+    end
+
+    it 'includes the DEPLOY_VERSION variable' do
+      vars = described_class.new.environment_variables_for('1.0')
+
+      expect(vars[:DEPLOY_VERSION]).to eq('1.0')
+    end
+
+    it 'includes the DEPLOY_REPO variable' do
+      vars = described_class.new.environment_variables_for('1.0')
+
+      expect(vars[:DEPLOY_REPO]).to eq('gitlab/pre-release')
+    end
+
+    context 'when a warmup is requested' do
+      it 'includes the TAKEOFF_WARMUP environment variable' do
+        command = described_class.new([], { warmup: true }, {})
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars[:TAKEOFF_WARMUP]).to eq('1')
+      end
+    end
+
+    context 'when a warmup is not requested' do
+      it 'does not include the TAKEOFF_WARMUP environment variable' do
+        command = described_class.new
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars.key?(:TAKEOFF_WARMUP)).to eq(false)
+      end
+    end
+  end
+
   describe '#repository' do
     context 'when the TAKEOFF_DEPLOY_REPO variable is not specified' do
       it 'returns the defaut repository value' do
@@ -191,6 +243,18 @@ describe Chatops::Commands::Deploy do
       command = described_class.new([], production: true)
 
       expect(command.environment).to eq('gprd')
+    end
+
+    it 'returns gprd-cny when the --production and --canary options are set' do
+      command = described_class.new([], production: true, canary: true)
+
+      expect(command.environment).to eq('gprd-cny')
+    end
+
+    it 'returns gstg-cny when the --canary option is set' do
+      command = described_class.new([], production: false, canary: true)
+
+      expect(command.environment).to eq('gstg-cny')
     end
   end
 
