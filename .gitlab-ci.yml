@@ -72,6 +72,9 @@ rubocop:
 broadcast:
   <<: *chatops
 
+cherry_pick:
+  <<: *chatops
+
 explain:
   <<: *chatops
 

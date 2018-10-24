@@ -24,6 +24,7 @@ require 'chatops/slack/file_upload'
 require 'chatops/slack/message'
 
 require 'chatops/commands/broadcast'
+require 'chatops/commands/cherry_pick'
 require 'chatops/commands/explain'
 require 'chatops/commands/feature'
 require 'chatops/commands/graph'
