@@ -38,6 +38,13 @@ module Chatops
           return 'The first argument must be the version to deploy'
         end
 
+        unless version.include?('.ee.')
+          # In almost all cases the package we want to deploy will end in .ee.0
+          # (e.g. 11.0.ee.0). To make deploying easier, we will add this suffix
+          # automatically if not already present.
+          version += '.ee.0'
+        end
+
         unless version.match?(VERSION_REGEX)
           return 'The specified version is invalid. ' \
             'Versions must be in the format MAJOR.MINOR.PATCH(-rcN)'

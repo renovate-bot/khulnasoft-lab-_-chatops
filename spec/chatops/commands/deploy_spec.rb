@@ -48,6 +48,18 @@ describe Chatops::Commands::Deploy do
       end
     end
 
+    context 'with a valid version without the EE suffix' do
+      it 'automatically adds the suffix' do
+        command = described_class.new(%w[11.3.0])
+
+        expect(command)
+          .to receive(:schedule_deploy)
+          .with('11.3.0.ee.0')
+
+        command.perform
+      end
+    end
+
     context 'with a valid stable version' do
       it 'deploys from the stable repository' do
         command = described_class.new(%w[11.3.0.ee.0])
