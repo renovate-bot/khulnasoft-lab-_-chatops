@@ -54,7 +54,19 @@ describe Chatops::Commands::Deploy do
 
         expect(command)
           .to receive(:schedule_deploy)
-          .with('11.3.0.ee.0')
+          .with('11.3.0-ee.0')
+
+        command.perform
+      end
+    end
+
+    context 'with a valid RC version' do
+      it 'automatically adds the suffix' do
+        command = described_class.new(%w[11.3.0-rc1])
+
+        expect(command)
+          .to receive(:schedule_deploy)
+          .with('11.3.0-rc1.ee.0')
 
         command.perform
       end
@@ -62,11 +74,11 @@ describe Chatops::Commands::Deploy do
 
     context 'with a valid stable version' do
       it 'deploys from the stable repository' do
-        command = described_class.new(%w[11.3.0.ee.0])
+        command = described_class.new(%w[11.3.0-ee.0])
 
         expect(command)
           .to receive(:schedule_deploy)
-          .with('11.3.0.ee.0')
+          .with('11.3.0-ee.0')
 
         command.perform
       end
@@ -81,6 +93,40 @@ describe Chatops::Commands::Deploy do
           .with('11.3.0-rc1.ee.0')
 
         command.perform
+      end
+    end
+  end
+
+  describe '#prepare_version' do
+    context 'with a release candidate version' do
+      it 'automatically adds the RC suffix if necessary' do
+        command = described_class.new
+        version = command.prepare_version('1.2.3-rc0')
+
+        expect(version).to eq('1.2.3-rc0.ee.0')
+      end
+
+      it 'does not add the RC suffix if not necessary' do
+        command = described_class.new
+        version = command.prepare_version('1.2.3-rc0.ee.0')
+
+        expect(version).to eq('1.2.3-rc0.ee.0')
+      end
+    end
+
+    context 'with a regular version' do
+      it 'automatically adds the version suffix if necessary' do
+        command = described_class.new
+        version = command.prepare_version('1.2.3')
+
+        expect(version).to eq('1.2.3-ee.0')
+      end
+
+      it 'does not add the version suffix if not necessary' do
+        command = described_class.new
+        version = command.prepare_version('1.2.3-ee.0')
+
+        expect(version).to eq('1.2.3-ee.0')
       end
     end
   end

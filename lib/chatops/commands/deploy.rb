@@ -9,13 +9,11 @@ module Chatops
       usage "#{command_name} [VERSION] [OPTIONS]"
       description 'Schedules a deployment using takeoff'
 
-      # The regular expression to use for verifying package versions.
-      #
-      # Allowed formats:
-      #
-      # * 11.3.0.ee.0
-      # * 11.3.0-rc1.ee.0
-      VERSION_REGEX = /\A\d+\.\d+\.\d+(-rc\d+)?\.ee\.\d+\z/
+      # The regular expression to use for verifying release candidate versions.
+      RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/
+
+      # The regular expression to use for verifying regular release versions.
+      VERSION_REGEX = /\A\d+\.\d+\.\d+-ee\.\d+\z/
 
       # Default package repository to use if TAKEOFF_DEPLOY_REPO is undefined
       DEFAULT_REPO = 'gitlab/pre-release'
@@ -38,19 +36,38 @@ module Chatops
           return 'The first argument must be the version to deploy'
         end
 
-        unless version.include?('.ee.')
-          # In almost all cases the package we want to deploy will end in .ee.0
-          # (e.g. 11.0.ee.0). To make deploying easier, we will add this suffix
-          # automatically if not already present.
-          version += '.ee.0'
-        end
+        version = prepare_version(version)
 
-        unless version.match?(VERSION_REGEX)
+        unless version_valid?(version)
           return 'The specified version is invalid. ' \
             'Versions must be in the format MAJOR.MINOR.PATCH(-rcN)'
         end
 
         schedule_deploy(version)
+      end
+
+      def prepare_version(version)
+        # In almost all cases the package we want to deploy will end in .ee.0
+        # (e.g. 11.0.ee.0). To make deploying easier, we will add this suffix
+        # automatically if not already present.
+        is_rc = version.include?('-rc')
+
+        # To make things eaiser, RCs use a slightly different version format
+        # compared to regular versions
+        search_for = is_rc ? '.ee.' : '-ee'
+        suffix = is_rc ? '.ee.0' : '-ee.0'
+
+        if version.include?(search_for)
+          version
+        else
+          version + suffix
+        end
+      end
+
+      def version_valid?(version)
+        regex = version.include?('-rc') ? RC_VERSION_REGEX : VERSION_REGEX
+
+        version.match?(regex)
       end
 
       def schedule_deploy(version)
