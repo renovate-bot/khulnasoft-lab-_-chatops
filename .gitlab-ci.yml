@@ -107,3 +107,6 @@ user:
 
 deploy:
   <<: *chatops
+
+member:
+  <<: *chatops

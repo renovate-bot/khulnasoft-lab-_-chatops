@@ -11,7 +11,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: 'gitaly', staging: false, dev: false },
+          { match: 'gitaly', staging: false, dev: false, ops: false },
           {}
         )
         .and_return(instance)
@@ -27,7 +27,10 @@ describe Chatops::Commands::Feature do
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[feature list], { match: nil, staging: true, dev: false }, {})
+        .with(
+          %w[feature list],
+          { match: nil, staging: true, dev: false, ops: false }, {}
+        )
         .and_return(instance)
 
       expect(instance)
@@ -41,13 +44,33 @@ describe Chatops::Commands::Feature do
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[feature list], { match: nil, staging: false, dev: true }, {})
+        .with(
+          %w[feature list],
+          { match: nil, staging: false, dev: true, ops: false }, {}
+        )
         .and_return(instance)
 
       expect(instance)
         .to receive(:perform)
 
       described_class.perform(%w[feature list --dev])
+    end
+
+    it 'supports a --ops option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(
+          %w[feature list],
+          { match: nil, staging: false, dev: false, ops: true }, {}
+        )
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[feature list --ops])
     end
   end
 

@@ -4,6 +4,7 @@ module Chatops
   module Commands
     class Feature
       include Command
+      include GitlabEnvironments
 
       # The color to use for the attachment containing enabled features.
       ENABLED_COLOR = '#B3ED8E'
@@ -26,8 +27,7 @@ module Chatops
           'Only displays features that contain the given substring'
         )
 
-        o.bool('--staging', 'Use staging.gitlab.com')
-        o.bool('--dev', 'Use dev.gitlab.org')
+        GitlabEnvironments.define_environment_options(o)
 
         o.separator("\nAvailable subcommands:\n\n#{available_subcommands}")
       end
@@ -204,37 +204,6 @@ module Chatops
           .new(token: gitlab_token, match: options[:match], host: gitlab_host)
           .per_state
           .map { |vals| vals.map(&:to_attachment_field) }
-      end
-
-      def gitlab_token
-        name =
-          if dev?
-            'GITLAB_DEV_TOKEN'
-          elsif staging?
-            'GITLAB_STAGING_TOKEN'
-          else
-            'GITLAB_TOKEN'
-          end
-
-        env.fetch(name)
-      end
-
-      def gitlab_host
-        if dev?
-          'dev.gitlab.org'
-        elsif staging?
-          'staging.gitlab.com'
-        else
-          'gitlab.com'
-        end
-      end
-
-      def staging?
-        options[:staging] == true
-      end
-
-      def dev?
-        options[:dev] == true
       end
     end
   end

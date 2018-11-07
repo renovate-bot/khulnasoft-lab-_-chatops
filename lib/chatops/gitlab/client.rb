@@ -72,6 +72,30 @@ module Chatops
       def pipeline_jobs(project, pipeline_id, options = {})
         internal_client.pipeline_jobs(project, pipeline_id, options)
       end
+
+      def add_group_member(group, user, access_level)
+        internal_client.add_group_member(group, user, access_level)
+      end
+
+      def add_project_member(project, user, access_level)
+        internal_client.add_team_member(project, user, access_level)
+      end
+
+      def remove_group_member(group, user)
+        internal_client.remove_group_member(group, user)
+      end
+
+      def remove_project_member(project, user)
+        internal_client.remove_team_member(project, user)
+      end
+
+      def find_project(name)
+        internal_client.project(name)
+      end
+
+      def find_group(name)
+        internal_client.group(name)
+      end
     end
   end
 end

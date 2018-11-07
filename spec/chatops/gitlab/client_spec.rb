@@ -137,4 +137,56 @@ describe Chatops::Gitlab::Client do
       client.pipeline_jobs('foo/bar', 123, foo: :bar)
     end
   end
+
+  describe '#add_group_member' do
+    it 'adds a member to the group' do
+      group = instance_double('group')
+      user = instance_double('user')
+
+      expect(client.internal_client)
+        .to receive(:add_group_member)
+        .with(group, user, 40)
+
+      client.add_group_member(group, user, 40)
+    end
+  end
+
+  describe '#add_project_member' do
+    it 'adds a member to the project' do
+      project = instance_double('project')
+      user = instance_double('user')
+
+      expect(client.internal_client)
+        .to receive(:add_team_member)
+        .with(project, user, 40)
+
+      client.add_project_member(project, user, 40)
+    end
+  end
+
+  describe '#remove_group_member' do
+    it 'removes a member to the group' do
+      group = instance_double('group')
+      user = instance_double('user')
+
+      expect(client.internal_client)
+        .to receive(:remove_group_member)
+        .with(group, user)
+
+      client.remove_group_member(group, user)
+    end
+  end
+
+  describe '#remove_project_member' do
+    it 'removes a member to the project' do
+      project = instance_double('project')
+      user = instance_double('user')
+
+      expect(client.internal_client)
+        .to receive(:remove_team_member)
+        .with(project, user)
+
+      client.remove_project_member(project, user)
+    end
+  end
 end
