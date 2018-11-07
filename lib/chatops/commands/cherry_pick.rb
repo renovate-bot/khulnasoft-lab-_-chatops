@@ -6,8 +6,6 @@ module Chatops
       include Command
       include Release::Command
 
-      VERSION_REGEX = /\A\d+\.\d+\.\d+(-rc\d+)?\z/
-
       usage "#{command_name} [VERSION]"
       description 'Perform automated cherry-picking into preparation branches.'
 
@@ -23,14 +21,6 @@ module Chatops
         task_name.prepend('security_') if options[:security]
 
         trigger_release(version, task_name)
-      end
-
-      private
-
-      def validate_version!(version)
-        return if VERSION_REGEX.match?(version)
-
-        raise ArgumentError, "Invalid version provided: #{version}"
       end
     end
   end

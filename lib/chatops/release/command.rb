@@ -4,6 +4,17 @@ module Chatops
   module Release
     # Common configuration and utilities for commands in release-tools.
     module Command
+      # rubocop:disable Style/RegexpLiteral
+      VERSION_REGEX = %r{
+        \A
+        (?<major>\d+)\.
+        (?<minor>\d+)\.
+        (?<patch>\d+)
+        (-rc(?<rc>\d+))?
+        \z
+      }x
+      # rubocop:enable Style/RegexpLiteral
+
       TARGET_PROJECT = 'gitlab-org/release-tools'
       TARGET_REF = 'master'
 
@@ -47,6 +58,12 @@ module Chatops
         arguments.fetch(index) do
           raise(ArgumentError, "You must specify the #{name}!")
         end
+      end
+
+      def validate_version!(version)
+        return if VERSION_REGEX.match?(version)
+
+        raise ArgumentError, "Invalid version provided: #{version}"
       end
 
       def run_trigger(version, task_name)

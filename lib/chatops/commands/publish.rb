@@ -10,8 +10,6 @@ module Chatops
       include Command
       include Release::Command
 
-      VERSION_REGEX = /\A\d+\.\d+\.\d+(-rc\d+)?\z/
-
       usage "#{command_name} [VERSION]"
       description 'Publish packages for a specified version.'
 
@@ -20,14 +18,6 @@ module Chatops
         validate_version!(version)
 
         trigger_release(version)
-      end
-
-      private
-
-      def validate_version!(version)
-        return if VERSION_REGEX.match?(version)
-
-        raise ArgumentError, "Invalid version provided: #{version}"
       end
     end
   end

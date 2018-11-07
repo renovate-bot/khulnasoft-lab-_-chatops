@@ -17,7 +17,6 @@ module Chatops
       include Command
       include Release::Command
 
-      VERSION_REGEX = /\A\d+\.\d+\.(?<patch>\d+)(-rc(?<rc>\d+))?\z/
       SECURITY_CHANNEL = 'CBTF82B1C' # security-release
 
       usage "#{command_name} [VERSION]"
@@ -44,12 +43,6 @@ module Chatops
       end
 
       private
-
-      def validate_version!(version)
-        return if VERSION_REGEX.match?(version)
-
-        raise ArgumentError, "Invalid version provided: #{version}"
-      end
 
       def channel
         super
