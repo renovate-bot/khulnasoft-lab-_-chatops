@@ -8,7 +8,7 @@ module Chatops
     # This command is context-aware and will create a specific type of task
     # issue based on where the command was run:
     #
-    # - In #security, it will create a security task issue
+    # - In #security-release, it will create a security task issue
     # - Anywhere else, it will create either a monthly issue or a patch issue,
     #   depending on the version.
     #
