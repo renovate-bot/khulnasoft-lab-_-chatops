@@ -110,3 +110,6 @@ deploy:
 
 member:
   <<: *chatops
+
+statusio:
+  <<: *chatops

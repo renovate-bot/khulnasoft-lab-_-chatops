@@ -6,6 +6,7 @@ gem 'gitlab'
 gem 'http'
 gem 'pg'
 gem 'slop'
+gem 'statusio'
 
 group :development do
   gem 'byebug'
