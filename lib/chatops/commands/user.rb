@@ -110,7 +110,7 @@ module Chatops
         end
       end
 
-      # rubocop: disable Method/MethodLength
+      # rubocop: disable Metrics/MethodLength
       def submit_user_details(user)
         Slack::Message
           .new(token: slack_token, channel: channel)
@@ -178,7 +178,7 @@ module Chatops
             ]
           )
       end
-      # rubocop: enable Method/MethodLength
+      # rubocop: enable Metrics/MethodLength
 
       def unsupported_command
         vals = COMMANDS.to_a.sort.map { |name| Markdown::Code.new(name) }
