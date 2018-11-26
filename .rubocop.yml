@@ -35,3 +35,22 @@ RSpec/MessageSpies:
 
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
+
+Style/MethodCallWithArgsParentheses:
+  Exclude:
+    - spec/**/*
+    - Gemfile
+    - Rakefile
+  Enabled: true
+  IgnoredMethods:
+    - array
+    - bool
+    - puts
+    - raise
+    - require
+    - separator
+    - string
+    - yield
+
+Style/MethodCallWithoutArgsParentheses:
+  Enabled: true

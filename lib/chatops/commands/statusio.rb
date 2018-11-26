@@ -119,7 +119,7 @@ module Chatops
       end
 
       def list
-        incidents = statusioclient.incident_list_by_id statuspage_id
+        incidents = statusioclient.incident_list_by_id(statuspage_id)
         active_incidents = incidents['result']['active_incidents']
         out = ''
         return 'No active incidents' if active_incidents.empty?
@@ -129,7 +129,7 @@ module Chatops
             statuspage_id,
             incident_id
           )
-          out += render_incident incident['result'][0]
+          out += render_incident(incident['result'][0])
         end
 
         out
@@ -142,9 +142,9 @@ module Chatops
       def open
         affected_containers = []
         incident_name = arguments[1]
-        validate_option_set :details
-        validate_option_set :status
-        validate_option_set :state
+        validate_option_set(:details)
+        validate_option_set(:status)
+        validate_option_set(:state)
         affected_containers = selected_container_ids unless options[:all]
 
         incident_req = statusioclient.incident_create(
@@ -162,7 +162,7 @@ module Chatops
           statuspage_id,
           incident_req['result']
         )
-        render_incident stored_incident['result'][0]
+        render_incident(stored_incident['result'][0])
       end
 
       def selected_container_ids
@@ -172,17 +172,17 @@ module Chatops
 
         options[:component].each do |option_component|
           selected_components += stausio_components.select do |component|
-            component['name'].casecmp? option_component
+            component['name'].casecmp?(option_component)
           end
         end
 
         options[:container].each do |option_container|
           selected_components.each do |component|
             selected_containers = component['containers'].select do |container|
-              container['name'].casecmp? option_container
+              container['name'].casecmp?(option_container)
             end
             selected_containers.each do |container|
-              affected_containers.push "#{component['_id']}-#{container['_id']}"
+              affected_containers.push("#{component['_id']}-#{container['_id']}")
             end
           end
         end
@@ -210,7 +210,7 @@ module Chatops
       end
 
       def show
-        status = statusioclient.status_summary statuspage_id
+        status = statusioclient.status_summary(statuspage_id)
 
         out = ''
         status['result']['status'].each do |component|
@@ -226,16 +226,16 @@ module Chatops
       end
 
       def update_component
-        validate_option_set :status
-        validate_option_set :details
+        validate_option_set(:status)
+        validate_option_set(:details)
         component_name = arguments[1]
         out = ''
         component = stausio_components.select do |s_component|
-          s_component['name'].casecmp? component_name
+          s_component['name'].casecmp?(component_name)
         end[0]
 
         component['containers'].each do |container|
-          next unless selected_container? container
+          next unless selected_container?(container)
 
           statusioclient.component_status_update(
             statuspage_id,
@@ -257,15 +257,15 @@ module Chatops
 
         # In case we don't want to update every container: Filter them
         options[:container].select do |opt_container|
-          container['name'].casecmp? opt_container
+          container['name'].casecmp?(opt_container)
         end.positive?
       end
 
       def update_incident
         incident_id = arguments[1]
-        validate_option_set :details
-        validate_option_set :status
-        validate_option_set :state
+        validate_option_set(:details)
+        validate_option_set(:status)
+        validate_option_set(:state)
 
         statusioclient.incident_update(
           statuspage_id,
@@ -283,47 +283,47 @@ module Chatops
 
       # Normalizes a state code or state string into a valid string
       def get_state_string(input)
-        return STATE_CODES[input.to_i] if STATE_CODES.key? input.to_i
+        return STATE_CODES[input.to_i] if STATE_CODES.key?(input.to_i)
 
         STATE_CODES.each do |_, state|
-          return state if state.casecmp? input
+          return state if state.casecmp?(input)
         end
         raise UnknownCode, "No such state `#{input}`"
       end
 
       # Normalizes a state code or state string into a valid code
       def get_state_code(input)
-        return input.to_i if STATE_CODES.key? input.to_i
+        return input.to_i if STATE_CODES.key?(input.to_i)
 
         STATE_CODES.each do |code, state|
-          return code if state.casecmp? input
+          return code if state.casecmp?(input)
         end
         raise UnknownCode, "No such state `#{input}`"
       end
 
       # Normalizes a status code or status string into a valid string
       def get_status_string(input)
-        return STATUS_CODES[input.to_i] if STATUS_CODES.key? input.to_i
+        return STATUS_CODES[input.to_i] if STATUS_CODES.key?(input.to_i)
 
         STATUS_CODES.each do |_, status|
-          return status if status.casecmp? input
+          return status if status.casecmp?(input)
         end
         raise UnknownCode, "No such status `#{input}`"
       end
 
       # Normalizes a status code or status string into a valid code
       def get_status_code(input)
-        return input.to_i if STATUS_CODES.key? input.to_i
+        return input.to_i if STATUS_CODES.key?(input.to_i)
 
         STATUS_CODES.each do |code, status|
-          return code if status.casecmp? input
+          return code if status.casecmp?(input)
         end
         raise UnknownCode, "No such status `#{input}`"
       end
 
       # A cached way to retrieve all components and containers therein
       def stausio_components
-        @components ||= statusioclient.component_list statuspage_id
+        @components ||= statusioclient.component_list(statuspage_id)
         @components['result']
       end
 
@@ -331,14 +331,14 @@ module Chatops
       def render_incident(incident)
         out = ''
         out += " - #{incident['name']} (`#{incident['_id']}`):"
-        out += " `#{get_state_string incident['messages'].last['state']}`\n"
+        out += " `#{get_state_string(incident['messages'].last['state'])}`\n"
         out += "   - Messages\n"
         incident['messages'].each do |message|
           out += "     - #{message['datetime']}: #{message['details']}\n"
         end
         out += "   - Affected services\n"
         incident['components_affected'].each do |affected_component|
-          out += render_incident_component incident, affected_component
+          out += render_incident_component(incident, affected_component)
         end
 
         out
