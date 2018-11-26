@@ -40,7 +40,9 @@ SPEC_TEMPLATE = <<~SPEC_TEMPLATE
 
   describe Chatops::Commands::%<class_name>s do
     describe '#perform' do
-      pending 'You must write tests for the #perform method'
+      it 'requires tests' do
+        raise 'You must write tests for the #perform method'
+      end
     end
   end
 SPEC_TEMPLATE
