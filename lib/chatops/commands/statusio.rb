@@ -182,7 +182,8 @@ module Chatops
               container['name'].casecmp?(option_container)
             end
             selected_containers.each do |container|
-              affected_containers.push("#{component['_id']}-#{container['_id']}")
+              affected_containers
+                .push("#{component['_id']}-#{container['_id']}")
             end
           end
         end
