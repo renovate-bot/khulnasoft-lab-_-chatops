@@ -1,0 +1,6 @@
+/bin/docker
+/spec
+/docker
+/*.md
+/.git
+Rakefile
