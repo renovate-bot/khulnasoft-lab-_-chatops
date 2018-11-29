@@ -1,0 +1,84 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://api.pagerduty.com/services?query=culpa
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      Authorization:
+      - Token token=[PAGERDUTY_TOKEN]
+      Content-Type:
+      - application/json
+      Accept:
+      - application/vnd.pagerduty+json;version=2
+      Connection:
+      - close
+      Host:
+      - api.pagerduty.com
+      User-Agent:
+      - http.rb/3.3.0
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx
+      Date:
+      - Wed, 28 Nov 2018 22:21:48 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '5841'
+      Connection:
+      - close
+      Vary:
+      - Accept-Encoding
+      - Accept-Encoding
+      Status:
+      - 200 OK
+      Access-Control-Allow-Methods:
+      - GET, POST, PUT, DELETE, OPTIONS
+      Access-Control-Max-Age:
+      - '1728000'
+      Access-Control-Allow-Origin:
+      - "*"
+      Access-Control-Allow-Headers:
+      - Authorization, Content-Type, AuthorizationOauth
+      X-Ua-Compatible:
+      - IE=Edge,chrome=1
+      Etag:
+      - '"d91cb88e3a9396373c89d8b05fda4cfb"'
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 36d1dfac-8ca8-4c89-84b4-f3b58e87a972
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Xss-Protection:
+      - 1; mode=block
+    body:
+      encoding: ASCII-8BIT
+      string: '{"services":[{"id":"P0M2F3M","name":"Service alias suscipit culpa","description":"Up-sized
+        stable flexibility","auto_resolve_timeout":14400,"acknowledgement_timeout":1800,"created_at":"2017-04-07T10:19:28-07:00","status":"active","last_incident_timestamp":null,"teams":[],"incident_urgency_rule":{"type":"constant","urgency":"high"},"scheduled_actions":[],"support_hours":null,"escalation_policy":{"id":"P9OFD2O","type":"escalation_policy_reference","summary":"Default","self":"https://api.pagerduty.com/escalation_policies/P9OFD2O","html_url":"https://apidocs.pagerduty.com/escalation_policies/P9OFD2O"},"addons":[],"alert_creation":"create_incidents","alert_grouping":null,"alert_grouping_timeout":null,"integrations":[{"id":"PM5PQ9L","type":"generic_events_api_inbound_integration_reference","summary":"Events
+        API v1","self":"https://api.pagerduty.com/services/P0M2F3M/integrations/PM5PQ9L","html_url":"https://apidocs.pagerduty.com/services/P0M2F3M/integrations/PM5PQ9L"}],"response_play":null,"type":"service","summary":"Service
+        alias suscipit culpa","self":"https://api.pagerduty.com/services/P0M2F3M","html_url":"https://apidocs.pagerduty.com/services/P0M2F3M"},{"id":"PPM7MK3","name":"Service
+        cumque ad culpa","description":"Balanced stable matrix","auto_resolve_timeout":14400,"acknowledgement_timeout":1800,"created_at":"2017-04-07T10:19:03-07:00","status":"active","last_incident_timestamp":null,"teams":[],"incident_urgency_rule":{"type":"constant","urgency":"high"},"scheduled_actions":[],"support_hours":null,"escalation_policy":{"id":"P9OFD2O","type":"escalation_policy_reference","summary":"Default","self":"https://api.pagerduty.com/escalation_policies/P9OFD2O","html_url":"https://apidocs.pagerduty.com/escalation_policies/P9OFD2O"},"addons":[],"alert_creation":"create_incidents","alert_grouping":null,"alert_grouping_timeout":null,"integrations":[{"id":"POZKX3V","type":"generic_events_api_inbound_integration_reference","summary":"Events
+        API v1","self":"https://api.pagerduty.com/services/PPM7MK3/integrations/POZKX3V","html_url":"https://apidocs.pagerduty.com/services/PPM7MK3/integrations/POZKX3V"}],"response_play":null,"type":"service","summary":"Service
+        cumque ad culpa","self":"https://api.pagerduty.com/services/PPM7MK3","html_url":"https://apidocs.pagerduty.com/services/PPM7MK3"},{"id":"PN1S59F","name":"Service
+        eius exercitationem culpa","description":"Phased well-modulated database","auto_resolve_timeout":14400,"acknowledgement_timeout":1800,"created_at":"2017-04-07T10:18:59-07:00","status":"active","last_incident_timestamp":null,"teams":[],"incident_urgency_rule":{"type":"constant","urgency":"high"},"scheduled_actions":[],"support_hours":null,"escalation_policy":{"id":"P9OFD2O","type":"escalation_policy_reference","summary":"Default","self":"https://api.pagerduty.com/escalation_policies/P9OFD2O","html_url":"https://apidocs.pagerduty.com/escalation_policies/P9OFD2O"},"addons":[],"alert_creation":"create_incidents","alert_grouping":null,"alert_grouping_timeout":null,"integrations":[{"id":"P8C4CT7","type":"generic_events_api_inbound_integration_reference","summary":"Events
+        API v1","self":"https://api.pagerduty.com/services/PN1S59F/integrations/P8C4CT7","html_url":"https://apidocs.pagerduty.com/services/PN1S59F/integrations/P8C4CT7"}],"response_play":null,"type":"service","summary":"Service
+        eius exercitationem culpa","self":"https://api.pagerduty.com/services/PN1S59F","html_url":"https://apidocs.pagerduty.com/services/PN1S59F"},{"id":"PZ1XQ2J","name":"Service
+        minima nobis culpa","description":"Reduced radical data-warehouse","auto_resolve_timeout":14400,"acknowledgement_timeout":1800,"created_at":"2017-04-07T10:18:36-07:00","status":"active","last_incident_timestamp":null,"teams":[],"incident_urgency_rule":{"type":"constant","urgency":"high"},"scheduled_actions":[],"support_hours":null,"escalation_policy":{"id":"P9OFD2O","type":"escalation_policy_reference","summary":"Default","self":"https://api.pagerduty.com/escalation_policies/P9OFD2O","html_url":"https://apidocs.pagerduty.com/escalation_policies/P9OFD2O"},"addons":[],"alert_creation":"create_incidents","alert_grouping":null,"alert_grouping_timeout":null,"integrations":[{"id":"PXC9K9O","type":"generic_events_api_inbound_integration_reference","summary":"Events
+        API v1","self":"https://api.pagerduty.com/services/PZ1XQ2J/integrations/PXC9K9O","html_url":"https://apidocs.pagerduty.com/services/PZ1XQ2J/integrations/PXC9K9O"}],"response_play":null,"type":"service","summary":"Service
+        minima nobis culpa","self":"https://api.pagerduty.com/services/PZ1XQ2J","html_url":"https://apidocs.pagerduty.com/services/PZ1XQ2J"},{"id":"PUG2SK3","name":"Service
+        nesciunt qui culpa","description":"Persevering maximized flexibility","auto_resolve_timeout":14400,"acknowledgement_timeout":1800,"created_at":"2017-04-07T10:16:58-07:00","status":"active","last_incident_timestamp":null,"teams":[],"incident_urgency_rule":{"type":"constant","urgency":"high"},"scheduled_actions":[],"support_hours":null,"escalation_policy":{"id":"P9OFD2O","type":"escalation_policy_reference","summary":"Default","self":"https://api.pagerduty.com/escalation_policies/P9OFD2O","html_url":"https://apidocs.pagerduty.com/escalation_policies/P9OFD2O"},"addons":[],"alert_creation":"create_incidents","alert_grouping":null,"alert_grouping_timeout":null,"integrations":[{"id":"PTTF03V","type":"generic_events_api_inbound_integration_reference","summary":"Events
+        API v1","self":"https://api.pagerduty.com/services/PUG2SK3/integrations/PTTF03V","html_url":"https://apidocs.pagerduty.com/services/PUG2SK3/integrations/PTTF03V"}],"response_play":null,"type":"service","summary":"Service
+        nesciunt qui culpa","self":"https://api.pagerduty.com/services/PUG2SK3","html_url":"https://apidocs.pagerduty.com/services/PUG2SK3"}],"limit":25,"offset":0,"total":null,"more":false}'
+    http_version: 
+  recorded_at: Wed, 28 Nov 2018 22:21:48 GMT
+recorded_with: VCR 4.0.0

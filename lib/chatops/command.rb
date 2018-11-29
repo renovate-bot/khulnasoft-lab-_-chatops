@@ -44,6 +44,11 @@ module Chatops
       env.fetch('GRAFANA_TOKEN')
     end
 
+    # Returns the API token to use for interacting with the PagerDuty API.
+    def pagerduty_token
+      env.fetch('PAGERDUTY_TOKEN')
+    end
+
     module ClassMethods
       def command_name
         @command_name ||= name

@@ -15,6 +15,7 @@ if ENV['COVERAGE']
     add_group 'Database', 'lib/chatops/database'
     add_group 'Grafana', 'lib/chatops/grafana'
     add_group 'Markdown', 'lib/chatops/markdown'
+    add_group 'PagerDuty', 'lib/chatops/pager_duty'
     add_group 'Slack', 'lib/chatops/slack'
   end
 

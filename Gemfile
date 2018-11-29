@@ -15,4 +15,6 @@ group :development do
   gem 'rubocop'
   gem 'rubocop-rspec'
   gem 'simplecov'
+  gem 'vcr', '~> 4.0.0'
+  gem 'webmock', '~> 3.4.0'
 end
