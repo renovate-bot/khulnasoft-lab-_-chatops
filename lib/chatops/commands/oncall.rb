@@ -11,7 +11,6 @@ module Chatops
       def perform
         search = arguments[0]
 
-        @oncalls = client.oncalls
         services = client.services(search)
 
         attachments = build_attachments(services)
@@ -52,12 +51,16 @@ module Chatops
           .send(attachments: attachments)
       end
 
+      def oncalls
+        @oncalls ||= client.oncalls
+      end
+
       # Return an array of oncall Users with the same escalation policy as the
       # specified service
       def oncalls_for_service(service)
         policy_id = service['escalation_policy']['id']
 
-        @oncalls
+        oncalls
           .select { |oncall| oncall['escalation_policy']['id'] == policy_id }
           .map { |oncall| PagerDuty::User.new(oncall) }
           .sort_by(&:escalation_level)
