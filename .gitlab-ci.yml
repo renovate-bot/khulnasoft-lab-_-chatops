@@ -21,6 +21,7 @@ stages:
 .ruby: &ruby
   except:
     - chat
+    - schedules
   before_script:
     - apk add --update build-base postgresql-dev
     - gem install bundler --no-ri --no-rdoc
@@ -39,6 +40,7 @@ build:image:
   image: docker:git
   only:
     - master
+    - schedules
   script:
     # When building the image, we want to push into the container registry of
     # the project CI runs in, instead of a fixed one. This ensures that on
