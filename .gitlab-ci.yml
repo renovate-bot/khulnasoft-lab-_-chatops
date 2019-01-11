@@ -24,7 +24,7 @@ stages:
     - schedules
   before_script:
     - apk add --update build-base postgresql-dev
-    - gem install bundler --no-ri --no-rdoc
+    - gem install bundler --no-document
     - ruby --version
     - gem --version
     - bundle --version
