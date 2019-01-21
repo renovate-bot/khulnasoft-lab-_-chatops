@@ -115,3 +115,6 @@ member:
 
 oncall:
   <<: *chatops
+
+prepare:
+  <<: *chatops
