@@ -9,7 +9,7 @@ describe Chatops::Commands::Deploy do
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[], { production: true, canary: false, warmup: false }, {})
+        .with(%w[], a_hash_including(production: true), {})
         .and_return(instance)
 
       expect(instance)
@@ -23,13 +23,41 @@ describe Chatops::Commands::Deploy do
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[], { production: false, canary: true, warmup: false }, {})
+        .with(%w[], a_hash_including(canary: true), {})
         .and_return(instance)
 
       expect(instance)
         .to receive(:perform)
 
       described_class.perform(%w[--canary])
+    end
+
+    it 'supports a --allow-precheck-failure option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], a_hash_including(allow_precheck_failure: true), {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--allow-precheck-failure])
+    end
+
+    it 'supports a --skip-haproxy option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], a_hash_including(skip_haproxy: true), {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--skip-haproxy])
     end
   end
 
@@ -223,6 +251,42 @@ describe Chatops::Commands::Deploy do
         vars = command.environment_variables_for('1.0')
 
         expect(vars.key?(:TAKEOFF_WARMUP)).to eq(false)
+      end
+    end
+
+    context 'when skip haproxy is requested' do
+      it 'includes the ANSIBLE_SKIP_TAGS environment variable' do
+        command = described_class.new([], { skip_haproxy: true }, {})
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars[:ANSIBLE_SKIP_TAGS]).to eq('haproxy')
+      end
+    end
+
+    context 'when skip haproxy is not requested' do
+      it 'does not include the ANSIBLE_SKIP_TAGS environment variable' do
+        command = described_class.new
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars.key?(:ANSIBLE_SKIP_TAGS)).to eq(false)
+      end
+    end
+
+    context 'when allow failure of prechecks is requested' do
+      it 'includes the PRECHECK_IGNORE_ERRORS environment variable' do
+        command = described_class.new([], { allow_precheck_failure: true }, {})
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars[:PRECHECK_IGNORE_ERRORS]).to eq('yes')
+      end
+    end
+
+    context 'when allow failure of prechecks is not requested' do
+      it 'does not include the PRECHECK_IGNORE_ERRORS environment variable' do
+        command = described_class.new
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars.key?(:PRECHECK_IGNORE_ERRORS)).to eq(false)
       end
     end
   end

@@ -27,6 +27,16 @@ module Chatops
         )
 
         o.bool('--warmup', 'Only perform a warmup, instead of a full deploy')
+
+        o.bool(
+          '--allow-precheck-failure',
+          'Allow the version and alert prechecks to fail'
+        )
+
+        o.bool(
+          '--skip-haproxy',
+          'Skip the ansible haproxy tasks'
+        )
       end
 
       def perform
@@ -94,6 +104,10 @@ module Chatops
         }
 
         vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]
+        vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
+        if options[:allow_precheck_failure]
+          vars[:PRECHECK_IGNORE_ERRORS] = 'yes'
+        end
 
         vars
       end
