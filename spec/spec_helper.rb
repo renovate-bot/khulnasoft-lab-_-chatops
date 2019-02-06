@@ -17,6 +17,8 @@ if ENV['COVERAGE']
     add_group 'Markdown', 'lib/chatops/markdown'
     add_group 'PagerDuty', 'lib/chatops/pager_duty'
     add_group 'Slack', 'lib/chatops/slack'
+    add_group 'HAProxy', 'lib/chatops/haproxy'
+    add_group 'Chef', 'lib/chatops/chef'
   end
 
   SimpleCov.start
@@ -34,6 +36,7 @@ end
 # To be 100% sure production secrets aren't accidentally used for tests we wipe
 # any variable ending with "_TOKEN" (e.g. "GITLAB_TOKEN"). We also wipe out
 # database related environment variables.
-ENV.keys
-  .select { |key| key.end_with?('_TOKEN') || key.start_with?('DATABASE_') }
-  .each { |key| ENV.delete(key) }
+secret_vars = ENV.keys.select do |key|
+  key.end_with?('_TOKEN', '_KEY') || key.start_with?('DATABASE_')
+end
+secret_vars.each { |var| ENV.delete(var) }

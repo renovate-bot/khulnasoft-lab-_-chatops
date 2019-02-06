@@ -118,3 +118,6 @@ oncall:
 
 prepare:
   <<: *chatops
+
+canary:
+  <<: *chatops

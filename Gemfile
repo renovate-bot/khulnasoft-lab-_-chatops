@@ -2,6 +2,7 @@
 
 source 'https://rubygems.org'
 
+gem 'chef'
 gem 'gitlab'
 gem 'http'
 gem 'pg'
