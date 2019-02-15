@@ -26,6 +26,20 @@ describe Chatops::Commands::ReleaseIssue, :release_command do
       end
     end
 
+    it 'supports a --security option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[1.2.3], { security: true }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[1.2.3 --security])
+    end
+
     context 'with a security release' do
       it 'runs the trigger' do
         expect(stubbed_client).to trigger_release(
@@ -33,12 +47,7 @@ describe Chatops::Commands::ReleaseIssue, :release_command do
           TASK: 'security_patch_issue'
         )
 
-        instance = stubbed_instance('10.9.0')
-        # Stub the channel since we don't set the environment variable
-        allow(instance).to receive(:channel)
-          .and_return(described_class::SECURITY_CHANNEL)
-
-        instance.perform
+        stubbed_instance('10.9.0', security: true).perform
       end
     end
 
