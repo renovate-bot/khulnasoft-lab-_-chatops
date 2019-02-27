@@ -59,6 +59,20 @@ describe Chatops::Commands::Deploy do
 
       described_class.perform(%w[--skip-haproxy])
     end
+
+    it 'supports a --rollback option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], a_hash_including(rollback: true), {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--rollback])
+    end
   end
 
   describe '#perform' do
@@ -287,6 +301,24 @@ describe Chatops::Commands::Deploy do
         vars = command.environment_variables_for('1.0')
 
         expect(vars.key?(:PRECHECK_IGNORE_ERRORS)).to eq(false)
+      end
+    end
+
+    context 'when rollback is requested' do
+      it 'includes the DEPLOY_ROLLBACK environment variable' do
+        command = described_class.new([], { rollback: true }, {})
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars[:DEPLOY_ROLLBACK]).to eq('yes')
+      end
+    end
+
+    context 'when DEPLOY_ROLLBACK is not requested' do
+      it 'does not include the DEPLOY_ROLLBACK environment variable' do
+        command = described_class.new
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars.key?(:DEPLOY_ROLLBACK)).to eq(false)
       end
     end
   end
