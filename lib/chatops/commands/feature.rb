@@ -26,6 +26,15 @@ module Chatops
           '--match',
           'Only displays features that contain the given substring'
         )
+        o.string(
+          '--project',
+          "The path of a project to set a feature flag for, e.g. \
+          gitlab-org/gitaly"
+        )
+        o.string(
+          '--group',
+          'The path of a group to set a feature flag for, e.g. gitlab-org'
+        )
 
         GitlabEnvironments.define_environment_options(o)
 
@@ -73,6 +82,12 @@ module Chatops
           # To enable a feature 50% of the time:
           feature set gitaly_tags 50
 
+          # To enable a feature for a project
+          feature set --project=gitlab-org/gitaly gitaly_tags
+
+          # To enable a feature for a group
+          feature set --group=gitlab-org gitaly_tags
+
           # To delete a feature flag and return to default behaviour:
           feature delete gitaly_tags
           ```
@@ -116,7 +131,8 @@ module Chatops
 
         response = Gitlab::Client
           .new(token: gitlab_token, host: gitlab_host)
-          .set_feature(name, value)
+          .set_feature(name, value, project: options[:project],
+                                    group: options[:group])
 
         feature = Gitlab::Feature.from_api_response(response)
 

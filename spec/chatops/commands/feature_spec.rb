@@ -11,7 +11,8 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: 'gitaly', staging: false, dev: false, ops: false },
+          { match: 'gitaly', staging: false, dev: false, ops: false,
+            project: nil, group: nil },
           {}
         )
         .and_return(instance)
@@ -29,8 +30,9 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: nil, staging: true, dev: false, ops: false }, {}
-        )
+          { match: nil, staging: true, dev: false, ops: false, project: nil,
+            group: nil }, {}
+          )
         .and_return(instance)
 
       expect(instance)
@@ -46,7 +48,9 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: nil, staging: false, dev: true, ops: false }, {}
+          { match: nil, staging: false, dev: true, ops: false, project: nil,
+            group: nil },
+          {}
         )
         .and_return(instance)
 
@@ -63,7 +67,9 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: nil, staging: false, dev: false, ops: true }, {}
+          { match: nil, staging: false, dev: false, ops: true, project: nil,
+            group: nil },
+          {}
         )
         .and_return(instance)
 
@@ -214,7 +220,75 @@ describe Chatops::Commands::Feature do
 
         expect(client)
           .to receive(:set_feature)
-          .with('foo', '10')
+          .with('foo', '10', project: nil, group: nil)
+          .and_return(feature)
+
+        expect(command).to receive(:send_feature_details).with(
+          feature: an_instance_of(Chatops::Gitlab::Feature),
+          text: 'The feature flag value has been updated!'
+        )
+
+        command.set
+      end
+    end
+
+    context 'when using a project feature gate' do
+      it 'updates the feature flag' do
+        command = described_class
+          .new(%w[set foo true],
+               { project: 'gitlab-org/gitaly', group: nil },
+               'GITLAB_TOKEN' => '123')
+
+        client = instance_double('client')
+        feature = instance_double(
+          'feature',
+          name: 'foo',
+          state: 'conditional',
+          gates: [{ 'project' => 'gitlab-org/gitaly', 'value' => true }]
+        )
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123', host: 'gitlab.com')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:set_feature)
+          .with('foo', 'true', project: 'gitlab-org/gitaly', group: nil)
+          .and_return(feature)
+
+        expect(command).to receive(:send_feature_details).with(
+          feature: an_instance_of(Chatops::Gitlab::Feature),
+          text: 'The feature flag value has been updated!'
+        )
+
+        command.set
+      end
+    end
+
+    context 'when using a group feature gate' do
+      it 'updates the feature flag' do
+        command = described_class
+          .new(%w[set foo true],
+               { project: nil, group: 'gitlab-org' },
+               'GITLAB_TOKEN' => '123')
+
+        client = instance_double('client')
+        feature = instance_double(
+          'feature',
+          name: 'foo',
+          state: 'conditional',
+          gates: [{ 'group' => 'gitlab-org', 'value' => true }]
+        )
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123', host: 'gitlab.com')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:set_feature)
+          .with('foo', 'true', project: nil, group: 'gitlab-org')
           .and_return(feature)
 
         expect(command).to receive(:send_feature_details).with(

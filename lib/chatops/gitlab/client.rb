@@ -30,8 +30,13 @@ module Chatops
       #
       # name - The name of the flag.
       # value - The value to set for the flag.
-      def set_feature(name, value)
-        internal_client.post("/features/#{name}", body: { value: value })
+      def set_feature(name, value, project: nil, group: nil)
+        body = { value: value }
+
+        body[:project] = project if project
+        body[:group] = group if group
+
+        internal_client.post("/features/#{name}", body: body)
       end
 
       # Delete a feature flag
