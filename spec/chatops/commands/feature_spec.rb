@@ -11,8 +11,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: 'gitaly', staging: false, dev: false, ops: false,
-            project: nil, group: nil },
+          a_hash_including(match: 'gitaly'),
           {}
         )
         .and_return(instance)
@@ -30,9 +29,9 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: nil, staging: true, dev: false, ops: false, project: nil,
-            group: nil }, {}
-          )
+          a_hash_including(staging: true, dev: false, ops: false),
+          {}
+        )
         .and_return(instance)
 
       expect(instance)
@@ -48,8 +47,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: nil, staging: false, dev: true, ops: false, project: nil,
-            group: nil },
+          a_hash_including(staging: false, dev: true, ops: false),
           {}
         )
         .and_return(instance)
@@ -67,8 +65,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          { match: nil, staging: false, dev: false, ops: true, project: nil,
-            group: nil },
+          a_hash_including(staging: false, dev: false, ops: true),
           {}
         )
         .and_return(instance)
