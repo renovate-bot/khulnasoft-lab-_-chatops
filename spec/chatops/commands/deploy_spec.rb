@@ -32,6 +32,20 @@ describe Chatops::Commands::Deploy do
       described_class.perform(%w[--canary])
     end
 
+    it 'supports a --pre option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], a_hash_including(pre: true), {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--pre])
+    end
+
     it 'supports a --allow-precheck-failure option' do
       instance = instance_double('instance')
 
@@ -399,6 +413,12 @@ describe Chatops::Commands::Deploy do
       command = described_class.new([], production: true)
 
       expect(command.environment).to eq('gprd')
+    end
+
+    it 'returns pre when the --pre option is set' do
+      command = described_class.new([], pre: true)
+
+      expect(command.environment).to eq('pre')
     end
 
     it 'returns gprd-cny when the --production and --canary options are set' do

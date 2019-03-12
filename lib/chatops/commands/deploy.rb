@@ -26,6 +26,11 @@ module Chatops
           'Only deploy to a canary, instead of the entire environment'
         )
 
+        o.bool(
+          '--pre',
+          'Deploy to the PreProd environment'
+        )
+
         o.bool('--warmup', 'Only perform a warmup, instead of a full deploy')
 
         o.bool(
@@ -144,6 +149,8 @@ module Chatops
         base =
           if options[:production]
             'gprd'
+          elsif options[:pre]
+            'pre'
           else
             'gstg'
           end
