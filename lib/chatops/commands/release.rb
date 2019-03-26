@@ -13,6 +13,8 @@ module Chatops
       COMMANDS = Set.new(%w[issue merge prepare qa tag])
 
       options do |o|
+        o.bool '--security', 'Act as a security release', default: false
+
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
@@ -32,17 +34,25 @@ module Chatops
 
               release merge 1.2.3-rc1
 
+            Merge security MRs
+
+              release merge --security
+
             Prepare for 1.2.0
 
               release prepare 1.2.0
+
+            Prepare for a security release
+
+              release prepare --security
 
             Create a QA issue for changes between 1.2.0-rc1 and 1.2.0-rc3
 
               release qa 1.2.0-rc1 1.2.0-rc3
 
-            Tag 1.2.0
+            Tag 1.2.0 as a security release
 
-              release tag 1.2.0
+              release tag --security 1.2.0
         HELP
       end
 
@@ -76,36 +86,44 @@ module Chatops
       def issue(version)
         validate_version!(version)
 
-        trigger_release(version, "release:#{__method__}")
+        trigger_release(version, "#{namespace}:#{__method__}")
       end
 
-      def merge(version)
-        validate_version!(version)
+      def merge(version = nil)
+        validate_version!(version) unless options[:security]
 
-        trigger_release(version, "release:#{__method__}")
+        trigger_release(version, "#{namespace}:#{__method__}")
       end
 
-      def prepare(version)
-        validate_version!(version)
+      def prepare(version = nil)
+        validate_version!(version) unless options[:security]
 
-        trigger_release(version, "release:#{__method__}")
+        trigger_release(version, "#{namespace}:#{__method__}")
       end
 
       def qa(*tags)
         validate_comparison!(*tags)
 
-        trigger_release(tags.join(','), "release:#{__method__}")
+        trigger_release(tags.join(','), "#{namespace}:#{__method__}")
       end
 
       def tag(version)
         validate_version!(version)
 
-        trigger_release(version, "release:#{__method__}")
+        trigger_release(version, "#{namespace}:#{__method__}")
       end
 
       private
 
       TAG_REGEX = /\Av\d+\.\d+\.\d+(-rc\d+)?\z/
+
+      def namespace
+        if options[:security]
+          'security'
+        else
+          'release'
+        end
+      end
 
       def validate_comparison!(tags)
         if tags.size != 2

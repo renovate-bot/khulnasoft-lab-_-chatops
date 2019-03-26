@@ -3,6 +3,10 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Release, :release_command do
+  def stubbed_instance(subcommand, version, options = {})
+    super(version, options.merge(subcommand: subcommand))
+  end
+
   describe '.perform' do
     it 'includes examples in the --help output' do
       output = described_class.perform(%w[--help])
@@ -50,87 +54,114 @@ describe Chatops::Commands::Release, :release_command do
     include_context 'release command #perform'
 
     describe '#issue' do
-      let(:instance) { stubbed_instance(version, subcommand: 'issue') }
+      it 'triggers a normal release' do
+        instance = stubbed_instance('issue', version)
 
-      it 'validates the provided version string' do
         expect(instance).to receive(:validate_version!).with(version)
+        expect(instance).to receive(:trigger_release)
+          .with(version, 'release:issue')
 
         instance.perform
       end
 
-      it 'runs the trigger' do
+      it 'triggers a security release' do
+        instance = stubbed_instance('issue', version, security: true)
+
+        expect(instance).to receive(:validate_version!).with(version)
         expect(instance).to receive(:trigger_release)
-          .with(version, 'release:issue')
+          .with(version, 'security:issue')
 
         instance.perform
       end
     end
 
     describe '#merge' do
-      let(:instance) { stubbed_instance(version, subcommand: 'merge') }
+      it 'triggers a normal release' do
+        instance = stubbed_instance('merge', version)
 
-      it 'validates the provided version string' do
         expect(instance).to receive(:validate_version!).with(version)
+        expect(instance).to receive(:trigger_release)
+          .with(version, 'release:merge')
 
         instance.perform
       end
 
-      it 'runs the trigger' do
+      it 'triggers a security release' do
+        instance = stubbed_instance('merge', nil, security: true)
+
+        expect(instance).not_to receive(:validate_version!)
         expect(instance).to receive(:trigger_release)
-          .with(version, 'release:merge')
+          .with(nil, 'security:merge')
 
         instance.perform
       end
     end
 
     describe '#prepare' do
-      let(:instance) { stubbed_instance(version, subcommand: 'prepare') }
+      it 'triggers a normal release' do
+        instance = stubbed_instance('prepare', version)
 
-      it 'validates the provided version string' do
         expect(instance).to receive(:validate_version!).with(version)
+        expect(instance).to receive(:trigger_release)
+          .with(version, 'release:prepare')
 
         instance.perform
       end
 
-      it 'runs the trigger' do
+      it 'triggers a security release' do
+        instance = stubbed_instance('prepare', nil, security: true)
+
+        expect(instance).not_to receive(:validate_version!)
         expect(instance).to receive(:trigger_release)
-          .with(version, 'release:prepare')
+          .with(nil, 'security:prepare')
 
         instance.perform
       end
     end
 
     describe '#qa' do
-      let(:tags) { %w[v1.2.3 v1.3.0-rc1] }
-      let(:instance) { stubbed_instance(tags, subcommand: 'qa') }
+      it 'triggers a normal release' do
+        tags = %w[v1.2.3 v1.3.0-rc1]
+        instance = stubbed_instance('qa', tags)
 
-      it 'validates the provided versions' do
         expect(instance).to receive(:validate_comparison!).with(tags)
           .and_call_original
+        expect(instance).to receive(:trigger_release)
+          .with(tags.join(','), 'release:qa')
 
         instance.perform
       end
 
-      it 'runs the trigger' do
+      it 'triggers a security release' do
+        tags = %w[v1.2.3 v1.3.0-rc1]
+        instance = stubbed_instance('qa', tags, security: true)
+
+        expect(instance).to receive(:validate_comparison!).with(tags)
+          .and_call_original
         expect(instance).to receive(:trigger_release)
-          .with(tags.join(','), 'release:qa')
+          .with(tags.join(','), 'security:qa')
 
         instance.perform
       end
     end
 
     describe '#tag' do
-      let(:instance) { stubbed_instance(version, subcommand: 'tag') }
+      it 'triggers a normal release' do
+        instance = stubbed_instance('tag', version)
 
-      it 'validates the provided version string' do
         expect(instance).to receive(:validate_version!).with(version)
+        expect(instance).to receive(:trigger_release)
+          .with(version, 'release:tag')
 
         instance.perform
       end
 
-      it 'runs the trigger' do
+      it 'triggers a security release' do
+        instance = stubbed_instance('tag', version, security: true)
+
+        expect(instance).to receive(:validate_version!).with(version)
         expect(instance).to receive(:trigger_release)
-          .with(version, 'release:tag')
+          .with(version, 'security:tag')
 
         instance.perform
       end
