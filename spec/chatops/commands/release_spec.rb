@@ -3,10 +3,6 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Release, :release_command do
-  def stubbed_instance(subcommand, version, options = {})
-    super(version, options.merge(subcommand: subcommand))
-  end
-
   describe '.perform' do
     it 'includes examples in the --help output' do
       output = described_class.perform(%w[--help])

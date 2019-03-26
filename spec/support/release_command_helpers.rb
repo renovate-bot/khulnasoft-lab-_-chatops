@@ -1,7 +1,14 @@
 # frozen_string_literal: true
 
 module ReleaseCommandHelpers
-  def stubbed_instance(version, arguments = {})
+  def stubbed_instance(*input)
+    arguments =
+      if input.last.is_a?(Hash)
+        input.pop
+      else
+        {}
+      end
+
     env = {
       'CHAT_CHANNEL' => 'channel_id',
       'GITLAB_TOKEN' => 'gitlab_token',
@@ -9,12 +16,7 @@ module ReleaseCommandHelpers
       'RELEASE_TRIGGER_TOKEN' => 'release_trigger_token'
     }
 
-    # TODO: Once we move all release-related commands to `release` and
-    # `security` with subcommands, deprecate `subcommand` key in favor of a
-    # required argument
-    command = [arguments.delete(:subcommand), version].compact
-
-    described_class.new(command, arguments, env).tap do |instance|
+    described_class.new(input, arguments, env).tap do |instance|
       # Default to the happy path
       allow(instance).to receive(:chatops_job?).and_return(true)
     end
