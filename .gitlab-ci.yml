@@ -121,3 +121,6 @@ prepare:
 
 canary:
   <<: *chatops
+
+release:
+  <<: *chatops
