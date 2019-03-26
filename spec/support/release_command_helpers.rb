@@ -9,7 +9,12 @@ module ReleaseCommandHelpers
       'RELEASE_TRIGGER_TOKEN' => 'release_trigger_token'
     }
 
-    described_class.new([version], arguments, env).tap do |instance|
+    # TODO: Once we move all release-related commands to `release` and
+    # `security` with subcommands, deprecate `subcommand` key in favor of a
+    # required argument
+    command = [arguments.delete(:subcommand), version].compact
+
+    described_class.new(command, arguments, env).tap do |instance|
       # Default to the happy path
       allow(instance).to receive(:chatops_job?).and_return(true)
     end
