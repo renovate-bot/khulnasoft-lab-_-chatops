@@ -76,8 +76,11 @@ describe Chatops::Commands::Release, :release_command do
         instance = stubbed_instance('merge', version)
 
         expect(instance).to receive(:validate_version!).with(version)
-        expect(instance).to receive(:trigger_release)
-          .with(version, 'release:merge')
+        expect(instance).to receive(:trigger_release).with(
+          version,
+          'release:merge',
+          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => false)
+        )
 
         instance.perform
       end
@@ -86,8 +89,24 @@ describe Chatops::Commands::Release, :release_command do
         instance = stubbed_instance('merge', nil, security: true)
 
         expect(instance).not_to receive(:validate_version!)
-        expect(instance).to receive(:trigger_release)
-          .with(nil, 'security:merge')
+        expect(instance).to receive(:trigger_release).with(
+          nil,
+          'security:merge',
+          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => false)
+        )
+
+        instance.perform
+      end
+
+      it 'triggers a security release with a `--master` flag' do
+        instance = stubbed_instance('merge', '--master', nil, security: true)
+
+        expect(instance).not_to receive(:validate_version!)
+        expect(instance).to receive(:trigger_release).with(
+          nil,
+          'security:merge',
+          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => true)
+        )
 
         instance.perform
       end

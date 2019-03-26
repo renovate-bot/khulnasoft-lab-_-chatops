@@ -24,8 +24,10 @@ module Chatops
         end
       end
 
-      def trigger_release(version, task_name = self.class.command_name)
-        pipeline = run_trigger(version, task_name)
+      def trigger_release(version,
+                          task_name = self.class.command_name,
+                          params = {})
+        pipeline = run_trigger(version, task_name, params)
         jobs = pipeline_jobs(pipeline.id)
 
         result =
@@ -58,15 +60,17 @@ module Chatops
         raise ArgumentError, "Invalid version provided: #{version}"
       end
 
-      def run_trigger(version, task_name)
+      def run_trigger(version, task_name, params = {})
         client.run_trigger(
           TARGET_PROJECT,
           env.fetch('RELEASE_TRIGGER_TOKEN'),
           TARGET_REF,
-          CHAT_CHANNEL: channel,
-          RELEASE_USER: env.fetch('GITLAB_USER_LOGIN', ''),
-          RELEASE_VERSION: version,
-          TASK: task_name
+          params.merge(
+            CHAT_CHANNEL: channel,
+            RELEASE_USER: env.fetch('GITLAB_USER_LOGIN', ''),
+            RELEASE_VERSION: version,
+            TASK: task_name
+          )
         )
       end
 

@@ -89,10 +89,17 @@ module Chatops
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 
-      def merge(version = nil)
+      def merge(*args)
+        merge_master = !args.delete('--master').nil?
+
+        version = args.shift
         validate_version!(version) unless options[:security]
 
-        trigger_release(version, "#{namespace}:#{__method__}")
+        trigger_release(
+          version,
+          "#{namespace}:#{__method__}",
+          'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_master
+        )
       end
 
       def prepare(version = nil)
