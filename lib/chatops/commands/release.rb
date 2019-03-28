@@ -50,9 +50,9 @@ module Chatops
 
               release qa 1.2.0-rc1 1.2.0-rc3
 
-            Tag 1.2.0 as a security release
+            Tag 1.2.3 as a security release
 
-              release tag --security 1.2.0
+              release tag --security 1.2.3
         HELP
       end
 
