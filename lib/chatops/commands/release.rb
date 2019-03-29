@@ -13,7 +13,13 @@ module Chatops
       COMMANDS = Set.new(%w[issue merge prepare qa tag])
 
       options do |o|
-        o.bool '--security', 'Act as a security release', default: false
+        o.bool '--security',
+               'Act as a security release',
+               default: false
+
+        o.bool '--master',
+               'Merge MRs targeting the master branch',
+               default: false
 
         o.separator <<~AVAIL.chomp
 
@@ -89,17 +95,18 @@ module Chatops
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 
-      def merge(*args)
-        merge_master = !args.delete('--master').nil?
+      def merge(version = nil)
+        if options[:security]
+          trigger_release(
+            version,
+            "#{namespace}:#{__method__}",
+            'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => options[:master]
+          )
+        else
+          validate_version!(version)
 
-        version = args.shift
-        validate_version!(version) unless options[:security]
-
-        trigger_release(
-          version,
-          "#{namespace}:#{__method__}",
-          'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_master
-        )
+          trigger_release(version, "#{namespace}:#{__method__}")
+        end
       end
 
       def prepare(version = nil)
