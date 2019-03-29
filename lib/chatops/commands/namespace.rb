@@ -10,7 +10,8 @@ module Chatops
       description 'Look up namespace information.'
 
       def perform
-        namespace_id = arguments.join(' ')
+        namespace_id = arguments[0]
+        return 'You must supply a namespace ID to look up.' unless namespace_id
 
         if namespace_id.empty?
           'You must supply a namespace ID to look up.'
