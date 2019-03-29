@@ -6,9 +6,11 @@ describe Chatops::Commands::Namespace do
   describe '#perform' do
     context 'without a namespace id' do
       it 'returns an error message' do
-        command = described_class.new(%w[])
+        command = described_class.new
 
         expect(command.perform).to eq('You must supply a namespace ID to look up.')
+
+        command.perform
       end
     end
 
