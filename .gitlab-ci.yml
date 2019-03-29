@@ -109,3 +109,6 @@ canary:
 
 release:
   <<: *chatops
+
+namespace:
+  <<: *chatops
