@@ -33,7 +33,7 @@ describe Chatops::Commands::Publish, :release_command do
       stubbed_instance('10.9.0').perform
     end
 
-    include_examples 'with a valid chatops job',    version: '10.9.0'
-    include_examples 'with an invalid chatops job', version: '10.9.0'
+    include_examples 'with a valid chatops job',    input: '10.9.0'
+    include_examples 'with an invalid chatops job', input: '10.9.0'
   end
 end

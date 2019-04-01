@@ -21,6 +21,9 @@ describe Chatops::Commands::Release, :release_command do
   describe '#perform' do
     include_context 'release command #perform'
 
+    include_examples 'with a valid chatops job',    input: %w[issue 10.9.0]
+    include_examples 'with an invalid chatops job', input: %w[issue 10.9.0]
+
     context 'when using a valid subcommand' do
       it 'executes the subcommand' do
         command = described_class.new(%w[issue 1.2.3])

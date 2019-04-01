@@ -9,10 +9,10 @@ RSpec.shared_context 'release command #perform' do
   end
 end
 
-RSpec.shared_examples 'with a valid chatops job' do |version:|
+RSpec.shared_examples 'with a valid chatops job' do |input:|
   context 'with a valid chatops job' do
     it 'returns the job URL' do
-      instance = stubbed_instance(version)
+      instance = stubbed_instance(*input)
       job = instance_double(
         'Objectified Hash',
         id: 123,
@@ -26,10 +26,10 @@ RSpec.shared_examples 'with a valid chatops job' do |version:|
   end
 end
 
-RSpec.shared_examples 'with an invalid chatops job' do |version:|
+RSpec.shared_examples 'with an invalid chatops job' do |input:|
   context 'with an invalid chatops job' do
     it 'returns the pipeline URL' do
-      instance = stubbed_instance(version)
+      instance = stubbed_instance(*input)
       pipeline = instance_double(
         'pipeline',
         id: 123,
