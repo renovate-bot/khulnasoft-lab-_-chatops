@@ -74,9 +74,6 @@ rubocop:
 broadcast:
   <<: *chatops
 
-cherry_pick:
-  <<: *chatops
-
 explain:
   <<: *chatops
 
@@ -92,16 +89,7 @@ help:
 publish:
   <<: *chatops
 
-qa_issue:
-  <<: *chatops
-
 query:
-  <<: *chatops
-
-release_issue:
-  <<: *chatops
-
-tag:
   <<: *chatops
 
 user:
@@ -114,9 +102,6 @@ member:
   <<: *chatops
 
 oncall:
-  <<: *chatops
-
-prepare:
   <<: *chatops
 
 canary:
