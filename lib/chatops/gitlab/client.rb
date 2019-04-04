@@ -28,7 +28,7 @@ module Chatops
 
       # Returns a namespace for a given namespace ID.
       def find_namespace(namespace_id)
-        internal_client.get("/namespaces/#{namespace_id}")
+        internal_client.namespaces(search: namespace_id).first
       end
 
       # Sets a feature flag's state.

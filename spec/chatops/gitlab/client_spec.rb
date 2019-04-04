@@ -53,6 +53,32 @@ describe Chatops::Gitlab::Client do
     end
   end
 
+  describe '#find_namespace' do
+    context 'when a namespace could be found' do
+      it 'returns the namespace' do
+        namespace = instance_double('namespace')
+
+        expect(client.internal_client)
+          .to receive(:namespaces)
+          .with(search: '1234567')
+          .and_return([namespace])
+
+        expect(client.find_namespace('1234567')).to eq(namespace)
+      end
+    end
+
+    context 'when a namespace could not be found' do
+      it 'returns nil' do
+        expect(client.internal_client)
+          .to receive(:namespaces)
+          .with(search: '1234567')
+          .and_return([])
+
+        expect(client.find_namespace('1234567')).to be_nil
+      end
+    end
+  end
+
   describe '#set_feature' do
     it 'sets the value of a feature flag' do
       expect(client.internal_client)
