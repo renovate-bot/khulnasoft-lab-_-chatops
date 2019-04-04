@@ -17,8 +17,8 @@ module Chatops
           'You must supply a namespace ID to look up.'
         else
           namespace_info = Gitlab::Client
-                           .new(token: gitlab_token)
-                           .find_namespace(namespace_id)
+            .new(token: gitlab_token)
+            .find_namespace(namespace_id)
         end
 
         if namespace_info
