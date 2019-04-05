@@ -115,8 +115,8 @@ module Chatops
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 
-      def qa(*tags)
-        validate_comparison!(*tags)
+      def qa(tags)
+        validate_comparison!(tags)
 
         trigger_release(tags.join(','), "#{namespace}:#{__method__}")
       end
