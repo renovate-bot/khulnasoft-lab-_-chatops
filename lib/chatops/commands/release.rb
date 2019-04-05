@@ -116,6 +116,8 @@ module Chatops
       end
 
       def qa(tags)
+        tags = tags.split('..') if tags.include?('..')
+
         validate_comparison!(tags)
 
         trigger_release(tags.join(','), "#{namespace}:#{__method__}")

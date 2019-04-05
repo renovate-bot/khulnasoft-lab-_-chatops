@@ -158,6 +158,18 @@ describe Chatops::Commands::Release, :release_command do
 
         instance.perform
       end
+
+      it 'supports a single range argument' do
+        tags = %w[v1.2.3 v1.3.0-rc1]
+        instance = stubbed_instance('qa', tags.join('..'))
+
+        expect(instance).to receive(:validate_comparison!).with(tags)
+          .and_call_original
+        expect(instance).to receive(:trigger_release)
+          .with(tags.join(','), 'release:qa')
+
+        instance.perform
+      end
     end
 
     describe '#tag' do
