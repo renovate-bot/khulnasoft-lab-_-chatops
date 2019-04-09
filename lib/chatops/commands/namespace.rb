@@ -10,16 +10,12 @@ module Chatops
       description 'Look up namespace information.'
 
       def perform
-        namespace_id = arguments[0]
+        namespace_id = arguments[1]
         return 'You must supply a namespace ID to look up.' unless namespace_id
 
-        if namespace_id.empty?
-          'You must supply a namespace ID to look up.'
-        else
-          namespace_info = Gitlab::Client
-            .new(token: gitlab_token)
-            .find_namespace(namespace_id)
-        end
+        namespace_info = Gitlab::Client
+          .new(token: gitlab_token)
+          .find_namespace(namespace_id)
 
         if namespace_info
           submit_namespace_details(namespace_info)
