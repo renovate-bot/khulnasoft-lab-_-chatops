@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://api.pagerduty.com/oncalls?include%5B%5D=users
+    uri: https://api.pagerduty.com/oncalls?include%5B%5D=users&limit=200
     body:
       encoding: UTF-8
       string: ''
@@ -188,6 +188,53 @@ http_interactions:
         minutes: channel PZBPPBM","self":"https://api.pagerduty.com/users/P2ZJRY7/notification_rules/PEQC6EG","html_url":null},{"id":"P2D27JP","type":"assignment_notification_rule_reference","summary":"0
         minutes: channel PZBPPBM","self":"https://api.pagerduty.com/users/P2ZJRY7/notification_rules/P2D27JP","html_url":null}],"coordinated_incidents":[],"id":"P2ZJRY7","type":"user","summary":"Tina
         Mann","self":"https://api.pagerduty.com/users/P2ZJRY7","html_url":"https://apidocs.pagerduty.com/users/P2ZJRY7"},"start":null,"end":null}],"limit":25,"offset":0,"more":true,"total":null}'
-    http_version: 
+    http_version:
   recorded_at: Wed, 28 Nov 2018 22:20:32 GMT
+- request:
+    method: get
+    uri: https://api.pagerduty.com/oncalls?include%5B%5D=users&limit=200
+    body:
+      encoding: UTF-8
+      string: ''
+    headers:
+      Authorization:
+      - Token token=fake_token
+      Content-Type:
+      - application/json
+      Accept:
+      - application/vnd.pagerduty+json;version=2
+      Connection:
+      - close
+      Host:
+      - api.pagerduty.com
+      User-Agent:
+      - http.rb/3.3.0
+  response:
+    status:
+      code: 401
+      message: Unauthorized
+    headers:
+      Server:
+      - nginx
+      Date:
+      - Wed, 10 Apr 2019 21:59:08 GMT
+      Content-Type:
+      - text/html; charset=UTF-8
+      Content-Length:
+      - '1'
+      Connection:
+      - close
+      Status:
+      - 401 Unauthorized
+      X-Ua-Compatible:
+      - IE=Edge,chrome=1
+      Cache-Control:
+      - no-cache
+      X-Request-Id:
+      - f171ac99-6038-43e8-8ce9-a6f97d94c81f
+    body:
+      encoding: UTF-8
+      string: " "
+    http_version:
+  recorded_at: Wed, 10 Apr 2019 21:59:08 GMT
 recorded_with: VCR 4.0.0
