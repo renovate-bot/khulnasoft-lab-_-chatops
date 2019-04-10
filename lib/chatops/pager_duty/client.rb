@@ -25,9 +25,10 @@ module Chatops
         JSON.parse(response.body).fetch('services', [])
       end
 
+      #add total=true if debugging
       def oncalls
         response = client
-          .get("#{ENDPOINT}/oncalls", params: { 'include[]' => 'users' })
+          .get("#{ENDPOINT}/oncalls", params: { 'include[]' => 'users', 'limit' => '200' })
 
         JSON.parse(response.body).fetch('oncalls', [])
       end
