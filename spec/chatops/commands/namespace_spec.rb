@@ -87,5 +87,4 @@ describe Chatops::Commands::Namespace do
       command.get_namespace('1234567')
     end
   end
-
 end
