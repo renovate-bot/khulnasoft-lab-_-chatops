@@ -42,23 +42,13 @@ module Chatops
                     short: true
                   },
                   {
-                    title: 'Owner ID',
-                    value: namespace.owner_id,
+                    title: 'Kind',
+                    value: namespace.kind,
                     short: true
                   },
                   {
                     title: 'Path',
                     value: namespace.path,
-                    short: true
-                  },
-                  {
-                    title: 'Created At',
-                    value: namespace.created_at,
-                    short: true
-                  },
-                  {
-                    title: 'Last Updated At',
-                    value: namespace.updated_at,
                     short: true
                   }
                 ]
