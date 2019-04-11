@@ -13,6 +13,10 @@ module Chatops
         namespace_id = arguments[1]
         return 'You must supply a namespace ID to look up.' unless namespace_id
 
+        get_namespace(namespace_id)
+      end
+
+      def get_namespace(namespace_id)
         namespace_info = Gitlab::Client
           .new(token: gitlab_token)
           .find_namespace(namespace_id)
