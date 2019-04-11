@@ -54,17 +54,15 @@ describe Chatops::Gitlab::Client do
   end
 
   describe '#find_namespace' do
-    context 'when a namespace could be found' do
-      it 'returns the namespace' do
-        namespace = instance_double('namespace')
+    it 'returns the namespace' do
+      namespace = instance_double('namespace')
 
-        expect(client.internal_client)
-          .to receive(:get)
-          .with('/namespaces/1234567')
-          .and_return([namespace])
+      expect(client.internal_client)
+        .to receive(:get)
+        .with('/namespaces/1234567')
+        .and_return([namespace])
 
-        expect(client.find_namespace('1234567')).to eq([namespace])
-      end
+      expect(client.find_namespace('1234567')).to eq([namespace])
     end
   end
 
