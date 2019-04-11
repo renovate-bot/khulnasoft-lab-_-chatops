@@ -43,7 +43,7 @@ describe Chatops::Commands::Namespace do
   describe '#submit_namespace_details' do
     context 'when using a valid namespace id' do
       it 'sends the details of the namespace to Slack' do
-        command = described_class.new(%w[1234567], {}, 'GITLAB_TOKEN' => '123')
+        command = described_class.new(%w[1234567], {}, 'CHAT_CHANNEL' => 'test_channel', 'SLACK_TOKEN' => '123')
         namespace = instance_double('namespace')
 
         expect(Chatops::Gitlab::Client)
