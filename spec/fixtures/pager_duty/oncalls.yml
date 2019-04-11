@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://api.pagerduty.com/oncalls?include%5B%5D=users&limit=200
+    uri: https://api.pagerduty.com/oncalls?include%5B%5D=users&limit=100
     body:
       encoding: UTF-8
       string: ''

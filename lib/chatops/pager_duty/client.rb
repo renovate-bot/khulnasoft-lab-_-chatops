@@ -25,9 +25,9 @@ module Chatops
         JSON.parse(response.body).fetch('services', [])
       end
 
-      # add total=true if debugging
+      # add total=true if debugging, limit can't be more than 100
       def oncalls
-        request_params = { 'include[]' => 'users', 'limit' => '200' }
+        request_params = { 'include[]' => 'users', 'limit' => '100' }
         response = client
           .get("#{ENDPOINT}/oncalls", params: request_params)
 
