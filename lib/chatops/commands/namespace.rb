@@ -21,11 +21,7 @@ module Chatops
           .new(token: gitlab_token)
           .find_namespace(namespace_id)
 
-        if namespace_info
-          submit_namespace_details(namespace_info)
-        else
-          namespace_not_found_error(namespace_id)
-        end
+        submit_namespace_details(namespace_info)
       end
 
       def submit_namespace_details(namespace)
@@ -59,10 +55,6 @@ module Chatops
               }
             ]
           )
-      end
-
-      def namespace_not_found_error(namespace_id)
-        "No namespace could be found for the id #{namespace_id.inspect}."
       end
     end
   end
