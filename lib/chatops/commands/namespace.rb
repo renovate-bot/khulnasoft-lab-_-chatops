@@ -10,7 +10,7 @@ module Chatops
       description 'Look up namespace information.'
 
       def perform
-        namespace_id = arguments[1]
+        namespace_id = arguments[3]
         return 'You must supply a namespace ID to look up.' unless namespace_id
 
         get_namespace(namespace_id)
