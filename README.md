@@ -110,6 +110,13 @@ like any other CLI application. These options are defined using
 [Slop](https://github.com/leejarvis/slop/), which is less painful to work with
 compared to Ruby's own OptionParser class.
 
+## Local Testing
+You can run the chatops command locally if you specify the proper environment variables. For example, the following will run a user find command on a user name. You may need other environment variables depending on the command.
+
+``` bash
+env SLACK_TOKEN='SLACK_XXX' GITLAB_TOKEN='GITLAB_XXX' CHAT_INPUT='find cmcfarland' CHAT_CHANNEL='#any_channel' bundle exec ./bin/chatops user
+```
+
 ## Examples
 
 You can use the following existing commands as examples/reference material when
