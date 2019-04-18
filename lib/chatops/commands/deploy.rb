@@ -21,6 +21,8 @@ module Chatops
       options do |o|
         o.bool('--production', 'Deploy to production, instead of staging')
 
+        o.bool('--dr', 'Deploy to dr, instead of staging')
+
         o.bool(
           '--canary',
           'Only deploy to a canary, instead of the entire environment'
@@ -151,6 +153,8 @@ module Chatops
             'gprd'
           elsif options[:pre]
             'pre'
+          elsif options[:dr]
+            'dr'
           else
             'gstg'
           end
