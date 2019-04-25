@@ -92,7 +92,7 @@ describe Chatops::Commands::Release, :release_command do
         expect(instance).to receive(:trigger_release).with(
           nil,
           'security:merge',
-          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => false)
+          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => '')
         )
 
         instance.perform
@@ -105,7 +105,7 @@ describe Chatops::Commands::Release, :release_command do
         expect(instance).to receive(:trigger_release).with(
           nil,
           'security:merge',
-          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => true)
+          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => '1')
         )
 
         instance.perform

@@ -97,10 +97,12 @@ module Chatops
 
       def merge(version = nil)
         if options[:security]
+          merge_master = options[:master] ? '1' : ''
+
           trigger_release(
             version,
             "#{namespace}:#{__method__}",
-            'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => options[:master]
+            'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_master
           )
         else
           validate_version!(version)
