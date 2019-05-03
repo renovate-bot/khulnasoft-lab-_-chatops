@@ -43,9 +43,13 @@ the following slash command:
 Certain commands manually produce their output. For example, the `graph` command
 uploads a file to Slack. For this to work you also need to:
 
-1. Set up a Slack bot.
-2. Make sure the bot is present in the channel.
-3. Expose the API token via the `SLACK_TOKEN` environment variable.
+1. Use an existing or add a new configuration in the
+   [Slack Bots App](https://gitlab.slack.com/apps/A0F7YS25R-bots).
+1. Make sure the bot is present in the channel.
+1. Expose the API token via the `SLACK_TOKEN` environment variable.
+
+Tip: To find the `CHAT_CHANNEL` ID, look at the link to a Slack message from 
+the channel. The ID is the first set of random looking characters.
 
 Other commands may require additional tokens such as a GitLab or Twitter API
 token. All of these are best set using CI/CD secret variables, which can be
