@@ -117,8 +117,9 @@ module Chatops
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 
-      def qa(tags)
-        tags = tags.split('..') if tags.include?('..')
+      def qa(*tags)
+        tags.flatten!
+        tags = tags.first.split('..') if tags.size == 1
 
         validate_comparison!(tags)
 
