@@ -39,7 +39,6 @@ module Chatops
       def execute(query)
         @connection.transaction do |conn|
           conn.exec('SET TRANSACTION READ ONLY')
-          conn.exec("SET STATEMENT_TIMEOUT TO '5s'")
           conn.exec(query)
         end
       end
