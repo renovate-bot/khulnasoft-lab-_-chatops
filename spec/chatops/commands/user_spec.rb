@@ -47,7 +47,7 @@ describe Chatops::Commands::User do
       it 'returns an error message' do
         command = described_class.new(%w[find])
 
-        expect(command.find).to eq('You must specify a username.')
+        expect(command.find).to eq('You must specify a username or email.')
       end
     end
 
@@ -77,6 +77,32 @@ describe Chatops::Commands::User do
       end
     end
 
+    context 'with a valid email' do
+      it 'submits the details of the user to Slack' do
+        client = instance_double('client')
+        user = instance_double('user')
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:find_user)
+          .with('alice@gitlab.com')
+          .and_return(user)
+
+        command = described_class
+          .new(%w[find alice], {}, 'GITLAB_TOKEN' => '123')
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user)
+
+        command.find('alice@gitlab.com')
+      end
+    end
+
     context 'with a non-existing username' do
       it 'returns an error message' do
         client = instance_double('client')
@@ -95,7 +121,29 @@ describe Chatops::Commands::User do
           .new(%w[find alice], {}, 'GITLAB_TOKEN' => '123')
 
         expect(command.find('alice'))
-          .to eq('No user could be found for the username "alice".')
+          .to eq('No user could be found for "alice".')
+      end
+    end
+
+    context 'with a non-existing email' do
+      it 'returns an error message' do
+        client = instance_double('client')
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:find_user)
+          .with('alice@gitlab.com')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[find alice], {}, 'GITLAB_TOKEN' => '123')
+
+        expect(command.find('alice@gitlab.com'))
+          .to eq('No user could be found for "alice@gitlab.com".')
       end
     end
   end
@@ -127,7 +175,7 @@ describe Chatops::Commands::User do
           .new(%w[block alice], {}, 'GITLAB_TOKEN' => '123')
 
         expect(command.block('alice'))
-          .to eq('No user could be found for the username "alice".')
+          .to eq('No user could be found for "alice".')
       end
     end
 
@@ -197,7 +245,7 @@ describe Chatops::Commands::User do
           .new(%w[unblock alice], {}, 'GITLAB_TOKEN' => '123')
 
         expect(command.unblock('alice'))
-          .to eq('No user could be found for the username "alice".')
+          .to eq('No user could be found for "alice".')
       end
     end
 

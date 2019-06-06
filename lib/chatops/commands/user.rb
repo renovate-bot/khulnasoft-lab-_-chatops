@@ -61,7 +61,7 @@ module Chatops
       #
       # name - The username of the user.
       def find(name = nil)
-        return 'You must specify a username.' unless name
+        return 'You must specify a username or email.' unless name
 
         user = Gitlab::Client
           .new(token: gitlab_token)
@@ -210,7 +210,7 @@ module Chatops
       end
 
       def user_not_found_error(name)
-        "No user could be found for the username #{name.inspect}."
+        "No user could be found for #{name.inspect}."
       end
     end
   end

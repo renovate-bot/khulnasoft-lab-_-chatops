@@ -21,9 +21,13 @@ module Chatops
         internal_client.get('/features').auto_paginate
       end
 
-      # Returns a user for a given username.
-      def find_user(username)
-        internal_client.users(username: username).first
+      # Returns a user for a given username or email address.
+      def find_user(username_or_email)
+        if /[^@]+@[^\.]+\..+/.match?(username_or_email)
+          internal_client.users(search: username_or_email).first
+        else
+          internal_client.users(username: username_or_email).first
+        end
       end
 
       # Returns a namespace for a given namespace ID.
