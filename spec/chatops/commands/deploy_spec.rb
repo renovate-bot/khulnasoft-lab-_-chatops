@@ -151,6 +151,19 @@ describe Chatops::Commands::Deploy do
         command.perform
       end
     end
+
+    context 'with a valid auto-deploy version' do
+      it 'deploys using an auto-deploy version' do
+        command = described_class
+          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50])
+
+        expect(command)
+          .to receive(:schedule_deploy)
+          .with('12.0.201906051128-30e31e4afb1.bd6aadb8c50')
+
+        command.perform
+      end
+    end
   end
 
   describe '#prepare_version' do

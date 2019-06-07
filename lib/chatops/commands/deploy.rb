@@ -15,6 +15,12 @@ module Chatops
       # The regular expression to use for verifying regular release versions.
       VERSION_REGEX = /\A\d+\.\d+\.\d+-ee\.\d+\z/
 
+      # The regular expression to use for verifying auto-deploy versions
+      #   The auto-deploy version may change due to
+      #   https://gitlab.com/gitlab-org/release/framework/issues/343
+      #   this regex allows for both options
+      AUTO_DEPLOY_REGEX = /\A\d+\.\d+\.\d+[+-][^ ]{7,}\.[^ ]{7,}\z/
+
       # Default package repository to use if TAKEOFF_DEPLOY_REPO is undefined
       DEFAULT_REPO = 'gitlab/pre-release'
 
@@ -69,7 +75,10 @@ module Chatops
       end
 
       def prepare_version(version)
-        # In almost all cases the package we want to deploy will end in .ee.0
+        # If it's an auto-deploy version no changes are necessary
+        return version if version.match?(AUTO_DEPLOY_REGEX)
+
+        # In most cases the package we want to deploy will end in .ee.0
         # (e.g. 11.0.ee.0). To make deploying easier, we will add this suffix
         # automatically if not already present.
         is_rc = version.include?('-rc')
@@ -87,7 +96,11 @@ module Chatops
       end
 
       def version_valid?(version)
-        regex = version.include?('-rc') ? RC_VERSION_REGEX : VERSION_REGEX
+        regex = if version.include?('-rc')
+                  RC_VERSION_REGEX
+                else
+                  Regexp.union(VERSION_REGEX, AUTO_DEPLOY_REGEX)
+                end
 
         version.match?(regex)
       end
