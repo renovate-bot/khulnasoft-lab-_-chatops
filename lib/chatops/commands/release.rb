@@ -85,7 +85,7 @@ module Chatops
 
           #{list}
 
-          For more information run `user --help`.
+          For more information run `release --help`.
         HELP
       end
 
