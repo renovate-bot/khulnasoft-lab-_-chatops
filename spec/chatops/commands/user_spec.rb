@@ -296,6 +296,7 @@ describe Chatops::Commands::User do
         id: 123,
         avatar_url: 'http://example.com',
         name: 'Alice',
+        username: 'alice',
         web_url: 'http://example.com',
         bio: 'This is the bio of alice',
         state: 'active',
