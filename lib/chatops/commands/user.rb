@@ -129,8 +129,8 @@ module Chatops
                     short: true
                   },
                   {
-                    title: 'Name',
-                    value: user.name,
+                    title: 'Username',
+                    value: user.username,
                     short: true
                   },
                   {
