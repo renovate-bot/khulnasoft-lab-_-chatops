@@ -33,6 +33,8 @@ module Chatops
 
               user find alice
 
+              user find alice@example.com
+
             Blocking a user:
 
               user block alice
@@ -59,7 +61,7 @@ module Chatops
 
       # Displays details of a single user.
       #
-      # name - The username of the user.
+      # name - The username or email address of the user.
       def find(name = nil)
         return 'You must specify a username or email.' unless name
 
