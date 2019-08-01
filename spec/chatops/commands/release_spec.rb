@@ -172,6 +172,28 @@ describe Chatops::Commands::Release, :release_command do
       end
     end
 
+    describe '#status' do
+      it 'triggers status for a normal release' do
+        instance = stubbed_instance('status', version)
+
+        expect(instance).to receive(:validate_version!).with(version)
+        expect(instance).to receive(:trigger_release)
+          .with(version, 'release:status')
+
+        instance.perform
+      end
+
+      it 'triggers status for a security release' do
+        instance = stubbed_instance('status', nil, security: true)
+
+        expect(instance).not_to receive(:validate_version!)
+        expect(instance).to receive(:trigger_release)
+          .with(nil, 'security:status')
+
+        instance.perform
+      end
+    end
+
     describe '#tag' do
       it 'triggers a normal release' do
         instance = stubbed_instance('tag', version)

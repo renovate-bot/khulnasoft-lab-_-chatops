@@ -10,7 +10,7 @@ module Chatops
       usage "#{command_name} SUBCOMMAND [OPTIONS]"
       description 'Perform release-related tasks.'
 
-      COMMANDS = Set.new(%w[issue merge prepare qa tag])
+      COMMANDS = Set.new(%w[issue merge prepare qa status tag])
 
       options do |o|
         o.bool '--security',
@@ -124,6 +124,12 @@ module Chatops
         validate_comparison!(tags)
 
         trigger_release(tags.join(','), "#{namespace}:#{__method__}")
+      end
+
+      def status(version = nil)
+        validate_version!(version) unless options[:security]
+
+        trigger_release(version, "#{namespace}:#{__method__}")
       end
 
       def tag(version)
