@@ -111,6 +111,21 @@ module Chatops
       def find_group(name)
         internal_client.group(name)
       end
+
+      def version
+        internal_client.version
+      end
+
+      def commit_refs(project, sha, options = {})
+        path = internal_client.url_encode(project)
+
+        # NOTE: The GitLab gem doesn't currently support this API
+        # See https://github.com/NARKOZ/gitlab/pull/507
+        internal_client.get(
+          "/projects/#{path}/repository/commits/#{sha}/refs",
+          query: options
+        )
+      end
     end
   end
 end
