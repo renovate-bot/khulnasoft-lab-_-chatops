@@ -30,6 +30,7 @@ require 'chatops/markdown/list'
 require 'chatops/pager_duty/client'
 require 'chatops/pager_duty/user'
 require 'chatops/release/command'
+require 'chatops/slack'
 require 'chatops/slack/file_upload'
 require 'chatops/slack/message'
 
