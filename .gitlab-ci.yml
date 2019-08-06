@@ -115,3 +115,6 @@ gitaly:
   
 namespace:
   <<: *chatops
+
+auto_deploy:
+  <<: *chatops
