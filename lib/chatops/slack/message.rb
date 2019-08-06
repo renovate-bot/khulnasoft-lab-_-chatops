@@ -19,7 +19,8 @@ module Chatops
 
       # message - The message to send.
       # attachments - Any attachments to include in the message.
-      def send(text: nil, attachments: [])
+      # blocks - Any blocks to include in the message.
+      def send(text: nil, attachments: [], blocks: [])
         response = HTTP.post(
           API_URL,
           headers: {
@@ -32,7 +33,8 @@ module Chatops
             response_type: :in_channel,
             as_user: true,
             text: text,
-            attachments: attachments
+            attachments: attachments,
+            blocks: blocks
           }.to_json
         )
 

@@ -22,14 +22,15 @@ describe Chatops::Slack::Message do
               response_type: :in_channel,
               as_user: true,
               text: 'hello',
-              attachments: %w[foo]
+              attachments: %w[foo],
+              blocks: %w[bar]
             }.to_json
           )
           .and_return(response)
 
         described_class
           .new(token: '123', channel: 'foo')
-          .send(text: 'hello', attachments: %w[foo])
+          .send(text: 'hello', attachments: %w[foo], blocks: %w[bar])
       end
     end
 
