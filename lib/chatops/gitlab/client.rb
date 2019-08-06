@@ -4,15 +4,16 @@ module Chatops
   module Gitlab
     # HTTP client for the GitLab API.
     class Client
-      DEFAULT_ENDPOINT = 'https://gitlab.com/api/v4'
+      DEFAULT_HOST = 'gitlab.com'
 
-      attr_reader :internal_client
+      attr_reader :internal_client, :host
 
       # token - The API token to use for authentication.
       # host - The hostname to use.
-      def initialize(token:, host: nil)
-        endpoint = host ? "https://#{host}/api/v4" : DEFAULT_ENDPOINT
+      def initialize(token:, host: DEFAULT_HOST)
+        endpoint = "https://#{host}/api/v4"
 
+        @host = host
         @internal_client = ::Gitlab::Client
           .new(endpoint: endpoint, private_token: token)
       end
