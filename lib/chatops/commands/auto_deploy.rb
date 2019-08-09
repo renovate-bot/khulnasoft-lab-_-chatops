@@ -73,9 +73,9 @@ module Chatops
           blocks << {
             type: 'section',
             fields: [
-              Slack.markdown("*Version* `#{env[:version]}`"),
-              Slack.markdown("*Revision* `#{env[:revision]}`"),
-              Slack.markdown("*Branch* `#{env[:branch]}`")
+              Slack.markdown("*Version:* `#{env[:version]}`"),
+              Slack.markdown("*Revision:* #{revision_link(env[:revision])}"),
+              Slack.markdown("*Branch:* #{branch_link(env[:branch])}")
             ]
           }
 
@@ -107,7 +107,7 @@ module Chatops
           host: client.host,
           version: version.version,
           revision: version.revision,
-          branch: auto_deploy_branch.name
+          branch: auto_deploy_branch&.name || nil
         }
       end
 
@@ -134,6 +134,25 @@ module Chatops
           'canary'
         else
           'party-tanuki'
+        end
+      end
+
+      def revision_link(revision)
+        url = "https://gitlab.com/#{PROJECT}/commit/#{revision}"
+        text = "`#{revision}`"
+
+        "<#{url}|#{text}>"
+      end
+
+      def branch_link(branch)
+        if branch
+          url = "https://gitlab.com/#{PROJECT}/commits/#{branch}"
+          text = "`#{branch}`"
+
+          "<#{url}|#{text}>"
+        else
+          # Something other than an auto-deploy branch is deployed
+          'Unknown'
         end
       end
     end
