@@ -53,7 +53,7 @@ module Chatops
         HELP
       end
 
-      def status
+      def status(*)
         envs = [
           environment_status(production_client),
           environment_status(canary_client),
