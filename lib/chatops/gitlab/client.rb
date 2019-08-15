@@ -116,6 +116,10 @@ module Chatops
         internal_client.version
       end
 
+      def commit(project, sha)
+        internal_client.commit(project, sha)
+      end
+
       def commit_refs(project, sha, options = {})
         path = internal_client.url_encode(project)
 

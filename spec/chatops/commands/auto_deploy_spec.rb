@@ -43,7 +43,26 @@ describe Chatops::Commands::AutoDeploy do
   end
 
   describe '#status' do
-    let(:fake_client) { class_double('Gitlab::Client').as_null_object }
+    def expect_slack_message(block_matcher)
+      message = instance_double('message')
+
+      expect(Chatops::Slack::Message)
+        .to receive(:new)
+        .and_return(message)
+
+      expect(message)
+        .to receive(:send)
+        .with(blocks: block_matcher)
+    end
+
+    let(:env) do
+      [
+        {},
+        'SLACK_TOKEN' => 'token',
+        'CHAT_CHANNEL' => 'channel',
+        'GITLAB_TOKEN' => 'token'
+      ]
+    end
     let(:production_status) do
       {
         host: 'gitlab.com',
@@ -53,37 +72,75 @@ describe Chatops::Commands::AutoDeploy do
       }
     end
 
+    # rubocop:disable RSpec/VerifiedDoubles
+    let(:fake_client) { double('Gitlab::Client').as_null_object }
+    # rubocop:enable RSpec/VerifiedDoubles
+
     before do
       stub_const('Gitlab::Client', fake_client)
     end
 
     context 'with no argument' do
       let(:command) do
-        described_class.new(
-          %w[status],
-          {},
-          'SLACK_TOKEN' => '123',
-          'CHAT_CHANNEL' => '456',
-          'GITLAB_TOKEN' => 'token'
-        )
-      end
-
-      before do
-        allow(command).to receive(:environment_status)
-          .and_return(production_status)
+        described_class.new(%w[status], *env)
       end
 
       it 'send a formatted Slack message' do
-        message = instance_double('message')
+        allow(command).to receive(:environment_status)
+          .and_return(production_status)
+        expect_slack_message(StatusBlockMatcher.new(production_status))
 
-        expect(Chatops::Slack::Message)
-          .to receive(:new)
-          .with(token: '123', channel: '456')
-          .and_return(message)
+        command.perform
+      end
+    end
 
-        expect(message)
-          .to receive(:send)
-          .with(blocks: StatusBlockArgumentMatcher.new(production_status))
+    context 'with a valid commit SHA' do
+      let(:command) do
+        described_class.new(%w[status abcdefg], *env)
+      end
+
+      it 'posts a message with deployed environments' do
+        allow(command).to receive(:environment_status)
+          .and_return(production_status)
+        allow(command).to receive(:auto_deploy_branches).with('abcdefg')
+          .and_return([{ name: production_status[:branch] }])
+
+        fake_commit = instance_double(
+          'Commit',
+          short_id: 'abcd',
+          title: 'Commit title'
+        )
+        expect(fake_client).to receive(:commit).and_return(fake_commit)
+
+        expect_slack_message(
+          DeployedCommitBlockMatcher.new(production_status, fake_commit)
+        )
+
+        command.perform
+      end
+
+      it 'posts an warning message with no deployed environment' do
+        allow(command).to receive(:environment_status).and_return({})
+        allow(command).to receive(:auto_deploy_branches).with('abcdefg')
+          .and_return([])
+        expect_slack_message(NoDeployedBlockMatcher.new)
+
+        command.perform
+      end
+    end
+
+    context 'with an invalid commit SHA' do
+      let(:command) do
+        described_class.new(%w[status abcdefg], *env)
+      end
+
+      before do
+        allow(fake_client).to receive(:commit)
+          .and_raise(gitlab_error(:NotFound))
+      end
+
+      it 'posts an error message' do
+        expect_slack_message(InvalidCommitBlockMatcher.new('abcdefg'))
 
         command.perform
       end
@@ -93,7 +150,7 @@ end
 
 # RSpec argument matcher for verifying the complex `block` Hash passed to
 # `Slack::Message#send` from the described class
-class StatusBlockArgumentMatcher
+class StatusBlockMatcher
   def initialize(status)
     @status = status
   end
@@ -106,5 +163,36 @@ class StatusBlockArgumentMatcher
       json.include?(@status[:version]) &&
       json.include?(@status[:revision]) &&
       json.include?(@status[:branch])
+  end
+end
+
+class DeployedCommitBlockMatcher
+  def initialize(status, commit)
+    @status = status
+    @commit = commit
+  end
+
+  def ===(other)
+    json = other.to_json
+
+    json.include?("`#{@commit.short_id}`") &&
+      json.include?(@commit.title) &&
+      json.include?(@status[:host])
+  end
+end
+
+class NoDeployedBlockMatcher
+  def ===(other)
+    other.to_json.include?(':warning: Unable to find a deployed branch')
+  end
+end
+
+class InvalidCommitBlockMatcher
+  def initialize(commit_sha)
+    @commit_sha = commit_sha
+  end
+
+  def ===(other)
+    other.to_json.include?(":exclamation: `#{@commit_sha}` not found")
   end
 end

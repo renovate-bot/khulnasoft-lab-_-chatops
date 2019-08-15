@@ -53,28 +53,111 @@ module Chatops
         HELP
       end
 
-      def status(*)
+      def status(sha = nil)
         envs = [
           environment_status(production_client),
           environment_status(canary_client),
           environment_status(staging_client)
         ]
 
+        if sha
+          auto_deploy_branches = auto_deploy_branches(sha)
+
+          deployed = envs.select do |env|
+            auto_deploy_branches.any? { |b| env[:branch] == b[:name] }
+          end
+
+          post_commit_status(sha, deployed)
+        else
+          post_environment_status(envs)
+        end
+      end
+
+      private
+
+      def environment_status(client)
+        version = client.version
+        revision = version.revision
+
+        # Get the auto-deploy ref for the deployed revision
+        auto_deploy_branch = auto_deploy_branches(revision).first
+
+        {
+          host: client.host,
+          version: version.version,
+          revision: version.revision,
+          branch: auto_deploy_branch&.name || nil
+        }
+      end
+
+      def auto_deploy_branches(ref)
+        # NOTE: We always use the production client, because staging is always
+        # behind for the specified repository.
+        production_client
+          .commit_refs(PROJECT, ref, type: 'branch')
+          .select { |b| b.name.match?(/^\d+-\d+-auto-deploy-\d+$/) }
+      rescue ::Gitlab::Error::NotFound
+        []
+      end
+
+      def post_commit_status(commit_sha, envs)
+        blocks = []
+
+        begin
+          commit = production_client.commit(PROJECT, commit_sha)
+
+          blocks << {
+            type: 'section',
+            text: Slack.markdown(
+              "*`#{commit_link(commit.short_id)}`* #{commit.title}"
+            )
+          }
+
+          if envs.any?
+            blocks << {
+              type: 'context',
+              elements: envs.map do |env|
+                Slack.markdown(environment_link(env))
+              end
+            }
+          else
+            blocks << {
+              type: 'context',
+              elements: [
+                Slack.markdown(
+                  ':warning: Unable to find a deployed branch for this commit.'
+                )
+              ]
+            }
+          end
+        rescue ::Gitlab::Error::NotFound
+          blocks << {
+            type: 'section',
+            text: Slack.markdown(
+              ":exclamation: `#{commit_sha}` not found in `#{PROJECT}`."
+            )
+          }
+        end
+
+        Slack::Message
+          .new(token: slack_token, channel: channel)
+          .send(blocks: blocks)
+      end
+
+      def post_environment_status(envs)
         blocks = []
 
         envs.each do |env|
           blocks << {
             type: 'section',
-            text: Slack.markdown(
-              ":#{env_icon(env[:host])}: <https://#{env[:host]}/|#{env[:host]}>"
-            )
+            text: Slack.markdown(environment_link(env))
           }
 
           blocks << {
             type: 'section',
             fields: [
               Slack.markdown("*Version:* `#{env[:version]}`"),
-              Slack.markdown("*Revision:* #{revision_link(env[:revision])}"),
+              Slack.markdown("*Revision:* #{commit_link(env[:revision])}"),
               Slack.markdown("*Branch:* #{branch_link(env[:branch])}")
             ]
           }
@@ -87,28 +170,6 @@ module Chatops
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(blocks: blocks)
-      end
-
-      private
-
-      def environment_status(client)
-        version = client.version
-        revision = version.revision
-
-        # Get the auto-deploy ref for the deployed revision
-        #
-        # NOTE: We always use the production client, because staging is always
-        # behind for the specified repository.
-        auto_deploy_branch = production_client
-          .commit_refs(PROJECT, revision, type: 'branch')
-          .detect { |b| b.name.match?(/^\d+-\d+-auto-deploy-\d+$/) }
-
-        {
-          host: client.host,
-          version: version.version,
-          revision: version.revision,
-          branch: auto_deploy_branch&.name || nil
-        }
       end
 
       def production_client
@@ -137,9 +198,13 @@ module Chatops
         end
       end
 
-      def revision_link(revision)
-        url = "https://gitlab.com/#{PROJECT}/commit/#{revision}"
-        text = "`#{revision}`"
+      def environment_link(env)
+        ":#{env_icon(env[:host])}: <https://#{env[:host]}/|#{env[:host]}>"
+      end
+
+      def commit_link(sha)
+        url = "https://gitlab.com/#{PROJECT}/commit/#{sha}"
+        text = "`#{sha}`"
 
         "<#{url}|#{text}>"
       end
