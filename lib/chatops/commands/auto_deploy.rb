@@ -187,19 +187,18 @@ module Chatops
           .new(token: gitlab_token, host: 'staging.gitlab.com')
       end
 
-      def env_icon(host)
-        case host
-        when /staging/
-          'building_construction'
-        when /canary/
-          'canary'
-        else
-          'party-tanuki'
-        end
-      end
-
       def environment_link(env)
-        ":#{env_icon(env[:host])}: <https://#{env[:host]}/|#{env[:host]}>"
+        icon =
+          case env[:host]
+          when /staging/
+            'building_construction'
+          when /canary/
+            'canary'
+          else
+            'party-tanuki'
+          end
+
+        ":#{icon}: <https://#{env[:host]}/|#{env[:host]}>"
       end
 
       def commit_link(sha)
