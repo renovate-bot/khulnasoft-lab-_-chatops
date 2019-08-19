@@ -130,10 +130,24 @@ module Chatops
         trigger_release(tags.join(','), "#{namespace}:#{__method__}")
       end
 
-      def stable_branch(version)
+      def stable_branch(*args)
+        args.flatten!
+
+        version = args&.first
+
+        source = if args.size == 1
+                   'master'
+                 else
+                   args[1]
+                 end
+
         validate_version!(version) unless options[:security]
 
-        trigger_release(version, "#{namespace}:#{__method__}")
+        trigger_release(
+          version,
+          "#{namespace}:#{__method__}",
+          'SOURCE_OF_STABLE_BRANCH' => source
+        )
       end
 
       def status(version = nil)
