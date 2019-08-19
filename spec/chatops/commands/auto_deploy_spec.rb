@@ -103,7 +103,9 @@ describe Chatops::Commands::AutoDeploy do
         allow(command).to receive(:environment_status)
           .and_return(production_status)
         allow(command).to receive(:auto_deploy_branches).with('abcdefg')
-          .and_return([{ name: production_status[:branch] }])
+          .and_return([instance_double(
+            'Branch', name: production_status[:branch]
+          )])
 
         fake_commit = instance_double(
           'Commit',
