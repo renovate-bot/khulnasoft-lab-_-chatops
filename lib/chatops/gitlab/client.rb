@@ -4,6 +4,8 @@ module Chatops
   module Gitlab
     # HTTP client for the GitLab API.
     class Client
+      extend Forwardable
+
       DEFAULT_HOST = 'gitlab.com'
 
       attr_reader :internal_client, :host
@@ -70,55 +72,25 @@ module Chatops
         internal_client.post('/broadcast_messages', body: body)
       end
 
-      # id - The ID of the user to block.
-      def block_user(id)
-        internal_client.block_user(id)
-      end
+      def_delegator :internal_client, :block_user
+      def_delegator :internal_client, :unblock_user
 
-      # id - The ID of the user to unblock.
-      def unblock_user(id)
-        internal_client.unblock_user(id)
-      end
+      def_delegator :internal_client, :run_trigger
+      def_delegator :internal_client, :pipeline_jobs
 
-      def run_trigger(project, token, ref, options = {})
-        internal_client.run_trigger(project, token, ref, options)
-      end
+      def_delegator :internal_client, :add_group_member
+      def_delegator :internal_client, :remove_group_member
 
-      def pipeline_jobs(project, pipeline_id, options = {})
-        internal_client.pipeline_jobs(project, pipeline_id, options)
-      end
+      def_delegator :internal_client, :add_team_member,
+                    :add_project_member
+      def_delegator :internal_client, :remove_team_member,
+                    :remove_project_member
 
-      def add_group_member(group, user, access_level)
-        internal_client.add_group_member(group, user, access_level)
-      end
+      def_delegator :internal_client, :project, :find_project
+      def_delegator :internal_client, :group, :find_group
 
-      def add_project_member(project, user, access_level)
-        internal_client.add_team_member(project, user, access_level)
-      end
-
-      def remove_group_member(group, user)
-        internal_client.remove_group_member(group, user)
-      end
-
-      def remove_project_member(project, user)
-        internal_client.remove_team_member(project, user)
-      end
-
-      def find_project(name)
-        internal_client.project(name)
-      end
-
-      def find_group(name)
-        internal_client.group(name)
-      end
-
-      def version
-        internal_client.version
-      end
-
-      def commit(project, sha)
-        internal_client.commit(project, sha)
-      end
+      def_delegator :internal_client, :version
+      def_delegator :internal_client, :commit
 
       def commit_refs(project, sha, options = {})
         path = internal_client.url_encode(project)
