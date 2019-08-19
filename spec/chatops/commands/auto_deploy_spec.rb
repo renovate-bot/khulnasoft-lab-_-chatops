@@ -73,11 +73,11 @@ describe Chatops::Commands::AutoDeploy do
     end
 
     # rubocop:disable RSpec/VerifiedDoubles
-    let(:fake_client) { double('Gitlab::Client').as_null_object }
+    let(:fake_client) { double('Chatops::Gitlab::Client').as_null_object }
     # rubocop:enable RSpec/VerifiedDoubles
 
     before do
-      stub_const('Gitlab::Client', fake_client)
+      stub_const('Chatops::Gitlab::Client', fake_client)
     end
 
     context 'with no argument' do

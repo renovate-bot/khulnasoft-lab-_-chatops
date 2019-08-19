@@ -5,7 +5,7 @@ RSpec.shared_context 'release command #perform' do
   let(:stubbed_client) { double.as_null_object }
 
   before do
-    stub_const('Gitlab::Client', stubbed_client)
+    stub_const('Chatops::Gitlab::Client', stubbed_client)
   end
 end
 
