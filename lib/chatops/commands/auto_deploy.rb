@@ -23,6 +23,10 @@ module Chatops
             Check the status of all environments
 
               status
+
+            Check the deploy status of a specific commit
+
+              status 6dc9ffbaa4a4e77facec1f2a1573bbbac2252066
         HELP
       end
 
