@@ -58,7 +58,7 @@ module Chatops
 
             Create stable branches for 1.2.0 from master branch
 
-              releae stable_branch 1.2.0 master
+              release stable_branch 1.2.0 master
 
             Tag 1.2.3 as a security release
 
