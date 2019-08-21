@@ -133,15 +133,13 @@ module Chatops
       def stable_branch(*args)
         args.flatten!
 
-        version = args&.first
-
-        source = if args.size == 1
-                   'master'
-                 else
-                   args[1]
-                 end
-
+        version, source = args[0..1]
         validate_version!(version) unless options[:security]
+
+        if source.nil? || source&.empty?
+          raise ArgumentError,
+                'Require source branch to create stable branches from'
+        end
 
         trigger_release(
           version,

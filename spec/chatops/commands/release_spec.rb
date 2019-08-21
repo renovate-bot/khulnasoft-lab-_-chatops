@@ -187,17 +187,22 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
 
-      it 'triggers stable branch creation using master as fallback source' do
+      it 'raises exception if source branch is not specified' do
         instance = stubbed_instance('stable_branch', version)
 
-        expect(instance).to receive(:trigger_release)
-          .with(
-            version,
-            'release:stable_branch',
-            'SOURCE_OF_STABLE_BRANCH' => 'master'
-          )
+        expect { instance.perform }.to raise_error(
+          ArgumentError,
+          'Require source branch to create stable branches from'
+        )
+      end
 
-        instance.perform
+      it 'raises exception if source branch is empty' do
+        instance = stubbed_instance('stable_branch', version, '')
+
+        expect { instance.perform }.to raise_error(
+          ArgumentError,
+          'Require source branch to create stable branches from'
+        )
       end
     end
 
