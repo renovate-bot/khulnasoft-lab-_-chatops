@@ -186,24 +186,6 @@ describe Chatops::Commands::Release, :release_command do
 
         instance.perform
       end
-
-      it 'raises exception if source branch is not specified' do
-        instance = stubbed_instance('stable_branch', version)
-
-        expect { instance.perform }.to raise_error(
-          ArgumentError,
-          'Require source branch to create stable branches from'
-        )
-      end
-
-      it 'raises exception if source branch is empty' do
-        instance = stubbed_instance('stable_branch', version, '')
-
-        expect { instance.perform }.to raise_error(
-          ArgumentError,
-          'Require source branch to create stable branches from'
-        )
-      end
     end
 
     describe '#status' do

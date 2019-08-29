@@ -130,13 +130,8 @@ module Chatops
         trigger_release(tags.join(','), "#{namespace}:#{__method__}")
       end
 
-      def stable_branch(version = nil, source = nil)
+      def stable_branch(version, source)
         validate_version!(version) unless options[:security]
-
-        if source.nil? || source&.empty?
-          raise ArgumentError,
-                'Require source branch to create stable branches from'
-        end
 
         trigger_release(
           version,
