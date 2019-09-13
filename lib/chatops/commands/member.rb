@@ -27,21 +27,21 @@ module Chatops
 
           Examples:
 
-            Adding user "alice" to project "gitlab-org/gitlab-ce":
+            Adding user "alice" to project "gitlab-org/gitlab-foss":
 
-              member add alice gitlab-org/gitlab-ce
+              member add alice gitlab-org/gitlab-foss
 
-            Adding user "alice" to project "gitlab-org/gitlab-ce" as a reporter:
+            Adding user "alice" to project "gitlab-org/gitlab-foss" as a reporter:
 
-              member add --level reporter alice gitlab-org/gitlab-ce
+              member add --level reporter alice gitlab-org/gitlab-foss
 
             Adding user "alice" to group "gitlab-org":
 
               member add alice gitlab-org
 
-            Removing user "alice" from project "gitlab-org/gitlab-ce":
+            Removing user "alice" from project "gitlab-org/gitlab-foss":
 
-              member remove alice gitlab-org/gitlab-ce
+              member remove alice gitlab-org/gitlab-foss
         EXAMPLES
       end
 

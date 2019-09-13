@@ -6,7 +6,7 @@ module Chatops
       include Command
 
       COMMANDS = Set.new(%w[status])
-      PROJECT = 'gitlab-org/gitlab-ee'
+      PROJECT = 'gitlab-org/gitlab'
 
       options do |o|
         o.separator <<~AVAIL.chomp

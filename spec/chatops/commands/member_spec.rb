@@ -136,7 +136,7 @@ describe Chatops::Commands::Member do
   describe '#add' do
     it 'adds a user to a project' do
       command = described_class
-        .new(%w[add alice gitlab-org/gitlab-ce], { level: 'developer' }, {})
+        .new(%w[add alice gitlab-org/gitlab-foss], { level: 'developer' }, {})
 
       project = instance_double('project')
       user = instance_double('user')
@@ -154,12 +154,12 @@ describe Chatops::Commands::Member do
         .with(user, described_class::ACCESS_LEVELS['developer'])
 
       expect(command.add)
-        .to eq('alice has been added to gitlab-org/gitlab-ce')
+        .to eq('alice has been added to gitlab-org/gitlab-foss')
     end
 
     it 'adds a user to a project with maintainer access' do
       command = described_class
-        .new(%w[add alice gitlab-org/gitlab-ce], { level: 'maintainer' }, {})
+        .new(%w[add alice gitlab-org/gitlab-foss], { level: 'maintainer' }, {})
 
       project = instance_double('project')
       user = instance_double('user')
@@ -177,13 +177,13 @@ describe Chatops::Commands::Member do
         .with(user, described_class::ACCESS_LEVELS['maintainer'])
 
       expect(command.add)
-        .to eq('alice has been added to gitlab-org/gitlab-ce')
+        .to eq('alice has been added to gitlab-org/gitlab-foss')
     end
   end
 
   describe '#remove' do
     it 'removes a user from a project' do
-      command = described_class.new(%w[remove alice gitlab-org/gitlab-ce])
+      command = described_class.new(%w[remove alice gitlab-org/gitlab-foss])
       project = instance_double('project')
       user = instance_double('user')
 
@@ -200,7 +200,7 @@ describe Chatops::Commands::Member do
         .with(user)
 
       expect(command.remove)
-        .to eq('alice has been removed from gitlab-org/gitlab-ce')
+        .to eq('alice has been removed from gitlab-org/gitlab-foss')
     end
   end
 
@@ -233,9 +233,9 @@ describe Chatops::Commands::Member do
 
     context 'with a project name' do
       it 'returns the project name' do
-        command = described_class.new(%w[add alice gitlab-org/gitlab-ce])
+        command = described_class.new(%w[add alice gitlab-org/gitlab-foss])
 
-        expect(command.project_or_group_name!).to eq('gitlab-org/gitlab-ce')
+        expect(command.project_or_group_name!).to eq('gitlab-org/gitlab-foss')
       end
     end
   end
