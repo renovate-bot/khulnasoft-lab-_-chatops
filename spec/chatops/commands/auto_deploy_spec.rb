@@ -60,7 +60,9 @@ describe Chatops::Commands::AutoDeploy do
         {},
         'SLACK_TOKEN' => 'token',
         'CHAT_CHANNEL' => 'channel',
-        'GITLAB_TOKEN' => 'token'
+        'GITLAB_TOKEN' => 'token',
+        'CHEF_USERNAME' => 'bork',
+        'CHEF_PEM_KEY' => 'bork'
       ]
     end
     let(:production_status) do
@@ -68,7 +70,8 @@ describe Chatops::Commands::AutoDeploy do
         host: 'gitlab.com',
         version: '12.2.0-pre',
         revision: '0874a8d346c',
-        branch: '12-2-auto-deploy-20190804'
+        branch: '12-2-auto-deploy-20190804',
+        package: '12.2.201908042020+0874a8d346c.2ee9f1d280d'
       }
     end
 
@@ -139,6 +142,10 @@ describe Chatops::Commands::AutoDeploy do
       before do
         allow(fake_client).to receive(:commit)
           .and_raise(gitlab_error(:NotFound))
+
+        allow(command).to receive(:chef_client).and_return(
+          instance_double('Chatops::Chef::Client', package_version: 'foo')
+        )
       end
 
       it 'posts an error message' do
@@ -164,7 +171,8 @@ class StatusBlockMatcher
       json.include?("<https://#{@status[:host]}/|#{@status[:host]}>") &&
       json.include?(@status[:version]) &&
       json.include?(@status[:revision]) &&
-      json.include?(@status[:branch])
+      json.include?(@status[:branch]) &&
+      json.include?(@status[:package])
   end
 end
 

@@ -3,6 +3,7 @@
 module Chatops
   module Commands
     class AutoDeploy
+      include Chef::Config
       include Command
 
       COMMANDS = Set.new(%w[status])
@@ -59,9 +60,9 @@ module Chatops
 
       def status(sha = nil)
         envs = [
-          environment_status(production_client),
-          environment_status(canary_client),
-          environment_status(staging_client)
+          environment_status('gprd'),
+          environment_status('gprd-cny'),
+          environment_status('gstg')
         ]
 
         if sha
@@ -79,7 +80,8 @@ module Chatops
 
       private
 
-      def environment_status(client)
+      def environment_status(role)
+        client = client_from_role(role)
         version = client.version
         revision = version.revision
 
@@ -90,7 +92,8 @@ module Chatops
           host: client.host,
           version: version.version,
           revision: version.revision,
-          branch: auto_deploy_branch&.name || nil
+          branch: auto_deploy_branch&.name || nil,
+          package: chef_client.package_version(role)
         }
       end
 
@@ -162,7 +165,8 @@ module Chatops
             fields: [
               Slack.markdown("*Version:* `#{env[:version]}`"),
               Slack.markdown("*Revision:* #{commit_link(env[:revision])}"),
-              Slack.markdown("*Branch:* #{branch_link(env[:branch])}")
+              Slack.markdown("*Branch:* #{branch_link(env[:branch])}"),
+              Slack.markdown("*Package:* `#{env[:package]}`")
             ]
           }
 
@@ -174,6 +178,17 @@ module Chatops
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(blocks: blocks)
+      end
+
+      def client_from_role(role)
+        case role
+        when 'gprd'
+          production_client
+        when 'gprd-cny'
+          canary_client
+        when 'gstg'
+          staging_client
+        end
       end
 
       def production_client
@@ -191,6 +206,11 @@ module Chatops
 
         @staging_client ||= Gitlab::Client
           .new(token: token, host: 'staging.gitlab.com')
+      end
+
+      def chef_client
+        @chef_client ||= Chatops::Chef::Client
+          .new(chef_username, chef_pem_key, chef_url)
       end
 
       def environment_link(env)

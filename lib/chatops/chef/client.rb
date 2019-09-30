@@ -33,6 +33,10 @@ module Chatops
         ips
       end
 
+      def package_version(role)
+        # TODO: Work your magic, Jarv!
+      end
+
       private
 
       def chef_key_file(chef_key)
