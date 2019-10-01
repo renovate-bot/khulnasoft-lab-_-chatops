@@ -187,8 +187,10 @@ module Chatops
       end
 
       def staging_client
+        token = ENV.fetch('GITLAB_STAGING_TOKEN', gitlab_token)
+
         @staging_client ||= Gitlab::Client
-          .new(token: gitlab_token, host: 'staging.gitlab.com')
+          .new(token: token, host: 'staging.gitlab.com')
       end
 
       def environment_link(env)
