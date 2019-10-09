@@ -34,7 +34,9 @@ module Chatops
       end
 
       def package_version(role)
-        # TODO: Work your magic, Jarv!
+        ::Chef::Role.load("#{role}-omnibus-version")
+          .default_attributes
+          .dig('omnibus-gitlab', 'package', 'version') || 'unknown'
       end
 
       private

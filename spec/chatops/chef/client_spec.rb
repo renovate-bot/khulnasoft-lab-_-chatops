@@ -35,4 +35,36 @@ describe Chatops::Chef::Client do
       expect(client.ips_from_role('some-role')).to eq(['1.1.1.1'])
     end
   end
+
+  describe '#package_version' do
+    it 'returns the package version for a Chef role' do
+      role_result = instance_double(
+        'role result',
+        default_attributes: {
+          'omnibus-gitlab' => {
+            'package' => {
+              'version' => 'some-version'
+            }
+          }
+        }
+      )
+
+      allow(Chef::Role)
+        .to receive(:load)
+        .with('some-env-omnibus-version')
+        .and_return(role_result)
+
+      expect(client.package_version('some-env')).to eq('some-version')
+    end
+
+    it 'returns `unknown` for a Chef role that does not have a package key' do
+      role_result = instance_double('role result', default_attributes: {})
+
+      allow(Chef::Role)
+        .to receive(:load)
+        .and_return(role_result)
+
+      expect(client.package_version('some-env')).to eq('unknown')
+    end
+  end
 end
