@@ -116,7 +116,7 @@ module Chatops
           blocks << {
             type: 'section',
             text: Slack.markdown(
-              "`#{commit_link(commit.short_id)}` #{commit.title}"
+              "#{commit_link(commit.short_id)} #{commit.title}"
             )
           }
 
