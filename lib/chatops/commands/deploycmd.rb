@@ -37,7 +37,8 @@ module Chatops
 
         url = response.web_url
 
-        "The command was issued: <#{url}>"
+        "Command #{command_name} was issued to "\
+        "#{role} in #{environment}: <#{url}>"
       rescue StandardError => error
         "The command could not be run: #{error.message}"
       end
