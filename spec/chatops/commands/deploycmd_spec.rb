@@ -74,4 +74,27 @@ describe Chatops::Commands::Deploycmd do
       described_class.perform(%w[--list])
     end
   end
+
+  describe '#perform' do
+    context 'without a command' do
+      it 'returns an error message' do
+        expect(described_class.new.perform)
+          .to eq('No command specified.')
+      end
+    end
+
+    context 'without a role' do
+      it 'returns an error message' do
+        command = described_class.new(
+          %w[foo],
+          {},
+          'GITLAB_OPS_TOKEN' => '12345',
+          'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
+        )
+
+        expect(command.perform)
+          .to eq('No role specified.')
+      end
+    end
+  end
 end

@@ -22,14 +22,14 @@ module Chatops
       end
 
       def perform
-        command_list = fetch_commands
-        return list_commands(command_list) if options[:list]
-
         # rubocop:disable AssignmentInCondition
         return 'No command specified.' unless command_name = arguments[0]
 
         return 'No role specified.' unless role = arguments[1]
+
         # rubocop:enable AssignmentInCondition
+        command_list = fetch_commands
+        return list_commands(command_list) if options[:list]
 
         return "#{command_name} is not a known command." unless
           command_list.include?(command_name)
@@ -57,7 +57,7 @@ module Chatops
 
         url = response.web_url
 
-        "Command #{command_name} was issued to "\
+        ":unicorn_face: Command #{command_name} was issued to "\
         "#{role} in #{environment}: <#{url}>"
       rescue StandardError => error
         "The command could not be run: #{error.message}"
@@ -104,11 +104,15 @@ module Chatops
         end
       end
 
-      def fetch_commands
-        commands = []
-        file_list = Gitlab::Client
+      def repository_tree
+        @repository_tree ||= Gitlab::Client
           .new(token: gitlab_ops_token, host: trigger_host)
           .repository_tree('157', path: 'cmds')
+      end
+
+      def fetch_commands
+        commands = []
+        file_list = repository_tree
         file_list.each do |key|
           # rubocop:disable AssignmentInCondition
           if match = key.name.match(/^(\w+)\.yml$/)
