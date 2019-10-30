@@ -9,7 +9,7 @@ module Chatops
     class Deploycmd
       include Command
 
-      usage "#{command_name} [COMMAND NAME] [ROLE]"
+      usage "#{command_name} [COMMAND NAME] [ROLE] [OPTIONS]"
       description 'Runs ansible commands across roles in our fleet.'
 
       options do |o|
@@ -17,11 +17,27 @@ module Chatops
         o.bool('--dr', 'Run command in DR instead of staging.')
         o.bool('--canary', 'Run command in canary.')
         o.bool('--pre', 'Run command in PRE instead of staging.')
+        o.bool('--list', 'List available commands.')
       end
 
       def perform
-        command_name = arguments[0]
+        command_list = fetch_commands
+        return list_commands(command_list) if options[:list]
+
+        if command_list.include?(arguments[0])
+          command_name = arguments[0]
+        else
+          return "#{arguments[0]} is not a known command."
+        end
+        puts command_name
         role = arguments[1]
+      end
+
+      def list_commands(command_list)
+        "Valid known commands are:#{command_list.join(', ')}."
+      end
+
+      def run_command
         vars = {
           'CMD': command_name,
           'GITLAB_ROLE': role,
@@ -61,6 +77,10 @@ module Chatops
         env.fetch('COMMAND_TRIGGER_HOST')
       end
 
+      def gitlab_ops_token
+        env.fetch('GITLAB_OPS_TOKEN')
+      end
+
       def environment
         base =
           if options[:production]
@@ -78,6 +98,19 @@ module Chatops
         else
           base
         end
+      end
+
+      def fetch_commands
+        commands = []
+        file_list = Gitlab::Client
+          .new(token: gitlab_ops_token, host: trigger_host)
+          .repository_tree('157', path: 'cmds')
+        file_list.each do |key|
+          if match = key.name.match(/^(\w+)\.yml$/)
+            commands.push(match.captures[0])
+          end
+        end
+        commands
       end
     end
   end
