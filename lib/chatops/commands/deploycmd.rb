@@ -25,12 +25,14 @@ module Chatops
         command_list = fetch_commands
         return list_commands(command_list) if options[:list]
 
+        # rubocop:disable AssignmentInCondition
         return 'No command specified.' unless command_name = arguments[0]
+
+        return 'No role specified.' unless role = arguments[1]
+        # rubocop:enable AssignmentInCondition
 
         return "#{command_name} is not a known command." unless
           command_list.include?(command_name)
-
-        return 'No role specified.' unless role = arguments[1]
 
         run_command(command_name, role)
       end
@@ -108,9 +110,11 @@ module Chatops
           .new(token: gitlab_ops_token, host: trigger_host)
           .repository_tree('157', path: 'cmds')
         file_list.each do |key|
+          # rubocop:disable AssignmentInCondition
           if match = key.name.match(/^(\w+)\.yml$/)
             commands.push(match.captures[0])
           end
+          # rubocop:enable AssignmentInCondition
         end
         commands
       end
