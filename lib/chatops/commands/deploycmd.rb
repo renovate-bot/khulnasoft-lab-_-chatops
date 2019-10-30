@@ -18,26 +18,28 @@ module Chatops
         o.bool('--canary', 'Run command in canary.')
         o.bool('--pre', 'Run command in PRE instead of staging.')
         o.bool('--list', 'List available commands.')
+        o.bool('--check', 'Run command in check mode and make no changes.')
       end
 
       def perform
         command_list = fetch_commands
         return list_commands(command_list) if options[:list]
 
-        if command_list.include?(arguments[0])
-          command_name = arguments[0]
-        else
-          return "#{arguments[0]} is not a known command."
-        end
-        puts command_name
-        role = arguments[1]
+        return 'No command specified.' unless command_name = arguments[0]
+
+        return "#{command_name} is not a known command." unless
+          command_list.include?(command_name)
+
+        return 'No role specified.' unless role = arguments[1]
+
+        run_command(command_name, role)
       end
 
       def list_commands(command_list)
         "Valid known commands are:#{command_list.join(', ')}."
       end
 
-      def run_command
+      def run_command(command_name, role)
         vars = {
           'CMD': command_name,
           'GITLAB_ROLE': role,
