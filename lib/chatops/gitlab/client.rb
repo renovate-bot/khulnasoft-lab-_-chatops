@@ -38,6 +38,14 @@ module Chatops
         internal_client.get("/namespaces/#{namespace}")
       end
 
+      # Return a list of objects from a project.
+      def repository_tree(project_id, options = {})
+        internal_client.get(
+          "/projects/#{project_id}/repository/tree",
+          query: options
+        )
+      end
+
       # Sets a feature flag's state.
       #
       # name - The name of the flag.
