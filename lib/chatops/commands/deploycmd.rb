@@ -50,6 +50,7 @@ module Chatops
           'CURRENT_DEPLOY_ENVIRONMENT': environment
         }
         vars[:CHECKMODE] = '--check' unless options[:no_check]
+        vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
         puts vars
         response = client.run_trigger(
           trigger_project,
