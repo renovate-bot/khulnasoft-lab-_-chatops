@@ -31,16 +31,13 @@ module Chatops
 
         # rubocop:enable AssignmentInCondition
         command_list = fetch_commands
-        return list_commands(command_list) if options[:list]
+        return "Valid known commands are: #{command_list.join(', ')}" if
+          options[:list]
 
         return "#{command_name} is not a known command." unless
           command_list.include?(command_name)
 
         run_command(command_name, role)
-      end
-
-      def list_commands(command_list)
-        "Valid known commands are:#{command_list.join(', ')}."
       end
 
       def run_command(command_name, role)
