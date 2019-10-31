@@ -73,6 +73,34 @@ describe Chatops::Commands::Deploycmd do
 
       described_class.perform(%w[--list])
     end
+
+    it 'supports a --no-check' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], a_hash_including(no_check: true), {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--no-check])
+    end
+
+    it 'supports a --skip-haproxy' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], a_hash_including(skip_haproxy: true), {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--skip-haproxy])
+    end
   end
 
   describe '#perform' do

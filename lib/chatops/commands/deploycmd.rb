@@ -18,7 +18,9 @@ module Chatops
         o.bool('--canary', 'Run command in canary.')
         o.bool('--pre', 'Run command in PRE instead of staging.')
         o.bool('--list', 'List available commands.')
-        o.bool('--check', 'Run command in check mode and make no changes.')
+        o.bool('--no-check', 'Run command instead a dry-run check.')
+        o.bool('--skip-haproxy', 'Skip gracefully draining and adding nodes
+          from haproxy')
       end
 
       def perform
@@ -45,9 +47,10 @@ module Chatops
         vars = {
           'CMD': command_name,
           'GITLAB_ROLE': role,
-          'CURRENT_DEPLOY_ENVIRONMENT': environment,
-          'CHECKMODE': '--check'
+          'CURRENT_DEPLOY_ENVIRONMENT': environment
         }
+        vars[:CHECKMODE] = '--check' unless options[:no_check]
+        puts vars
         response = client.run_trigger(
           trigger_project,
           trigger_token,
