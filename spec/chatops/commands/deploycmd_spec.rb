@@ -125,22 +125,18 @@ describe Chatops::Commands::Deploycmd do
       end
     end
 
-    context 'without a valid command' do
-      it 'returns an error message' do
+    context 'with a list option' do
+      it 'returns a list of commands' do
         command = described_class.new(
           %w[foo bar],
-          {},
+          { list: true },
           'GITLAB_OPS_TOKEN' => '12345',
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
         )
         client = instance_double('client')
-        repository_tree = instance_double(
-          'repository_tree'
-        )
-        key = instance_double(
-          'key',
-          name: 'hostname.yml'
-        )
+        objectified_hash =
+          Gitlab::ObjectifiedHash.new(name: 'hostname.yml')
+        repository_tree = [objectified_hash]
 
         expect(Chatops::Gitlab::Client)
           .to receive(:new)
@@ -151,9 +147,32 @@ describe Chatops::Commands::Deploycmd do
           .to receive(:repository_tree)
           .and_return(repository_tree)
 
-        expect(repository_tree)
-          .to receive(:each)
-          .and_return(key)
+        expect(command.perform)
+          .to eq('Valid known commands are: hostname')
+      end
+    end
+
+    context 'without a valid command' do
+      it 'returns an error message' do
+        command = described_class.new(
+          %w[foo bar],
+          {},
+          'GITLAB_OPS_TOKEN' => '12345',
+          'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
+        )
+        client = instance_double('client')
+        objectified_hash =
+          Gitlab::ObjectifiedHash.new(name: 'hostname.yml')
+        repository_tree = [objectified_hash]
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(host: 'ops.gitlab.net', token: '12345')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:repository_tree)
+          .and_return(repository_tree)
 
         expect(command.perform)
           .to eq('foo is not a known command.')
