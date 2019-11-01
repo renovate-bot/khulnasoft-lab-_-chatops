@@ -60,7 +60,7 @@ module Chatops
         ":unicorn_face: Command #{command_name} was issued to "\
         "#{role} in #{environment}: <#{url}>"
       rescue StandardError => error
-        "The command could not be run: #{error.message}"
+        ":unicorn_face: The command could not be run: #{error.message}"
       end
 
       def client
