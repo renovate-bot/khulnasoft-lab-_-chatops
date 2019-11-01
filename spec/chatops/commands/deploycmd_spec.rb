@@ -3,7 +3,6 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Deploycmd do
-
   describe '#trigger_token' do
     context 'when the COMMAND_TRIGGER_TOKEN variable is not specified' do
       it 'raises KeyError' do
