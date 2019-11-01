@@ -112,8 +112,7 @@ module Chatops
 
       def fetch_commands
         commands = []
-        file_list = repository_tree
-        file_list.each do |key|
+        repository_tree.each do |key|
           # rubocop:disable AssignmentInCondition
           if match = key.name.match(/^(\w+)\.yml$/)
             commands.push(match.captures[0])
