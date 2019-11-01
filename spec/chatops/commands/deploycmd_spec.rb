@@ -302,7 +302,6 @@ describe Chatops::Commands::Deploycmd do
         objectified_hash =
           Gitlab::ObjectifiedHash.new(name: 'foo.yml')
         repository_tree = [objectified_hash]
-        response = instance_double('response', web_url: 'bar')
 
         expect(Chatops::Gitlab::Client)
           .to receive(:new)
