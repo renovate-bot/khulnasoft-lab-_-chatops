@@ -124,5 +124,40 @@ describe Chatops::Commands::Deploycmd do
           .to eq('No role specified.')
       end
     end
+
+    context 'without a valid command' do
+      it 'returns an error message' do
+        command = described_class.new(
+          %w[foo bar],
+          {},
+          'GITLAB_OPS_TOKEN' => '12345',
+          'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
+        )
+        client = instance_double('client')
+        repository_tree = instance_double(
+          'repository_tree'
+        )
+        key = instance_double(
+          'key',
+          name: 'hostname.yml'
+        )
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(host: 'ops.gitlab.net', token: '12345')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:repository_tree)
+          .and_return(repository_tree)
+
+        expect(repository_tree)
+          .to receive(:each)
+          .and_return(key)
+
+        expect(command.perform)
+          .to eq('foo is not a known command.')
+      end
+    end
   end
 end
