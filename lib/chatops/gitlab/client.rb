@@ -42,11 +42,12 @@ module Chatops
       #
       # name - The name of the flag.
       # value - The value to set for the flag.
-      def set_feature(name, value, project: nil, group: nil)
+      def set_feature(name, value, project: nil, group: nil, user: nil)
         body = { value: value }
 
         body[:project] = project if project
         body[:group] = group if group
+        body[:user] = user if user
 
         internal_client.post("/features/#{name}", body: body)
       end

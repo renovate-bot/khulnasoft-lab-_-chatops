@@ -202,7 +202,7 @@ describe Chatops::Commands::Feature do
         command = described_class
           .new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123')
 
-        client = instance_double('client')
+        client = instance_double('Chatops::Gitlab::Client')
         feature = instance_double(
           'feature',
           name: 'foo',
@@ -217,7 +217,7 @@ describe Chatops::Commands::Feature do
 
         expect(client)
           .to receive(:set_feature)
-          .with('foo', '10', project: nil, group: nil)
+          .with('foo', '10', project: nil, group: nil, user: nil)
           .and_return(feature)
 
         expect(command).to receive(:send_feature_details).with(
@@ -233,10 +233,10 @@ describe Chatops::Commands::Feature do
       it 'updates the feature flag' do
         command = described_class
           .new(%w[set foo true],
-               { project: 'gitlab-org/gitaly', group: nil },
+               { project: 'gitlab-org/gitaly', group: nil, user: nil },
                'GITLAB_TOKEN' => '123')
 
-        client = instance_double('client')
+        client = instance_double('Chatops::Gitlab::Client')
         feature = instance_double(
           'feature',
           name: 'foo',
@@ -251,7 +251,10 @@ describe Chatops::Commands::Feature do
 
         expect(client)
           .to receive(:set_feature)
-          .with('foo', 'true', project: 'gitlab-org/gitaly', group: nil)
+          .with('foo', 'true',
+                project: 'gitlab-org/gitaly',
+                group: nil,
+                user: nil)
           .and_return(feature)
 
         expect(command).to receive(:send_feature_details).with(
@@ -267,10 +270,10 @@ describe Chatops::Commands::Feature do
       it 'updates the feature flag' do
         command = described_class
           .new(%w[set foo true],
-               { project: nil, group: 'gitlab-org' },
+               { project: nil, group: 'gitlab-org', user: nil },
                'GITLAB_TOKEN' => '123')
 
-        client = instance_double('client')
+        client = instance_double('Chatops::Gitlab::Client')
         feature = instance_double(
           'feature',
           name: 'foo',
@@ -285,7 +288,41 @@ describe Chatops::Commands::Feature do
 
         expect(client)
           .to receive(:set_feature)
-          .with('foo', 'true', project: nil, group: 'gitlab-org')
+          .with('foo', 'true', project: nil, group: 'gitlab-org', user: nil)
+          .and_return(feature)
+
+        expect(command).to receive(:send_feature_details).with(
+          feature: an_instance_of(Chatops::Gitlab::Feature),
+          text: 'The feature flag value has been updated!'
+        )
+
+        command.set
+      end
+    end
+
+    context 'when using a user feature gate' do
+      it 'updates the feature flag' do
+        command = described_class
+          .new(%w[set foo true],
+               { project: nil, group: nil, user: 'myuser' },
+               'GITLAB_TOKEN' => '123')
+
+        client = instance_double('Chatops::Gitlab::Client')
+        feature = instance_double(
+          'feature',
+          name: 'foo',
+          state: 'conditional',
+          gates: [{ 'user' => 'myuser', 'value' => true }]
+        )
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123', host: 'gitlab.com')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:set_feature)
+          .with('foo', 'true', project: nil, group: nil, user: 'myuser')
           .and_return(feature)
 
         expect(command).to receive(:send_feature_details).with(

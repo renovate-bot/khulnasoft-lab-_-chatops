@@ -35,6 +35,10 @@ module Chatops
           '--group',
           'The path of a group to set a feature flag for, e.g. gitlab-org'
         )
+        o.string(
+          '--user',
+          'The username of a user to set a feature flag for, e.g. someuser'
+        )
 
         GitlabEnvironments.define_environment_options(o)
 
@@ -88,6 +92,9 @@ module Chatops
           # To enable a feature for a group
           feature set --group=gitlab-org gitaly_tags
 
+          # To enable a feature for a user
+          feature set --user=someuser gitaly_tags
+
           # To delete a feature flag and return to default behaviour:
           feature delete gitaly_tags
           ```
@@ -132,7 +139,8 @@ module Chatops
         response = Gitlab::Client
           .new(token: gitlab_token, host: gitlab_host)
           .set_feature(name, value, project: options[:project],
-                                    group: options[:group])
+                                    group: options[:group],
+                                    user: options[:user])
 
         feature = Gitlab::Feature.from_api_response(response)
 

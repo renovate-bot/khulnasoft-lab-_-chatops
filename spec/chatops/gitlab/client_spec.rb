@@ -74,6 +74,14 @@ describe Chatops::Gitlab::Client do
 
       client.set_feature('foo', 'true')
     end
+
+    it 'sets the user of a feature flag' do
+      expect(client.internal_client)
+        .to receive(:post)
+        .with('/features/foo', body: { value: 'true', user: 'myuser' })
+
+      client.set_feature('foo', 'true', user: 'myuser')
+    end
   end
 
   describe '#delete_feature' do
