@@ -1,5 +1,5 @@
 ---
-image: ruby:2.4-alpine
+image: ruby:2.6-alpine
 
 stages:
   - test

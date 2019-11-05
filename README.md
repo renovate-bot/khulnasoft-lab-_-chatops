@@ -5,7 +5,7 @@ GitLab.com such as getting the `EXPLAIN ANALYZE` output of a database query.
 
 # Requirements
 
-* Ruby 2.4 or newer
+* Ruby 2.6
 * Bundler
 * GitLab EE Ultimate for chatops support
 * A Slack API token for a bot integration
