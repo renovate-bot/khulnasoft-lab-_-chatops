@@ -18,7 +18,7 @@ module Chatops
         o.bool('--canary', 'Run command in canary.')
         o.bool('--pre', 'Run command in PRE instead of staging.')
         o.bool('--list', 'List available commands.')
-        o.bool('--no-check', 'Run command instead a dry-run check.')
+        o.bool('--no-check', 'Run command instead of a dry-run check.')
         o.bool('--skip-haproxy', 'Skip gracefully draining and adding nodes
           from haproxy')
       end
