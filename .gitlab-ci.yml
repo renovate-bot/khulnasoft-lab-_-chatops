@@ -118,3 +118,6 @@ namespace:
 
 auto_deploy:
   <<: *chatops
+
+helm:
+  <<: *chatops
