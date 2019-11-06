@@ -107,15 +107,19 @@ module Chatops
       def repository_tree
         @repository_tree ||= Gitlab::Client
           .new(token: gitlab_ops_token, host: trigger_host)
-          .repository_tree('157', path: 'cmds')
+          .repository_tree(
+            'gitlab-com%2Fgl-infra%2Fdeploy-tooling',
+            path: 'cmds'
+          )
       end
 
       def fetch_commands
         commands = []
+        name_regex = /^(?<name>\w+)\.yml$/
         repository_tree.each do |key|
           # rubocop:disable AssignmentInCondition
-          if match = key.name.match(/^(\w+)\.yml$/)
-            commands.push(match.captures[0])
+          if match = key.name.match(name_regex)
+            commands.push(match[:name])
           end
           # rubocop:enable AssignmentInCondition
         end
