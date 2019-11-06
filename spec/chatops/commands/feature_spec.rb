@@ -225,6 +225,8 @@ describe Chatops::Commands::Feature do
           text: 'The feature flag value has been updated!'
         )
 
+        expect(command).to receive(:log_feature_toggle).with('foo', '10')
+
         command.set
       end
     end
@@ -262,6 +264,8 @@ describe Chatops::Commands::Feature do
           text: 'The feature flag value has been updated!'
         )
 
+        expect(command).to receive(:log_feature_toggle).with('foo', 'true')
+
         command.set
       end
     end
@@ -296,6 +300,8 @@ describe Chatops::Commands::Feature do
           text: 'The feature flag value has been updated!'
         )
 
+        expect(command).to receive(:log_feature_toggle).with('foo', 'true')
+
         command.set
       end
     end
@@ -329,6 +335,8 @@ describe Chatops::Commands::Feature do
           feature: an_instance_of(Chatops::Gitlab::Feature),
           text: 'The feature flag value has been updated!'
         )
+
+        expect(command).to receive(:log_feature_toggle).with('foo', 'true')
 
         command.set
       end
@@ -507,6 +515,59 @@ describe Chatops::Commands::Feature do
         command = described_class.new
 
         expect(command.gitlab_host).to eq('gitlab.com')
+      end
+    end
+  end
+
+  describe '#log_feature_toggle' do
+    context 'without the GITLAB_USER_LOGIN variable' do
+      it 'raises KeyError' do
+        command = described_class.new
+
+        expect { command.log_feature_toggle('foo', 'bar') }
+          .to raise_error(KeyError)
+      end
+    end
+
+    context 'without the GITLAB_TOKEN variable' do
+      it 'raises KeyError' do
+        command = described_class.new([], {}, 'GITLAB_USER_LOGIN' => 'alice')
+
+        expect { command.log_feature_toggle('foo', 'bar') }
+          .to raise_error(KeyError)
+      end
+    end
+
+    context 'with all required variables set' do
+      it 'creates a closed issue' do
+        command = described_class.new(
+          [],
+          {},
+          'GITLAB_USER_LOGIN' => 'alice',
+          'GITLAB_TOKEN' => 'foo'
+        )
+
+        client = instance_double(Chatops::Gitlab::Client)
+        issue = instance_double('issue', project_id: 1, iid: 2)
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'foo', host: 'gitlab.com')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:create_issue)
+          .with(
+            described_class::LOG_PROJECT,
+            an_instance_of(String),
+            labels: 'host::gitlab.com',
+            description: an_instance_of(String)
+          )
+          .and_return(issue)
+
+        expect(client).to receive(:close_issue).with(1, 2)
+
+        command.log_feature_toggle('foo', 'bar')
       end
     end
   end

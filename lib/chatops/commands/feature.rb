@@ -19,6 +19,9 @@ module Chatops
       # single feature.
       GATES_DOCUMENTATION = 'https://github.com/jnunemaker/flipper/blob/master/docs/Gates.md'
 
+      # The project name to use for logging the toggling of feature flags.
+      LOG_PROJECT = 'gitlab-com/gl-infra/feature-flag-log'
+
       description 'Managing of GitLab feature flags.'
 
       options do |o|
@@ -144,6 +147,8 @@ module Chatops
 
         feature = Gitlab::Feature.from_api_response(response)
 
+        log_feature_toggle(name, value)
+
         send_feature_details(
           feature: feature,
           text: 'The feature flag value has been updated!'
@@ -228,6 +233,46 @@ module Chatops
           .new(token: gitlab_token, match: options[:match], host: gitlab_host)
           .per_state
           .map { |vals| vals.map(&:to_attachment_field) }
+      end
+
+      def log_feature_toggle(name, value)
+        client = Gitlab::Client
+          .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
+
+        host = gitlab_host
+        label = "host::#{host}"
+        username = env.fetch('GITLAB_USER_LOGIN')
+        issue = client.create_issue(
+          LOG_PROJECT,
+          "Feature flag #{name.inspect} has been set to #{value.inspect}",
+          labels: label,
+          description: <<~DESC
+            * Feature flag: `#{name}`
+            * New value: `#{value}`
+            * Changed by: [`@#{username}`](https://gitlab.com/#{username})
+            * Changed on (in UTC): `#{Time.now.utc.iso8601}`
+            * Host: https://#{host}
+
+            ## Feature flag scopes
+
+            This feature flag applies the following scopes (if any):
+
+            | User                        | Project                        | Group
+            |-----------------------------|--------------------------------|-------------
+            | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}`
+
+            When a value is set to `nil` it means the scope does not apply. If
+            none of these scopes are set it means the feature flag applies to
+            everybody.
+
+            <hr>
+
+            :robot: This issue was generated using [GitLab
+            Chatops](https://gitlab.com/gitlab-com/chatops/).
+          DESC
+        )
+
+        client.close_issue(issue.project_id, issue.iid)
       end
     end
   end
