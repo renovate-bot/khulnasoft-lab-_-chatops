@@ -24,12 +24,10 @@ module Chatops
       end
 
       def perform
-        # rubocop:disable AssignmentInCondition
-        return 'No command specified.' unless command_name = arguments[0]
+        return 'No command specified.' unless (command_name = arguments[0])
 
-        return 'No role specified.' unless role = arguments[1]
+        return 'No role specified.' unless (role = arguments[1])
 
-        # rubocop:enable AssignmentInCondition
         command_list = fetch_commands
         return "Valid known commands are: #{command_list.join(', ')}" if
           options[:list]
@@ -117,11 +115,9 @@ module Chatops
         commands = []
         name_regex = /^(?<name>\w+)\.yml$/
         repository_tree.each do |key|
-          # rubocop:disable AssignmentInCondition
-          if match = key.name.match(name_regex)
+          if (match = key.name.match(name_regex))
             commands.push(match[:name])
           end
-          # rubocop:enable AssignmentInCondition
         end
         commands
       end
