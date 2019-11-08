@@ -560,7 +560,7 @@ describe Chatops::Commands::Feature do
           .with(
             described_class::LOG_PROJECT,
             an_instance_of(String),
-            labels: 'host::gitlab.com change',
+            labels: 'host::gitlab.com, change',
             description: an_instance_of(String)
           )
           .and_return(issue)
