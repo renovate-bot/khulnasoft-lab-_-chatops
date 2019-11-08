@@ -240,7 +240,7 @@ module Chatops
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
 
         host = gitlab_host
-        label = "host::#{host}"
+        label = "host::#{host} change"
         username = env.fetch('GITLAB_USER_LOGIN')
         issue = client.create_issue(
           LOG_PROJECT,
