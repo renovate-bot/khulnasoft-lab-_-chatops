@@ -154,6 +154,78 @@ describe Chatops::Commands::AutoDeploy do
         command.perform
       end
     end
+
+    describe '#promotable_env_revision' do
+      let(:production_rev) { 'abc1234' }
+      let(:canary_rev)     { 'fff1235' }
+      let(:staging_rev)    { 'ddd1236' }
+      let(:envs) do
+        [
+          { revision: production_rev },
+          { revision: canary_rev },
+          { revision: staging_rev }
+        ]
+      end
+
+      def promotable_env_revision(index)
+        subject.send(:promotable_env_revision, envs, index)
+      end
+
+      it 'returns nil for the first env' do
+        expect(promotable_env_revision(0)).to be_nil
+      end
+
+      it 'returns the revision of the previous env' do
+        expect(promotable_env_revision(1)).to eq(production_rev)
+        expect(promotable_env_revision(2)).to eq(canary_rev)
+      end
+
+      it 'returns nil for index out of bounds' do
+        expect(promotable_env_revision(100)).to be_nil
+      end
+    end
+
+    describe '#md_revision_field' do
+      let(:command) { subject }
+
+      def md_revision_field(current, promotable_to)
+        command.send(:md_revision_field, current, promotable_to)
+      end
+
+      it 'shows the commit link and a comparison link' do
+        current_rev = '1234'
+        promotable_env_rev = 'abcf'
+
+        expect(command).to receive(:commit_link)
+          .with(current_rev).and_return('commit_link')
+        expect(command).to receive(:compare_link)
+          .with(promotable_env_rev, current_rev)
+          .and_return('compare_link')
+
+        expect(md_revision_field(current_rev, promotable_env_rev))
+          .to eq('*Revision:* commit_link - compare_link')
+      end
+
+      it 'shows only the commit link when comparing to nil' do
+        current_rev = '1234'
+        expect(command).to receive(:commit_link)
+          .with(current_rev).and_return('commit_link')
+        expect(command).not_to receive(:compare_link)
+
+        expect(md_revision_field(current_rev, nil))
+          .to eq('*Revision:* commit_link')
+      end
+
+      it 'shows only the commit link when revisions are the same' do
+        current_rev = '1234'
+        expect(command).to receive(:commit_link)
+          .with(current_rev).and_return('commit_link')
+        expect(command).not_to receive(:compare_link)
+
+        expect(md_revision_field(current_rev, current_rev))
+          .to eq('*Revision:* commit_link')
+      end
+    end
   end
 end
 

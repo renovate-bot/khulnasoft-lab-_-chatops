@@ -154,7 +154,10 @@ module Chatops
       def post_environment_status(envs)
         blocks = []
 
-        envs.each do |env|
+        envs.each_with_index do |env, idx|
+          promotable_from = promotable_env_revision(envs, idx)
+          revision_markdown = md_revision_field(env[:revision], promotable_from)
+
           blocks << {
             type: 'section',
             text: Slack.markdown(environment_link(env))
@@ -164,7 +167,7 @@ module Chatops
             type: 'section',
             fields: [
               Slack.markdown("*Version:* `#{env[:version]}`"),
-              Slack.markdown("*Revision:* #{commit_link(env[:revision])}"),
+              Slack.markdown(revision_markdown),
               Slack.markdown("*Branch:* #{branch_link(env[:branch])}"),
               Slack.markdown("*Package:* `#{env[:package]}`")
             ]
@@ -234,6 +237,13 @@ module Chatops
         "<#{url}|#{text}>"
       end
 
+      def compare_link(prev_sha, sha)
+        url = "https://gitlab.com/#{PROJECT}/compare/#{prev_sha}...#{sha}"
+        text = "Compare with `#{prev_sha}`"
+
+        "<#{url}|#{text}>"
+      end
+
       def branch_link(branch)
         if branch
           url = "https://gitlab.com/#{PROJECT}/commits/#{branch}"
@@ -244,6 +254,23 @@ module Chatops
           # Something other than an auto-deploy branch is deployed
           'Unknown'
         end
+      end
+
+      def promotable_env_revision(envs, idx)
+        return if idx.zero?
+
+        envs.dig(idx - 1, :revision)
+      end
+
+      def md_revision_field(current_revision, promotable_env_revision)
+        revision_link = "*Revision:* #{commit_link(current_revision)}"
+
+        return revision_link unless promotable_env_revision
+        return revision_link if promotable_env_revision == current_revision
+
+        whats_new_link = compare_link(promotable_env_revision, current_revision)
+
+        "#{revision_link} - #{whats_new_link}"
       end
     end
   end

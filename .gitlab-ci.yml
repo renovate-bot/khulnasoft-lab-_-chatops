@@ -112,11 +112,14 @@ release:
 
 gitaly:
   <<: *chatops
-  
+
 namespace:
   <<: *chatops
 
 auto_deploy:
+  <<: *chatops
+
+helm:
   <<: *chatops
 
 deploycmd:
