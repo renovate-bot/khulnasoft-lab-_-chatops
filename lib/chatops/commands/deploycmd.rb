@@ -106,7 +106,7 @@ module Chatops
         @repository_tree ||= Gitlab::Client
           .new(token: gitlab_ops_token, host: trigger_host)
           .repository_tree(
-            'gitlab-com%2Fgl-infra%2Fdeploy-tooling',
+            'gitlab-com/gl-infra/deploy-tooling',
             path: 'cmds'
           )
       end
