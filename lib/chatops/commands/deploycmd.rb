@@ -24,13 +24,13 @@ module Chatops
       end
 
       def perform
-        return 'No command specified.' unless (command_name = arguments[0])
-
-        return 'No role specified.' unless (role = arguments[1])
-
         command_list = fetch_commands
         return "Valid known commands are: #{command_list.join(', ')}" if
           options[:list]
+
+        return 'No command specified.' unless (command_name = arguments[0])
+
+        return 'No role specified.' unless (role = arguments[1])
 
         return "#{command_name} is not a known command." unless
           command_list.include?(command_name)
@@ -112,6 +112,7 @@ module Chatops
       end
 
       def fetch_commands
+        return @fetch_commands unless @fetch_commands.nil?
         commands = []
         name_regex = /^(?<name>\w+)\.yml$/
         repository_tree.each do |key|
