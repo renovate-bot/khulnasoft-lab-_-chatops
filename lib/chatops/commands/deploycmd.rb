@@ -113,6 +113,7 @@ module Chatops
 
       def fetch_commands
         return @fetch_commands unless @fetch_commands.nil?
+
         commands = []
         name_regex = /^(?<name>\w+)\.yml$/
         repository_tree.each do |key|

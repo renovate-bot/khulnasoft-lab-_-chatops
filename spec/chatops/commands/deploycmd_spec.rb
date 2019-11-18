@@ -316,7 +316,8 @@ describe Chatops::Commands::Deploycmd do
           .and_return(repository_tree)
 
         expect(command.perform)
-          .to eq(':unicorn_face: Command `foo` was issued to `bar` in `gstg`: <bar>')
+          .to eq(':unicorn_face: Command `foo` was issued ' \
+            'to `bar` in `gstg`: <bar>')
       end
     end
 
