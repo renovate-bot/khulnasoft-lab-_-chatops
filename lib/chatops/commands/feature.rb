@@ -240,12 +240,12 @@ module Chatops
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
 
         host = gitlab_host
-        label = "host::#{host}"
+        labels = "host::#{host}, change"
         username = env.fetch('GITLAB_USER_LOGIN')
         issue = client.create_issue(
           LOG_PROJECT,
           "Feature flag #{name.inspect} has been set to #{value.inspect}",
-          labels: label,
+          labels: labels,
           description: <<~DESC
             * Feature flag: `#{name}`
             * New value: `#{value}`
