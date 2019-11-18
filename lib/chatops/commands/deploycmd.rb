@@ -55,8 +55,8 @@ module Chatops
 
         url = response.web_url
 
-        ":unicorn_face: Command #{command_name} was issued to "\
-        "#{role} in #{environment}: <#{url}>"
+        ":unicorn_face: Command `#{command_name}` was issued to "\
+        "`#{role}` in `#{environment}`: <#{url}>"
       rescue StandardError => error
         ":unicorn_face: The command could not be run: #{error.message}"
       end
