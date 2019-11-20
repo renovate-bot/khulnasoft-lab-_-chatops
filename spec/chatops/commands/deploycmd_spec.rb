@@ -250,7 +250,9 @@ describe Chatops::Commands::Deploycmd do
           .and_return(repository_tree)
 
         expect(command.perform)
-          .to eq('Valid known commands are: hostname')
+          .to eq(":unicorn_face: The following commands are"\
+            " available:\n\n* `hostname`\n\nFor more information"\
+            " run `deploycmd --help`.")
       end
     end
 

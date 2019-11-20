@@ -25,7 +25,7 @@ module Chatops
 
       def perform
         command_list = fetch_commands
-        return "Valid known commands are: #{command_list.join(', ')}" if
+        return list_commands if
           options[:list]
 
         return 'No command specified.' unless (command_name = arguments[0])
@@ -36,6 +36,19 @@ module Chatops
           command_list.include?(command_name)
 
         run_command(command_name, role)
+      end
+
+      def list_commands
+        vals = fetch_commands.to_a.sort.map { |name| Markdown::Code.new(name) }
+        list = Markdown::List.new(vals)
+
+        <<~HELP.strip
+          :unicorn_face: The following commands are available:
+
+          #{list}
+
+          For more information run `deploycmd --help`.
+        HELP
       end
 
       def unsupported_command
