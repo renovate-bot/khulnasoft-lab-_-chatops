@@ -25,6 +25,18 @@ module Chatops
       end
     end
 
+    def env_name
+      if dev?
+        'dev'
+      elsif staging?
+        'gstg'
+      elsif ops?
+        'ops'
+      else
+        'gprd'
+      end
+    end
+
     def gitlab_token
       name =
         if dev?
