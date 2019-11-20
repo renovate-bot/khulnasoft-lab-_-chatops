@@ -198,9 +198,14 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when using valid arguments' do
+      # rubocop: disable RSpec/ExampleLength
+      # rubocop: disable RSpec/MultipleExpectations
       it 'updates the feature flag' do
         command = described_class
-          .new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123')
+          .new(%w[set foo 10], {},
+               'GITLAB_TOKEN' => '123',
+               'GRAFANA_TOKEN' => 'some-grafana-token',
+               'GITLAB_USER_LOGIN' => 'alice')
 
         client = instance_double('Chatops::Gitlab::Client')
         feature = instance_double(
@@ -225,18 +230,37 @@ describe Chatops::Commands::Feature do
           text: 'The feature flag value has been updated!'
         )
 
+        annotate = instance_double('annotate')
+        expect(Chatops::Grafana::Annotate)
+          .to receive(:new)
+          .with(token: 'some-grafana-token')
+          .and_return(annotate)
+
+        expect(annotate)
+          .to receive(:annotate!)
+          .with(
+            'alice set feature flag foo to 10',
+            tags: ['gprd', 'feature-flag', 'foo']
+          )
+
         expect(command).to receive(:log_feature_toggle).with('foo', '10')
 
         command.set
       end
+      # rubocop: enable RSpec/ExampleLength
+      # rubocop: enable RSpec/MultipleExpectations
     end
 
     context 'when using a project feature gate' do
+      # rubocop: disable RSpec/ExampleLength
+      # rubocop: disable RSpec/MultipleExpectations
       it 'updates the feature flag' do
         command = described_class
           .new(%w[set foo true],
                { project: 'gitlab-org/gitaly', group: nil, user: nil },
-               'GITLAB_TOKEN' => '123')
+               'GITLAB_TOKEN' => '123',
+               'GRAFANA_TOKEN' => 'some-grafana-token',
+               'GITLAB_USER_LOGIN' => 'alice')
 
         client = instance_double('Chatops::Gitlab::Client')
         feature = instance_double(
@@ -266,16 +290,35 @@ describe Chatops::Commands::Feature do
 
         expect(command).to receive(:log_feature_toggle).with('foo', 'true')
 
+        annotate = instance_double('annotate')
+
+        expect(Chatops::Grafana::Annotate)
+          .to receive(:new)
+          .with(token: 'some-grafana-token')
+          .and_return(annotate)
+
+        expect(annotate)
+          .to receive(:annotate!)
+          .with(
+            'alice set feature flag foo to true',
+            tags: ['gprd', 'feature-flag', 'foo']
+          )
         command.set
       end
+      # rubocop: enable RSpec/ExampleLength
+      # rubocop: enable RSpec/MultipleExpectations
     end
 
     context 'when using a group feature gate' do
+      # rubocop: disable RSpec/ExampleLength
+      # rubocop: disable RSpec/MultipleExpectations
       it 'updates the feature flag' do
         command = described_class
           .new(%w[set foo true],
                { project: nil, group: 'gitlab-org', user: nil },
-               'GITLAB_TOKEN' => '123')
+               'GITLAB_TOKEN' => '123',
+               'GRAFANA_TOKEN' => 'some-grafana-token',
+               'GITLAB_USER_LOGIN' => 'alice')
 
         client = instance_double('Chatops::Gitlab::Client')
         feature = instance_double(
@@ -300,18 +343,38 @@ describe Chatops::Commands::Feature do
           text: 'The feature flag value has been updated!'
         )
 
+        annotate = instance_double('annotate')
+
+        expect(Chatops::Grafana::Annotate)
+          .to receive(:new)
+          .with(token: 'some-grafana-token')
+          .and_return(annotate)
+
+        expect(annotate)
+          .to receive(:annotate!)
+          .with(
+            'alice set feature flag foo to true',
+            tags: ['gprd', 'feature-flag', 'foo']
+          )
+
         expect(command).to receive(:log_feature_toggle).with('foo', 'true')
 
         command.set
       end
+      # rubocop: enable RSpec/ExampleLength
+      # rubocop: enable RSpec/MultipleExpectations
     end
 
     context 'when using a user feature gate' do
+      # rubocop: disable RSpec/ExampleLength
+      # rubocop: disable RSpec/MultipleExpectations
       it 'updates the feature flag' do
         command = described_class
           .new(%w[set foo true],
                { project: nil, group: nil, user: 'myuser' },
-               'GITLAB_TOKEN' => '123')
+               'GITLAB_TOKEN' => '123',
+               'GRAFANA_TOKEN' => 'some-grafana-token',
+               'GITLAB_USER_LOGIN' => 'alice')
 
         client = instance_double('Chatops::Gitlab::Client')
         feature = instance_double(
@@ -335,11 +398,25 @@ describe Chatops::Commands::Feature do
           feature: an_instance_of(Chatops::Gitlab::Feature),
           text: 'The feature flag value has been updated!'
         )
-
         expect(command).to receive(:log_feature_toggle).with('foo', 'true')
 
+        annotate = instance_double('annotate')
+
+        expect(Chatops::Grafana::Annotate)
+          .to receive(:new)
+          .with(token: 'some-grafana-token')
+          .and_return(annotate)
+
+        expect(annotate)
+          .to receive(:annotate!)
+          .with(
+            'alice set feature flag foo to true',
+            tags: ['gprd', 'feature-flag', 'foo']
+          )
         command.set
       end
+      # rubocop: enable RSpec/ExampleLength
+      # rubocop: enable RSpec/MultipleExpectations
     end
   end
 

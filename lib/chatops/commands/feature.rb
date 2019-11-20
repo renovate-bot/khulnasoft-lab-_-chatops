@@ -148,6 +148,7 @@ module Chatops
         feature = Gitlab::Feature.from_api_response(response)
 
         log_feature_toggle(name, value)
+        annotate_feature_toggle(name, value)
 
         send_feature_details(
           feature: feature,
@@ -273,6 +274,18 @@ module Chatops
         )
 
         client.close_issue(issue.project_id, issue.iid)
+      end
+
+      def annotate_feature_toggle(name, value)
+        Grafana::Annotate.new(token: grafana_token)
+          .annotate!(
+            "#{username} set feature flag #{name} to #{value}",
+            tags: [env_name, 'feature-flag', name]
+          )
+      end
+
+      def username
+        env.fetch('GITLAB_USER_LOGIN')
       end
     end
   end
