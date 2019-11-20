@@ -32,10 +32,23 @@ module Chatops
 
         return 'No role specified.' unless (role = arguments[1])
 
-        return "#{command_name} is not a known command." unless
+        return unsupported_command unless
           command_list.include?(command_name)
 
         run_command(command_name, role)
+      end
+
+      def unsupported_command
+        vals = fetch_commands.to_a.sort.map { |name| Markdown::Code.new(name) }
+        list = Markdown::List.new(vals)
+
+        <<~HELP.strip
+          :unicorn_face: The provided command is invalid. The following commands are available:
+
+          #{list}
+
+          For more information run `deploycmd --help`.
+        HELP
       end
 
       def run_command(command_name, role)

@@ -277,7 +277,9 @@ describe Chatops::Commands::Deploycmd do
           .and_return(repository_tree)
 
         expect(command.perform)
-          .to eq('foo is not a known command.')
+          .to eq(":unicorn_face: The provided command is invalid."\
+            " The following commands are available:\n\n* `hostname`\n\nFor"\
+            " more information run `deploycmd --help`.")
       end
     end
 
