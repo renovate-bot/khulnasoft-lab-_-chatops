@@ -10,8 +10,7 @@ describe Chatops::Grafana::Annotate do
       client = instance_double('client')
       response = instance_double(
         'response',
-        status: instance_double('status', ok?: true),
-        body_to_s: 'ok'
+        status: instance_double('status', ok?: true)
       )
 
       expect(HTTP)
@@ -29,12 +28,10 @@ describe Chatops::Grafana::Annotate do
         )
         .and_return(response)
 
-      expect(
-        graph.annotate!(
-          'some annotation',
-          tags: ['some-tag', 'another-tag']
-        )
-      ).to eq('ok')
+      graph.annotate!(
+        'some annotation',
+        tags: ['some-tag', 'another-tag']
+      )
     end
 
     it 'fails to post an annotation' do
