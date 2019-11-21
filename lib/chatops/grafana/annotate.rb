@@ -22,8 +22,7 @@ module Chatops
                 tags: tags
               }
             )
-
-          return resp.body_to_s if resp.status.ok?
+          return if resp.status.ok?
 
           sleep ANNOTATE_RETRY_INTERVAL
         end
