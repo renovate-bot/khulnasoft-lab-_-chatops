@@ -31,10 +31,10 @@ module Chatops
 
               explain SELECT COUNT(*) FROM users
 
-            If a query contains single or double quotes then you must quote the
-            entire query:
+            If a query contains single or double quotes, or asterisk then you must
+            surround the entire query with backticks:
 
-              explain "SELECT COUNT(*) FROM users WHERE username = 'alice'"
+              explain `SELECT COUNT(*) FROM "users" WHERE "users".username = 'alice'`
 
             You can also get an EXPLAIN plan for a URL. This can be useful when
             the input URL is too large to be sent as a Slack message:
@@ -60,6 +60,7 @@ module Chatops
             .strip
             .gsub(/[“”]/, '"')
             .gsub(/[‘’]/, "'")
+            .gsub(/[`]/, '')
             .gsub(/\s*(--without-analyze|--visual)\s*/, '')
 
         query = download_query(query) if query.start_with?('http')

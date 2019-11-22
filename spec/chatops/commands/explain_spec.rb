@@ -85,6 +85,19 @@ describe Chatops::Commands::Explain do
       end
     end
 
+    context 'when the query contains backticks' do
+      it 'removes the backticks' do
+        command = described_class
+          .new([], {}, 'CHAT_INPUT' => '`SELECT events.* WHERE title = "foo"`')
+
+        expect(command)
+          .to receive(:upload_explain_plan_for)
+          .with('SELECT events.* WHERE title = "foo"')
+
+        command.perform
+      end
+    end
+
     context 'when the query contains an option' do
       it 'removes the --visual option' do
         command = described_class
