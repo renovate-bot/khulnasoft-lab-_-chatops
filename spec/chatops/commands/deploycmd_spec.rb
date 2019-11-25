@@ -181,19 +181,6 @@ describe Chatops::Commands::Deploycmd do
           'GITLAB_OPS_TOKEN' => '12345',
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
         )
-        client = instance_double('client')
-        objectified_hash =
-          Gitlab::ObjectifiedHash.new(name: 'hostname.yml')
-        repository_tree = [objectified_hash]
-
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(host: 'ops.gitlab.net', token: '12345')
-          .and_return(client)
-
-        expect(client)
-          .to receive(:repository_tree)
-          .and_return(repository_tree)
 
         expect(command.perform)
           .to eq('No command specified.')
@@ -208,19 +195,6 @@ describe Chatops::Commands::Deploycmd do
           'GITLAB_OPS_TOKEN' => '12345',
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
         )
-        client = instance_double('client')
-        objectified_hash =
-          Gitlab::ObjectifiedHash.new(name: 'hostname.yml')
-        repository_tree = [objectified_hash]
-
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(host: 'ops.gitlab.net', token: '12345')
-          .and_return(client)
-
-        expect(client)
-          .to receive(:repository_tree)
-          .and_return(repository_tree)
 
         expect(command.perform)
           .to eq('No role specified.')

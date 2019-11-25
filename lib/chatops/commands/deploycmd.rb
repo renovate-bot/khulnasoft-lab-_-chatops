@@ -24,16 +24,14 @@ module Chatops
       end
 
       def perform
-        command_list = fetch_commands
-        return list_commands if
-          options[:list]
+        return list_commands if options[:list]
 
-        return 'No command specified.' unless (command_name = arguments[0])
+        command_name, role = arguments
+        return 'No command specified.' unless command_name
 
-        return 'No role specified.' unless (role = arguments[1])
+        return 'No role specified.' unless role
 
-        return unsupported_command unless
-          command_list.include?(command_name)
+        return unsupported_command unless fetch_commands.include?(command_name)
 
         run_command(command_name, role)
       end
@@ -138,16 +136,17 @@ module Chatops
       end
 
       def fetch_commands
-        return @fetch_commands unless @fetch_commands.nil?
-
-        commands = []
-        name_regex = /^(?<name>\w+)\.yml$/
-        repository_tree.each do |key|
-          if (match = key.name.match(name_regex))
-            commands.push(match[:name])
+        @fetch_commands ||=
+          begin
+            commands = []
+            name_regex = /^(?<name>\w+)\.yml$/
+            repository_tree.each do |key|
+              if (match = key.name.match(name_regex))
+                commands.push(match[:name])
+              end
+            end
+            commands
           end
-        end
-        commands
       end
     end
   end
