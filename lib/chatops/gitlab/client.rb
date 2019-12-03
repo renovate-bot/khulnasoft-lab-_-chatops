@@ -38,11 +38,6 @@ module Chatops
         internal_client.get("/namespaces/#{namespace}")
       end
 
-      # Return a list of objects from a project.
-      def repository_tree(project_id, options = {})
-        internal_client.tree(project_id, options)
-      end
-
       # Sets a feature flag's state.
       #
       # name - The name of the flag.
@@ -97,6 +92,7 @@ module Chatops
 
       def_delegator :internal_client, :version
       def_delegator :internal_client, :commit
+      def_delegator :internal_client, :tree, :repository_tree
 
       def_delegator :internal_client, :create_issue
       def_delegator :internal_client, :close_issue
