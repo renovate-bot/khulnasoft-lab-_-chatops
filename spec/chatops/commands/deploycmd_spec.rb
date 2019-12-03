@@ -210,9 +210,10 @@ describe Chatops::Commands::Deploycmd do
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
         )
         client = instance_double('client')
-        objectified_hash =
+        repository_tree = [
+          Gitlab::ObjectifiedHash.new(name: 'README.md'),
           Gitlab::ObjectifiedHash.new(name: 'hostname.yml')
-        repository_tree = [objectified_hash]
+        ]
 
         expect(Chatops::Gitlab::Client)
           .to receive(:new)
@@ -239,9 +240,10 @@ describe Chatops::Commands::Deploycmd do
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
         )
         client = instance_double('client')
-        objectified_hash =
+        repository_tree = [
+          Gitlab::ObjectifiedHash.new(name: 'README.md'),
           Gitlab::ObjectifiedHash.new(name: 'hostname.yml')
-        repository_tree = [objectified_hash]
+        ]
 
         expect(Chatops::Gitlab::Client)
           .to receive(:new)
@@ -270,9 +272,7 @@ describe Chatops::Commands::Deploycmd do
           'COMMAND_TRIGGER_TOKEN' => 'florb'
         )
         client = instance_double('client')
-        objectified_hash =
-          Gitlab::ObjectifiedHash.new(name: 'foo.yml')
-        repository_tree = [objectified_hash]
+        repository_tree = [Gitlab::ObjectifiedHash.new(name: 'foo.yml')]
         response = instance_double('response', web_url: 'bar')
 
         expect(Chatops::Gitlab::Client)
@@ -310,9 +310,7 @@ describe Chatops::Commands::Deploycmd do
           'COMMAND_TRIGGER_TOKEN' => 'florb'
         )
         client = instance_double('client')
-        objectified_hash =
-          Gitlab::ObjectifiedHash.new(name: 'foo.yml')
-        repository_tree = [objectified_hash]
+        repository_tree = [Gitlab::ObjectifiedHash.new(name: 'foo.yml')]
 
         expect(Chatops::Gitlab::Client)
           .to receive(:new)

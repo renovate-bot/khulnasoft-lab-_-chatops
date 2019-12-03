@@ -9,6 +9,8 @@ module Chatops
     class Deploycmd
       include Command
 
+      COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/
+
       usage "#{command_name} [COMMAND NAME] [ROLE] [OPTIONS]"
       description 'Runs ansible commands across roles in our fleet.'
 
@@ -134,16 +136,9 @@ module Chatops
 
       def fetch_commands
         @fetch_commands ||=
-          begin
-            commands = []
-            name_regex = /^(?<name>\w+)\.yml$/
-            repository_tree.each do |key|
-              if (match = key.name.match(name_regex))
-                commands.push(match[:name])
-              end
-            end
-            commands
-          end
+          repository_tree
+            .select { |file| file.name.match?(COMMAND_FILE_PATTERN) }
+            .map { |file| file.name.gsub(COMMAND_FILE_PATTERN, '\1') }
       end
     end
   end
