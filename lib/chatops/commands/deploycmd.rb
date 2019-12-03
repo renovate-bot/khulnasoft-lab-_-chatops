@@ -27,10 +27,9 @@ module Chatops
         return list_commands if options[:list]
 
         command_name, role = arguments
+
         return 'No command specified.' unless command_name
-
         return 'No role specified.' unless role
-
         return unsupported_command unless fetch_commands.include?(command_name)
 
         run_command(command_name, role)
@@ -70,6 +69,7 @@ module Chatops
         }
         vars[:CHECKMODE] = '--check' unless options[:no_check]
         vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
+
         response = client.run_trigger(
           trigger_project,
           trigger_token,
@@ -77,17 +77,14 @@ module Chatops
           vars
         )
 
-        url = response.web_url
-
         ":unicorn_face: Command `#{command_name}` was issued to "\
-        "`#{role}` in `#{environment}`: <#{url}>"
+        "`#{role}` in `#{environment}`: <#{response.web_url}>"
       rescue StandardError => error
         ":unicorn_face: The command could not be run: #{error.message}"
       end
 
       def client
-        # For triggers we don't need an API token, so we explicitly set it to
-        # nil.
+        # For triggers we don't need an API token, so explicitly set it to nil
         @client ||= Gitlab::Client.new(token: nil, host: trigger_host)
       end
 
