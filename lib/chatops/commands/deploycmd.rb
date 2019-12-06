@@ -69,7 +69,7 @@ module Chatops
           'GITLAB_ROLE': role,
           'CURRENT_DEPLOY_ENVIRONMENT': environment
         }
-        vars[:CHECKMODE] = '--check' unless options[:no_check]
+        vars[:CHECKMODE] = options[:no_check] ? 'false' : '--check'
         vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
 
         response = client.run_trigger(
