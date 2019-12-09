@@ -61,6 +61,8 @@ module Chatops
       end
 
       def run_trigger(version, task_name, params = {})
+        params[:TEST] = 'true' if options[:dry_run]
+
         client.run_trigger(
           TARGET_PROJECT,
           env.fetch('RELEASE_TRIGGER_TOKEN'),

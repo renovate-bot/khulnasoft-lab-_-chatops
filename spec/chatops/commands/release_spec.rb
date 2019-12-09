@@ -23,6 +23,7 @@ describe Chatops::Commands::Release, :release_command do
 
     include_examples 'with a valid chatops job',    input: %w[issue 10.9.0]
     include_examples 'with an invalid chatops job', input: %w[issue 10.9.0]
+    include_examples 'with a dry-run flag',         input: %w[issue 10.9.0]
 
     context 'when using a valid subcommand' do
       it 'executes the subcommand' do

@@ -43,4 +43,17 @@ RSpec.shared_examples 'with an invalid chatops job' do |input:|
     end
   end
 end
+
+RSpec.shared_examples 'with a dry-run flag' do |input:|
+  context 'with a `--dry-run` option' do
+    it 'sets the `TEST` trigger variable' do
+      instance = stubbed_instance(*input, dry_run: true)
+
+      expect(stubbed_client).to receive(:run_trigger)
+        .with(anything, anything, anything, a_hash_including(TEST: 'true'))
+
+      instance.perform
+    end
+  end
+end
 # rubocop:enable RSpec/ContextWording
