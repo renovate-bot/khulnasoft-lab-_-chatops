@@ -176,6 +176,7 @@ GEM
       json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
     simplecov-html (0.10.2)
+    slack_block_kit (0.3.2)
     slop (4.6.2)
     specinfra (2.76.9)
       net-scp
@@ -214,6 +215,7 @@ DEPENDENCIES
   rubocop
   rubocop-rspec
   simplecov
+  slack_block_kit (~> 0.3.0)
   slop
   vcr (~> 4.0.0)
   webmock (~> 3.5.0)
