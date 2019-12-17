@@ -124,3 +124,6 @@ helm:
 
 deploycmd:
   <<: *chatops
+
+mirror:
+  <<: *chatops
