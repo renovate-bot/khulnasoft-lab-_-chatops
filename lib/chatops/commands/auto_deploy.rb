@@ -101,7 +101,8 @@ module Chatops
         # NOTE: We always use the production client, because staging is always
         # behind for the specified repository.
         production_client
-          .commit_refs(PROJECT, ref, type: 'branch')
+          .commit_refs(PROJECT, ref, type: 'branch', per_page: 100)
+          .auto_paginate
           .select { |b| b.name.match?(/^\d+-\d+-auto-deploy-\d+$/) }
       rescue ::Gitlab::Error::NotFound
         []
