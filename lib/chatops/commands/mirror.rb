@@ -55,6 +55,7 @@ module Chatops
         @security_mirrors ||= client
           .find_group('gitlab-org/security')
           .projects
+          .select { |p| p.key?('forked_from_project') }
           .sort_by { |p| p['path'] }
           .map { |p| Gitlab::SecurityMirrorStatus.new(p) }
           .select(&:available?)
