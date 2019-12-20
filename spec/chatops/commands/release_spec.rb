@@ -174,6 +174,19 @@ describe Chatops::Commands::Release, :release_command do
     end
 
     describe '#stable_branch' do
+      it 'triggers stable branch creation from last production deployment' do
+        instance = stubbed_instance('stable_branch', version)
+
+        expect(instance).to receive(:trigger_release)
+          .with(
+            version,
+            'release:stable_branch',
+            {}
+          )
+
+        instance.perform
+      end
+
       it 'triggers stable branch creation from specified branch' do
         instance = stubbed_instance('stable_branch',
                                     version, 'auto-deploy-20190818')

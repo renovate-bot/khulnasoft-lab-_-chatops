@@ -60,9 +60,9 @@ module Chatops
 
               release qa 1.2.0-rc1 1.2.0-rc3
 
-            Create stable branches for 1.2.0 from master branch
+            Create stable branches for 1.2.0 from the last production deployment
 
-              release stable_branch 1.2.0 master
+              release stable_branch 1.2.0
 
             Tag 1.2.3 as a security release
 
@@ -134,13 +134,15 @@ module Chatops
         trigger_release(tags.join(','), "#{namespace}:#{__method__}")
       end
 
-      def stable_branch(version, source)
+      def stable_branch(version, source = nil)
         validate_version!(version) unless options[:security]
+
+        variables = { 'SOURCE_OF_STABLE_BRANCH' => source }.compact
 
         trigger_release(
           version,
           "#{namespace}:#{__method__}",
-          'SOURCE_OF_STABLE_BRANCH' => source
+          variables
         )
       end
 
