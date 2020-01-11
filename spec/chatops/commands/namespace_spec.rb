@@ -31,7 +31,8 @@ describe Chatops::Commands::Namespace do
         id: '1234567',
         name: 'testname',
         kind: 'group',
-        path: 'foobar'
+        path: 'foobar',
+        billable_members_count: 42
       )
 
       expect(Chatops::Gitlab::Client)
@@ -67,7 +68,8 @@ describe Chatops::Commands::Namespace do
         id: '1234567',
         name: 'testname',
         kind: 'group',
-        path: 'foobar'
+        path: 'foobar',
+        billable_members_count: 42
       )
 
       expect(Chatops::Gitlab::Client)

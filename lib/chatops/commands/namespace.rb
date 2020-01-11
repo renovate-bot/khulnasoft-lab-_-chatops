@@ -50,6 +50,11 @@ module Chatops
                     title: 'Path',
                     value: namespace.path,
                     short: true
+                  },
+                  {
+                    title: 'Billable members',
+                    value: namespace.billable_members_count,
+                    short: true
                   }
                 ]
               }
