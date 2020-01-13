@@ -3,6 +3,16 @@
 require 'spec_helper'
 
 describe Chatops::Gitlab::SecurityMirrorStatus do
+  def mirror_stub(messages = {})
+    defaults = {
+      enabled: true,
+      last_error: nil,
+      url: 'https://******:******@example.com/gitlab-org/gitlab.git'
+    }
+
+    instance_double('status', defaults.merge(messages))
+  end
+
   let(:client) { Chatops::Gitlab::Client.new(token: 'token').internal_client }
   let(:project) do
     {
@@ -50,15 +60,13 @@ describe Chatops::Gitlab::SecurityMirrorStatus do
 
   describe '#security_error' do
     it 'returns the last error for the security mirror' do
-      mirror = instance_double(
-        'mirror',
-        url: 'https://***:***@gitlab.com/gitlab-org/security/gitlab.git',
-        last_error: 'failure'
-      )
-
       status = described_class.new(project)
-
       allow(status).to receive(:client).and_return(client)
+
+      mirror = mirror_stub(
+        last_error: 'failure',
+        url: 'https://***:***@gitlab.com/gitlab-org/security/gitlab.git'
+      )
       expect(client).to receive(:get).and_return([mirror])
 
       expect(status.security_error).to eq('failure')
@@ -67,15 +75,13 @@ describe Chatops::Gitlab::SecurityMirrorStatus do
 
   describe '#build_error' do
     it 'returns the last error for the build mirror' do
-      mirror = instance_double(
-        'mirror',
+      status = described_class.new(project)
+      allow(status).to receive(:client).and_return(client)
+
+      mirror = mirror_stub(
         url: 'https://***:***@dev.gitlab.org/gitlab/gitlab-ee.git',
         last_error: 'failure'
       )
-
-      status = described_class.new(project)
-
-      allow(status).to receive(:client).and_return(client)
       expect(client).to receive(:get).and_return([mirror])
 
       expect(status.build_error).to eq('failure')
@@ -83,13 +89,28 @@ describe Chatops::Gitlab::SecurityMirrorStatus do
   end
 
   describe '#mirror_chain' do
-    it 'shows a broken chain' do
+    it 'shows a broken chain due to disabled mirrors' do
       status = described_class.new(project)
 
       allow(status).to receive(:security_status)
-        .and_return(instance_double('status', last_error: 'foo'))
+        .and_return(mirror_stub(enabled: false))
       allow(status).to receive(:build_status)
-        .and_return(instance_double('status', last_error: 'bar', url: ''))
+        .and_return(mirror_stub(enabled: false))
+
+      chain = status.mirror_chain
+
+      expect(chain).to include('|Canonical> :double_vertical_bar:')
+      expect(chain).to include('|Security> :double_vertical_bar:')
+      expect(chain).to end_with(':warning:')
+    end
+
+    it 'shows a broken chain due to mirror errors' do
+      status = described_class.new(project)
+
+      allow(status).to receive(:security_status)
+        .and_return(mirror_stub(last_error: 'foo'))
+      allow(status).to receive(:build_status)
+        .and_return(mirror_stub(last_error: 'bar'))
 
       chain = status.mirror_chain
 
@@ -102,9 +123,9 @@ describe Chatops::Gitlab::SecurityMirrorStatus do
       status = described_class.new(project)
 
       allow(status).to receive(:security_status)
-        .and_return(instance_double('status', last_error: nil))
+        .and_return(mirror_stub)
       allow(status).to receive(:build_status)
-        .and_return(instance_double('status', last_error: nil, url: ''))
+        .and_return(mirror_stub)
 
       chain = status.mirror_chain
 

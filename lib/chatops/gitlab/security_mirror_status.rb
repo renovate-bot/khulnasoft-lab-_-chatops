@@ -33,7 +33,7 @@ module Chatops
       end
 
       def security_mirrored?
-        security_error.nil?
+        security_error.nil? && security_status.enabled
       end
 
       # Error String for the Security -> Build mirror, if any
@@ -42,7 +42,7 @@ module Chatops
       end
 
       def build_mirrored?
-        build_error.nil?
+        build_error.nil? && build_status.enabled
       end
 
       def complete?
@@ -55,14 +55,14 @@ module Chatops
 
       def security_link
         [
-          security_mirrored? ? ':arrow_right:' : ':x:',
+          mirror_icon(security_status),
           "<https://gitlab.com/#{@security_path}|Security>"
         ].join(' ')
       end
 
       def build_link
         [
-          build_mirrored? ? ':arrow_right:' : ':x:',
+          mirror_icon(build_status),
           # Extract the Build project path from the mirror URL
           "<https://#{build_status.url.sub(/\A.*@(.*)\.git\z/, '\1')}|Build>"
         ].join(' ')
@@ -105,6 +105,16 @@ module Chatops
       rescue ::Gitlab::Error::NotFound
         # Feature flag is disabled on this project
         false
+      end
+
+      def mirror_icon(status)
+        if status.last_error
+          ':x:'
+        elsif !status.enabled
+          ':double_vertical_bar:' # Otherwise known as Pause
+        else
+          ':arrow_right:'
+        end
       end
     end
   end
