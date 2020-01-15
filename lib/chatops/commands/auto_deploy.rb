@@ -7,7 +7,9 @@ module Chatops
       include Command
 
       COMMANDS = Set.new(%w[status])
-      PROJECT = 'gitlab-org/gitlab'
+
+      SOURCE_HOST = 'https://gitlab.com'
+      SOURCE_PROJECT = 'gitlab-org/gitlab'
 
       options do |o|
         o.separator <<~AVAIL.chomp
@@ -101,7 +103,7 @@ module Chatops
         # NOTE: We always use the production client, because staging is always
         # behind for the specified repository.
         production_client
-          .commit_refs(PROJECT, ref, type: 'branch', per_page: 100)
+          .commit_refs(SOURCE_PROJECT, ref, type: 'branch', per_page: 100)
           .auto_paginate
           .select { |b| b.name.match?(/^\d+-\d+-auto-deploy-\d+$/) }
       rescue ::Gitlab::Error::NotFound
@@ -112,7 +114,7 @@ module Chatops
         blocks = []
 
         begin
-          commit = production_client.commit(PROJECT, commit_sha)
+          commit = production_client.commit(SOURCE_PROJECT, commit_sha)
 
           blocks << {
             type: 'section',
@@ -142,7 +144,7 @@ module Chatops
           blocks << {
             type: 'section',
             text: Slack.markdown(
-              ":exclamation: `#{commit_sha}` not found in `#{PROJECT}`."
+              ":exclamation: `#{commit_sha}` not found in `#{SOURCE_PROJECT}`."
             )
           }
         end
@@ -232,14 +234,14 @@ module Chatops
       end
 
       def commit_link(sha)
-        url = "https://gitlab.com/#{PROJECT}/commit/#{sha}"
+        url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/commit/#{sha}"
         text = "`#{sha}`"
 
         "<#{url}|#{text}>"
       end
 
       def compare_link(prev_sha, sha)
-        url = "https://gitlab.com/#{PROJECT}/compare/#{prev_sha}...#{sha}"
+        url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/compare/#{prev_sha}...#{sha}"
         text = "Compare with `#{prev_sha}`"
 
         "<#{url}|#{text}>"
@@ -247,7 +249,7 @@ module Chatops
 
       def branch_link(branch)
         if branch
-          url = "https://gitlab.com/#{PROJECT}/commits/#{branch}"
+          url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/commits/#{branch}"
           text = "`#{branch}`"
 
           "<#{url}|#{text}>"
