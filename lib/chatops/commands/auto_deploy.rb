@@ -149,9 +149,7 @@ module Chatops
           }
         end
 
-        Slack::Message
-          .new(token: slack_token, channel: channel)
-          .send(blocks: blocks)
+        slack_message.send(blocks: blocks)
       end
 
       def post_environment_status(envs)
@@ -181,9 +179,7 @@ module Chatops
 
         blocks.pop # Remove the last divider
 
-        Slack::Message
-          .new(token: slack_token, channel: channel)
-          .send(blocks: blocks)
+        slack_message.send(blocks: blocks)
       end
 
       def client_from_role(role)
@@ -217,6 +213,11 @@ module Chatops
       def chef_client
         @chef_client ||= Chatops::Chef::Client
           .new(chef_username, chef_pem_key, chef_url)
+      end
+
+      def slack_message
+        @slack_message ||= Slack::Message
+          .new(token: slack_token, channel: channel)
       end
 
       def environment_link(env)
