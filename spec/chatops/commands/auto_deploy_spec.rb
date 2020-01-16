@@ -3,6 +3,37 @@
 require 'spec_helper'
 
 describe Chatops::Commands::AutoDeploy do
+  # rubocop:disable RSpec/VerifiedDoubles
+  let(:fake_client) { spy('Chatops::Gitlab::Client') }
+  # rubocop:enable RSpec/VerifiedDoubles
+
+  let(:env) do
+    [
+      {},
+      'SLACK_TOKEN' => 'token',
+      'CHAT_CHANNEL' => 'channel',
+      'GITLAB_TOKEN' => 'token',
+      'CHEF_USERNAME' => 'bork',
+      'CHEF_PEM_KEY' => 'bork'
+    ]
+  end
+
+  before do
+    stub_const('Chatops::Gitlab::Client', fake_client)
+  end
+
+  def expect_slack_message(block_matcher)
+    message = instance_double('message')
+
+    expect(Chatops::Slack::Message)
+      .to receive(:new)
+      .and_return(message)
+
+    expect(message)
+      .to receive(:send)
+      .with(blocks: block_matcher)
+  end
+
   describe '.perform' do
     it 'includes examples in the --help output' do
       output = described_class.perform(%w[--help])
@@ -42,29 +73,57 @@ describe Chatops::Commands::AutoDeploy do
     end
   end
 
-  describe '#status' do
-    def expect_slack_message(block_matcher)
-      message = instance_double('message')
+  describe '#pause' do
+    let(:command) { described_class.new(%w[pause], *env) }
 
-      expect(Chatops::Slack::Message)
-        .to receive(:new)
-        .and_return(message)
+    it 'triggers a pause' do
+      auto_deploy = instance_double('Chatops::Gitlab::AutoDeploy')
+      expect(Chatops::Gitlab::AutoDeploy).to receive(:new)
+        .with(fake_client)
+        .and_return(auto_deploy)
 
-      expect(message)
-        .to receive(:send)
-        .with(blocks: block_matcher)
+      tasks = []
+      expect(auto_deploy).to receive(:pause).and_return(tasks)
+      expect(command).to receive(:post_task_status).with(tasks)
+
+      command.perform
     end
+  end
 
-    let(:env) do
-      [
-        {},
-        'SLACK_TOKEN' => 'token',
-        'CHAT_CHANNEL' => 'channel',
-        'GITLAB_TOKEN' => 'token',
-        'CHEF_USERNAME' => 'bork',
-        'CHEF_PEM_KEY' => 'bork'
+  describe '#unpause' do
+    let(:command) { described_class.new(%w[unpause], *env) }
+
+    it 'triggers an unpause' do
+      auto_deploy = instance_double('Chatops::Gitlab::AutoDeploy')
+      expect(Chatops::Gitlab::AutoDeploy).to receive(:new)
+        .with(fake_client)
+        .and_return(auto_deploy)
+
+      tasks = [
+        instance_double(
+          'task',
+          active: true,
+          description: 'foo',
+          next_run_at: 'Tomorrow'
+        ),
+        instance_double(
+          'task',
+          active: false,
+          description: 'bar',
+          next_run_at: 'Next week'
+        )
       ]
+      expect(auto_deploy).to receive(:unpause).and_return(tasks)
+      expect(command).to receive(:post_task_status)
+        .with(tasks)
+        .and_call_original
+
+      expect_slack_message(TaskBlockMatcher.new(tasks))
+      command.perform
     end
+  end
+
+  describe '#status' do
     let(:production_status) do
       {
         host: 'gitlab.com',
@@ -73,14 +132,6 @@ describe Chatops::Commands::AutoDeploy do
         branch: '12-2-auto-deploy-20190804',
         package: '12.2.201908042020+0874a8d346c.2ee9f1d280d'
       }
-    end
-
-    # rubocop:disable RSpec/VerifiedDoubles
-    let(:fake_client) { double('Chatops::Gitlab::Client').as_null_object }
-    # rubocop:enable RSpec/VerifiedDoubles
-
-    before do
-      stub_const('Chatops::Gitlab::Client', fake_client)
     end
 
     context 'with no argument' do
@@ -276,5 +327,20 @@ class InvalidCommitBlockMatcher
 
   def ===(other)
     other.to_json.include?(":exclamation: `#{@commit_sha}` not found")
+  end
+end
+
+class TaskBlockMatcher
+  def initialize(tasks)
+    @tasks = tasks
+  end
+
+  def ===(other)
+    json = other.to_json
+
+    @tasks.all? do |task|
+      icon = task.active ? ':white_check_mark:' : ':double_vertical_bar:'
+      json.include?(icon) && json.include?(task.description)
+    end
   end
 end

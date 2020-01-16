@@ -6,7 +6,7 @@ module Chatops
       include Chef::Config
       include Command
 
-      COMMANDS = Set.new(%w[status])
+      COMMANDS = Set.new(%w[pause status unpause])
 
       SOURCE_HOST = 'https://gitlab.com'
       SOURCE_PROJECT = 'gitlab-org/gitlab'
@@ -22,6 +22,14 @@ module Chatops
         o.separator <<~HELP.chomp
 
           Examples:
+
+            Disable all of the auto-deploy scheduled tasks
+
+              pause
+
+            Enable all of the auto-deploy scheduled tasks
+
+              unpause
 
             Check the status of all environments
 
@@ -60,6 +68,18 @@ module Chatops
         HELP
       end
 
+      def pause
+        tasks = Gitlab::AutoDeploy.new(production_client).pause
+
+        post_task_status(tasks)
+      end
+
+      def unpause
+        tasks = Gitlab::AutoDeploy.new(production_client).unpause
+
+        post_task_status(tasks)
+      end
+
       def status(sha = nil)
         envs = [
           environment_status('gprd'),
@@ -81,6 +101,19 @@ module Chatops
       end
 
       private
+
+      def post_task_status(tasks)
+        blocks = ::Slack::BlockKit.blocks
+
+        tasks.each do |task|
+          text = "#{task_icon(task)} `#{task.description}`"
+          text += " Next run: `#{task.next_run_at}`" if task.active
+
+          blocks.section { |section| section.mrkdwn(text: text) }
+        end
+
+        slack_message.send(blocks: blocks.as_json)
+      end
 
       def environment_status(role)
         client = client_from_role(role)
@@ -232,6 +265,14 @@ module Chatops
           end
 
         ":#{icon}: <https://#{env[:host]}/|#{env[:host]}>"
+      end
+
+      def task_icon(task)
+        if task.active
+          ':white_check_mark:'
+        else
+          ':double_vertical_bar:'
+        end
       end
 
       def commit_link(sha)
