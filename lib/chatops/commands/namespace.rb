@@ -55,6 +55,11 @@ module Chatops
                     title: 'Billable members',
                     value: namespace.billable_members_count,
                     short: true
+                  },
+                  {
+                    title: 'Plan',
+                    value: namespace.plan,
+                    short: true
                   }
                 ]
               }
