@@ -17,6 +17,10 @@ module Chatops
                'Act as a security release',
                default: false
 
+        o.bool '--critical',
+               'Act as a critical security release',
+               default: false
+
         o.bool '--master',
                'Merge MRs targeting the master branch',
                default: false

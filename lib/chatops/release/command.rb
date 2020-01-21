@@ -62,6 +62,7 @@ module Chatops
 
       def run_trigger(version, task_name, params = {})
         params[:TEST] = 'true' if options[:dry_run]
+        params[:SECURITY] = 'critical' if security_critical?
 
         client.run_trigger(
           TARGET_PROJECT,
@@ -86,6 +87,10 @@ module Chatops
 
       def chatops_job?(jobs)
         jobs.count == 1 && jobs.first.name == 'chatops'
+      end
+
+      def security_critical?
+        options[:security] && options[:critical]
       end
     end
   end
