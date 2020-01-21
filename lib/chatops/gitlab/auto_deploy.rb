@@ -24,9 +24,19 @@ module Chatops
       end
 
       def update_tasks(attrs = {})
+        ensure_tasks!
+
         tasks.map! do |task|
           @client.edit_pipeline_schedule(TASK_PROJECT, task.id, **attrs)
         end
+      end
+
+      private
+
+      def ensure_tasks!
+        return if tasks.any?
+
+        raise "No auto_deploy tasks found in #{TASK_PROJECT}"
       end
     end
   end

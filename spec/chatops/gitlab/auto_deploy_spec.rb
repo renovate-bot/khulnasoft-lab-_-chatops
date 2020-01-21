@@ -24,27 +24,35 @@ describe Chatops::Gitlab::AutoDeploy do
 
   describe '#update_tasks' do
     let(:tasks) do
-      [
-        instance_double('task', id: 1, description: 'auto_deploy:foo'),
-        instance_double('task', id: 2, description: 'auto_deploy:bar')
-      ]
-    end
-
-    before do
-      allow(fake_client).to receive(:pipeline_schedules).and_return(tasks)
     end
 
     it 'updates all tasks with the specified attributes' do
+      tasks = [
+        instance_double('task', id: 1, description: 'auto_deploy:foo'),
+        instance_double('task', id: 2, description: 'auto_deploy:bar')
+      ]
       attrs = {
         active: false
       }
 
+      allow(fake_client).to receive(:pipeline_schedules).and_return(tasks)
       expect(fake_client).to receive(:edit_pipeline_schedule)
         .with(described_class::TASK_PROJECT, tasks.first.id, **attrs)
       expect(fake_client).to receive(:edit_pipeline_schedule)
         .with(described_class::TASK_PROJECT, tasks.last.id, **attrs)
 
       auto_deploy.update_tasks(attrs)
+    end
+
+    it 'raises an exception if no tasks are found' do
+      tasks = [
+        instance_double('task', id: 1, description: 'release_manager:sync')
+      ]
+
+      allow(fake_client).to receive(:pipeline_schedules).and_return(tasks)
+
+      expect { auto_deploy.update_tasks(active: false) }
+        .to raise_error(RuntimeError, /No auto_deploy tasks found/)
     end
   end
 end

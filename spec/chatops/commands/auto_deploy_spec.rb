@@ -3,9 +3,7 @@
 require 'spec_helper'
 
 describe Chatops::Commands::AutoDeploy do
-  # rubocop:disable RSpec/VerifiedDoubles
-  let(:fake_client) { spy('Chatops::Gitlab::Client') }
-  # rubocop:enable RSpec/VerifiedDoubles
+  let(:fake_client) { spy }
 
   let(:env) do
     [
