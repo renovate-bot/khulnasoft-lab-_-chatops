@@ -20,7 +20,7 @@ describe Chatops::Commands::AutoDeploy do
     stub_const('Chatops::Gitlab::Client', fake_client)
   end
 
-  def expect_slack_message(block_matcher)
+  def expect_slack_message(args = {})
     message = instance_double('message')
 
     expect(Chatops::Slack::Message)
@@ -29,7 +29,7 @@ describe Chatops::Commands::AutoDeploy do
 
     expect(message)
       .to receive(:send)
-      .with(blocks: block_matcher)
+      .with(**args)
   end
 
   describe '.perform' do
@@ -80,10 +80,19 @@ describe Chatops::Commands::AutoDeploy do
         .with(fake_client)
         .and_return(auto_deploy)
 
-      tasks = []
+      tasks = [
+        instance_double('task', active: false, description: 'foo'),
+        instance_double('task', active: false, description: 'bar')
+      ]
       expect(auto_deploy).to receive(:pause).and_return(tasks)
-      expect(command).to receive(:post_task_status).with(tasks)
+      expect(command).to receive(:post_task_status)
+        .with(tasks)
+        .and_call_original
 
+      expect_slack_message(
+        text: /temporarily disabled while a security release is in progress/,
+        blocks: TaskBlockMatcher.new(tasks)
+      )
       command.perform
     end
   end
@@ -106,7 +115,7 @@ describe Chatops::Commands::AutoDeploy do
         ),
         instance_double(
           'task',
-          active: false,
+          active: true,
           description: 'bar',
           next_run_at: 'Next week'
         )
@@ -116,7 +125,10 @@ describe Chatops::Commands::AutoDeploy do
         .with(tasks)
         .and_call_original
 
-      expect_slack_message(TaskBlockMatcher.new(tasks))
+      expect_slack_message(
+        text: 'Scheduled auto-deploy tasks have been re-enabled.',
+        blocks: TaskBlockMatcher.new(tasks)
+      )
       command.perform
     end
   end
@@ -140,7 +152,7 @@ describe Chatops::Commands::AutoDeploy do
       it 'send a formatted Slack message' do
         allow(command).to receive(:environment_status)
           .and_return(production_status)
-        expect_slack_message(StatusBlockMatcher.new(production_status))
+        expect_slack_message(blocks: StatusBlockMatcher.new(production_status))
 
         command.perform
       end
@@ -167,7 +179,7 @@ describe Chatops::Commands::AutoDeploy do
         expect(fake_client).to receive(:commit).and_return(fake_commit)
 
         expect_slack_message(
-          DeployedCommitBlockMatcher.new(production_status, fake_commit)
+          blocks: DeployedCommitBlockMatcher.new(production_status, fake_commit)
         )
 
         command.perform
@@ -177,7 +189,7 @@ describe Chatops::Commands::AutoDeploy do
         allow(command).to receive(:environment_status).and_return({})
         allow(command).to receive(:auto_deploy_branches).with('abcdefg')
           .and_return([])
-        expect_slack_message(NoDeployedBlockMatcher.new)
+        expect_slack_message(blocks: NoDeployedBlockMatcher.new)
 
         command.perform
       end
@@ -198,7 +210,7 @@ describe Chatops::Commands::AutoDeploy do
       end
 
       it 'posts an error message' do
-        expect_slack_message(InvalidCommitBlockMatcher.new('abcdefg'))
+        expect_slack_message(blocks: InvalidCommitBlockMatcher.new('abcdefg'))
 
         command.perform
       end
