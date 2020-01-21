@@ -103,15 +103,20 @@ module Chatops
       private
 
       def post_task_status(tasks)
-        summary = 'Scheduled auto-deploy tasks have been '
-        summary +=
-          if tasks.all?(&:active)
-            're-enabled.'
-          else
-            'temporarily disabled while a security release is in progress.'
-          end
-
         blocks = ::Slack::BlockKit.blocks
+
+        blocks.section do |section|
+          summary = 'Scheduled auto-deploy tasks have been '
+          summary +=
+            if tasks.all?(&:active)
+              're-enabled.'
+            else
+              'temporarily disabled while a security release is in progress.'
+            end
+
+          section.mrkdwn(text: summary)
+        end
+
         tasks.each do |task|
           text = "#{task_icon(task)} `#{task.description}`"
           text += " Next run: `#{task.next_run_at}`" if task.active
@@ -119,7 +124,7 @@ module Chatops
           blocks.section { |section| section.mrkdwn(text: text) }
         end
 
-        slack_message.send(text: summary, blocks: blocks.as_json)
+        slack_message.send(blocks: blocks.as_json)
       end
 
       def environment_status(role)

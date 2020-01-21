@@ -89,10 +89,7 @@ describe Chatops::Commands::AutoDeploy do
         .with(tasks)
         .and_call_original
 
-      expect_slack_message(
-        text: /temporarily disabled while a security release is in progress/,
-        blocks: TaskBlockMatcher.new(tasks)
-      )
+      expect_slack_message(blocks: TaskBlockMatcher.new(tasks))
       command.perform
     end
   end
@@ -125,10 +122,7 @@ describe Chatops::Commands::AutoDeploy do
         .with(tasks)
         .and_call_original
 
-      expect_slack_message(
-        text: 'Scheduled auto-deploy tasks have been re-enabled.',
-        blocks: TaskBlockMatcher.new(tasks)
-      )
+      expect_slack_message(blocks: TaskBlockMatcher.new(tasks))
       command.perform
     end
   end
@@ -350,7 +344,20 @@ class TaskBlockMatcher
 
     @tasks.all? do |task|
       icon = task.active ? ':white_check_mark:' : ':double_vertical_bar:'
-      json.include?(icon) && json.include?(task.description)
+      json.include?(icon) &&
+        json.include?(task.description) &&
+        json.include?(summary)
+    end
+  end
+
+  private
+
+  def summary
+    if @tasks.all?(&:active)
+      'Scheduled auto-deploy tasks have been re-enabled.'
+    else
+      'Scheduled auto-deploy tasks have been temporarily disabled while ' \
+        'a security release is in progress.'
     end
   end
 end
