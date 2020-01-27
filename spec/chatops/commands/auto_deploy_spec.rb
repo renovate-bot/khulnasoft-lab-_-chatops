@@ -94,6 +94,17 @@ describe Chatops::Commands::AutoDeploy do
     end
   end
 
+  describe '#prepare', :release_command do
+    it 'triggers `auto_deploy:prepare`' do
+      instance = stubbed_instance('prepare')
+
+      expect(instance).to receive(:trigger_release)
+        .with(nil, 'auto_deploy:prepare')
+
+      instance.perform
+    end
+  end
+
   describe '#unpause' do
     let(:command) { described_class.new(%w[unpause], *env) }
 

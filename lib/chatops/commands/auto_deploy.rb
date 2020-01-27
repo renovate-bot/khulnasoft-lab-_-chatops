@@ -5,8 +5,9 @@ module Chatops
     class AutoDeploy
       include Chef::Config
       include Command
+      include ::Chatops::Release::Command
 
-      COMMANDS = Set.new(%w[pause status unpause])
+      COMMANDS = Set.new(%w[pause prepare status unpause])
 
       SOURCE_HOST = 'https://gitlab.com'
       SOURCE_PROJECT = 'gitlab-org/gitlab'
@@ -30,6 +31,10 @@ module Chatops
             Enable all of the auto-deploy scheduled tasks
 
               unpause
+
+            Trigger `auto_deploy:prepare` in release-tools
+
+              prepare
 
             Check the status of all environments
 
@@ -72,6 +77,10 @@ module Chatops
         tasks = Gitlab::AutoDeploy.new(production_client).pause
 
         post_task_status(tasks)
+      end
+
+      def prepare
+        trigger_release(nil, 'auto_deploy:prepare')
       end
 
       def unpause
