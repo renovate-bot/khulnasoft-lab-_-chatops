@@ -7,12 +7,16 @@ module Chatops
       include Command
       include ::Chatops::Release::Command
 
-      COMMANDS = Set.new(%w[pause prepare status unpause])
+      COMMANDS = Set.new(%w[pause prepare status tag unpause])
 
       SOURCE_HOST = 'https://gitlab.com'
       SOURCE_PROJECT = 'gitlab-org/gitlab'
 
       options do |o|
+        o.bool '--security',
+               'Act as a security release',
+               default: false
+
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
@@ -35,6 +39,10 @@ module Chatops
             Trigger `auto_deploy:prepare` in release-tools
 
               prepare
+
+            Trigger `auto_deploy:tag` in release-tools
+
+              tag
 
             Check the status of all environments
 
@@ -81,6 +89,12 @@ module Chatops
 
       def prepare
         trigger_release(nil, 'auto_deploy:prepare')
+      end
+
+      def tag
+        params = { SECURITY: true } if options[:security]
+
+        trigger_release(nil, 'auto_deploy:tag', params)
       end
 
       def unpause

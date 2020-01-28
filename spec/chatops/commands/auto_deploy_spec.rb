@@ -105,6 +105,26 @@ describe Chatops::Commands::AutoDeploy do
     end
   end
 
+  describe '#tag', :release_command do
+    it 'triggers `auto_deploy:tag' do
+      instance = stubbed_instance('tag')
+
+      expect(instance).to receive(:trigger_release)
+        .with(nil, 'auto_deploy:tag', nil)
+
+      instance.perform
+    end
+
+    it 'supports a `--security` flag' do
+      instance = stubbed_instance('tag', security: true)
+
+      expect(instance).to receive(:trigger_release)
+        .with(nil, 'auto_deploy:tag', hash_including(SECURITY: true))
+
+      instance.perform
+    end
+  end
+
   describe '#unpause' do
     let(:command) { described_class.new(%w[unpause], *env) }
 
