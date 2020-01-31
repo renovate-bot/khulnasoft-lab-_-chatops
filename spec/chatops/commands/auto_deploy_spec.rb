@@ -110,7 +110,7 @@ describe Chatops::Commands::AutoDeploy do
       instance = stubbed_instance('tag')
 
       expect(instance).to receive(:trigger_release)
-        .with(nil, 'auto_deploy:tag', nil)
+        .with(nil, 'auto_deploy:tag', {})
 
       instance.perform
     end

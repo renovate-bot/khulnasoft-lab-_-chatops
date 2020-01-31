@@ -94,7 +94,7 @@ module Chatops
       def tag
         params = { SECURITY: true } if options[:security]
 
-        trigger_release(nil, 'auto_deploy:tag', params)
+        trigger_release(nil, 'auto_deploy:tag', params || {})
       end
 
       def unpause
