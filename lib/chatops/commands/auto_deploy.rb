@@ -134,7 +134,7 @@ module Chatops
             if tasks.all?(&:active)
               're-enabled.'
             else
-              'temporarily disabled while a security release is in progress.'
+              'temporarily disabled.'
             end
 
           section.mrkdwn(text: summary)

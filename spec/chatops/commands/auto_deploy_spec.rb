@@ -387,8 +387,7 @@ class TaskBlockMatcher
     if @tasks.all?(&:active)
       'Scheduled auto-deploy tasks have been re-enabled.'
     else
-      'Scheduled auto-deploy tasks have been temporarily disabled while ' \
-        'a security release is in progress.'
+      'Scheduled auto-deploy tasks have been temporarily disabled.'
     end
   end
 end
