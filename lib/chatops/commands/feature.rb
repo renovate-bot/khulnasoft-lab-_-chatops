@@ -136,7 +136,7 @@ module Chatops
 
         unless Gitlab::Feature.valid_value?(value)
           return "The value #{value.inspect} is invalid. " \
-            'Valid valures are: `true`, `false`, or an integer from 0 to 100.'
+            'Valid values are: `true`, `false`, or an integer from 0 to 100.'
         end
 
         response = Gitlab::Client
