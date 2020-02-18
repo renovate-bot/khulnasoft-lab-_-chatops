@@ -66,10 +66,21 @@ module Chatops
       def attachment_fields_for_gates
         @gates.map do |gate|
           {
-            title: gate['key'],
+            title: gate_key_title(gate['key']),
             value: Markdown::Code.new(gate['value'].to_s).to_s,
             short: true
           }
+        end
+      end
+
+      private
+
+      def gate_key_title(gate_key)
+        case gate_key
+        when 'boolean'
+          'Default Enabled'
+        else
+          gate_key
         end
       end
     end
