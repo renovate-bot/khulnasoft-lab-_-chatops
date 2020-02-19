@@ -59,10 +59,12 @@ rspec:
     # Configure the "postgres" service itself.
     POSTGRES_DB: chatops
     POSTGRES_USER: runner
+    POSTGRES_PASSWORD: runner-password
     # Configure the test environment to connect to said service.
     TEST_DATABASE_HOST: postgres
     TEST_DATABASE_USER: runner
     TEST_DATABASE_NAME: chatops
+    TEST_DATABASE_PASSWORD: runner-password
     COVERAGE: 'true'
 
 rubocop:
