@@ -78,7 +78,9 @@ module Chatops
       def gate_key_title(gate_key)
         case gate_key
         when 'boolean'
-          'Default Enabled'
+          'Enabled Globally'
+        when 'actors'
+          'Scoped to'
         else
           gate_key
         end
