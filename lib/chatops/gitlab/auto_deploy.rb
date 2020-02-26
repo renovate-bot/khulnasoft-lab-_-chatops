@@ -3,7 +3,7 @@
 module Chatops
   module Gitlab
     class AutoDeploy
-      TASK_PROJECT = 'gitlab-org/release-tools'
+      TASK_PROJECT = 'gitlab-org/release/tools'
 
       def initialize(client = nil)
         @client = client

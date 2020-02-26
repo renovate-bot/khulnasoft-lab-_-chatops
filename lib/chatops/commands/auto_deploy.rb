@@ -82,7 +82,7 @@ module Chatops
       end
 
       def pause
-        tasks = Gitlab::AutoDeploy.new(production_client).pause
+        tasks = Gitlab::AutoDeploy.new(ops_client).pause
 
         post_task_status(tasks)
       end
@@ -98,7 +98,7 @@ module Chatops
       end
 
       def unpause
-        tasks = Gitlab::AutoDeploy.new(production_client).unpause
+        tasks = Gitlab::AutoDeploy.new(ops_client).unpause
 
         post_task_status(tasks)
       end
@@ -276,6 +276,11 @@ module Chatops
 
         @staging_client ||= Gitlab::Client
           .new(token: token, host: 'staging.gitlab.com')
+      end
+
+      def ops_client
+        @ops_client ||= Gitlab::Client
+          .new(token: gitlab_ops_token, host: 'ops.gitlab.net')
       end
 
       def chef_client

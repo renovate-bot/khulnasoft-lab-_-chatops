@@ -11,6 +11,7 @@ describe Chatops::Commands::AutoDeploy do
       'SLACK_TOKEN' => 'token',
       'CHAT_CHANNEL' => 'channel',
       'GITLAB_TOKEN' => 'token',
+      'GITLAB_OPS_TOKEN' => 'token',
       'CHEF_USERNAME' => 'bork',
       'CHEF_PEM_KEY' => 'bork'
     ]
