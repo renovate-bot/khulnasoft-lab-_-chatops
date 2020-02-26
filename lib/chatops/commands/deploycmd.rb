@@ -102,10 +102,6 @@ module Chatops
         env.fetch('COMMAND_TRIGGER_HOST')
       end
 
-      def gitlab_ops_token
-        env.fetch('GITLAB_OPS_TOKEN')
-      end
-
       def environment
         base =
           if options[:production]

@@ -39,6 +39,10 @@ module Chatops
       env.fetch('GITLAB_TOKEN')
     end
 
+    def gitlab_ops_token
+      env.fetch('GITLAB_OPS_TOKEN')
+    end
+
     # Returns the API token to use for interacting with the Grafana API.
     def grafana_token
       env.fetch('GRAFANA_TOKEN')
