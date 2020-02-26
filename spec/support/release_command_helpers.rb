@@ -11,7 +11,7 @@ module ReleaseCommandHelpers
 
     env = {
       'CHAT_CHANNEL' => 'channel_id',
-      'GITLAB_TOKEN' => 'gitlab_token',
+      'GITLAB_OPS_TOKEN' => 'gitlab_ops_token',
       'GITLAB_USER_LOGIN' => ENV['USER'],
       'RELEASE_TRIGGER_TOKEN' => 'release_trigger_token'
     }

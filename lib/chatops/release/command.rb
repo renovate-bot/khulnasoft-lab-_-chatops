@@ -15,7 +15,7 @@ module Chatops
       }x
       # rubocop:enable Style/RegexpLiteral
 
-      TARGET_PROJECT = 'gitlab-org/release-tools'
+      TARGET_PROJECT = 'gitlab-org/release/tools'
       TARGET_REF = 'master'
 
       TriggerResult = Struct.new(:status, :url) do
@@ -78,7 +78,10 @@ module Chatops
       end
 
       def client
-        @client ||= Gitlab::Client.new(token: gitlab_token)
+        @client ||= Gitlab::Client.new(
+          token: gitlab_ops_token,
+          endpoint: 'ops.gitlab.net'
+        )
       end
 
       def pipeline_jobs(pipeline_id)
