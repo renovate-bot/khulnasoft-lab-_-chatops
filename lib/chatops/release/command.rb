@@ -80,7 +80,7 @@ module Chatops
       def client
         @client ||= Gitlab::Client.new(
           token: gitlab_ops_token,
-          endpoint: 'ops.gitlab.net'
+          host: 'ops.gitlab.net'
         )
       end
 
