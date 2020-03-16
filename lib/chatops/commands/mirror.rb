@@ -65,8 +65,12 @@ module Chatops
         canonical = mirror.canonical
 
         blocks.context do |context|
+          unless canonical['avatar_url'].nil?
+            context
+              .image(url: canonical['avatar_url'], alt_text: canonical['name'])
+          end
+
           context
-            .image(url: canonical['avatar_url'], alt_text: canonical['name'])
             .mrkdwn(text: "*#{canonical['name']}* -- #{mirror.mirror_chain}")
         end
 
