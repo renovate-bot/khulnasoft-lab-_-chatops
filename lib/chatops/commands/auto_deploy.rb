@@ -159,6 +159,7 @@ module Chatops
         auto_deploy_branch = auto_deploy_branches(revision).first
 
         {
+          role: role,
           host: client.host,
           version: version.version,
           revision: version.revision,
@@ -267,8 +268,13 @@ module Chatops
       end
 
       def canary_client
-        @canary_client ||= Gitlab::Client
-          .new(token: gitlab_token, host: 'canary.gitlab.com')
+        @canary_client ||= Gitlab::Client.new(
+          token: gitlab_token,
+          host: 'gitlab.com',
+          httparty: {
+            headers: { 'Cookie' => 'gitlab_canary=true' }
+          }
+        )
       end
 
       def staging_client
@@ -295,10 +301,10 @@ module Chatops
 
       def environment_link(env)
         icon =
-          case env[:host]
-          when /staging/
+          case env[:role]
+          when /gstg/
             'building_construction'
-          when /canary/
+          when /cny/
             'canary'
           else
             'party-tanuki'
