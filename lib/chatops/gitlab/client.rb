@@ -12,12 +12,12 @@ module Chatops
 
       # token - The API token to use for authentication.
       # host - The hostname to use.
-      def initialize(token:, host: DEFAULT_HOST)
+      def initialize(token:, host: DEFAULT_HOST, httparty: {})
         endpoint = "https://#{host}/api/v4"
 
         @host = host
         @internal_client = ::Gitlab::Client
-          .new(endpoint: endpoint, private_token: token)
+          .new(endpoint: endpoint, private_token: token, httparty: httparty)
       end
 
       def features
