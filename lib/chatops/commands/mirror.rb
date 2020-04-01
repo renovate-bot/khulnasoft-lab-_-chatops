@@ -53,8 +53,8 @@ module Chatops
 
       def security_mirrors
         @security_mirrors ||= client
-          .find_group('gitlab-org/security')
-          .projects
+          .group_projects('gitlab-org/security', include_subgroups: true)
+          .map(&:to_h)
           .select { |p| p.key?('forked_from_project') }
           .sort_by { |p| p['path'] }
           .map { |p| Gitlab::SecurityMirrorStatus.new(p) }

@@ -91,6 +91,7 @@ module Chatops
 
       def_delegator :internal_client, :project, :find_project
       def_delegator :internal_client, :group, :find_group
+      def_delegator :internal_client, :group_projects
 
       def_delegator :internal_client, :version
       def_delegator :internal_client, :commit
