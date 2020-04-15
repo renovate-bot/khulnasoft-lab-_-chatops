@@ -38,6 +38,12 @@ module Chatops
         internal_client.get("/namespaces/#{namespace}")
       end
 
+      # Update the extra shared runner minutes for a given namespace ID.
+      def set_namespace_extra_minutes(namespace, minutes)
+        body = { extra_shared_runners_minutes_limit: minutes }
+        internal_client.put("/namespaces/#{namespace}", body: body)
+      end
+
       # Sets a feature flag's state.
       #
       # name - The name of the flag.

@@ -6,22 +6,72 @@ module Chatops
     class Namespace
       include Command
 
-      usage "#{command_name} [namespace id]"
-      description 'Look up namespace information.'
+      usage "#{command_name} [SUBCOMMAND] [OPTIONS]"
+      description 'Managing of namespaces using the GitLab API.'
 
-      def perform
-        namespace_id = arguments[0]
-        return 'You must supply a namespace ID to look up.' unless namespace_id
+      # All the available subcommands.
+      COMMANDS = Set.new(%w[find minutes])
 
-        get_namespace(namespace_id)
+      options do |o|
+        o.separator <<~AVAIL.chomp
+
+          Available subcommands:
+
+          #{available_subcommands}
+        AVAIL
+
+        o.separator <<~HELP.chomp
+
+          Examples:
+
+            Obtaining details about a single namespace:
+
+              namespace find alice
+
+            Setting additional minutes quota for a namespace:
+
+              namespace minutes alice 2000
+        HELP
       end
 
-      def get_namespace(namespace_id)
+      def self.available_subcommands
+        Markdown::List.new(COMMANDS.to_a.sort).to_s
+      end
+
+      def perform
+        command = arguments[0]
+
+        if COMMANDS.include?(command)
+          public_send(command, *arguments[1..-1])
+        else
+          unsupported_command
+        end
+      end
+
+      def find(name = nil)
+        return 'You must supply a namespace path or ID.' unless name
+
         namespace_info = Gitlab::Client
           .new(token: gitlab_token)
-          .find_namespace(namespace_id)
+          .find_namespace(name)
 
-        submit_namespace_details(namespace_info)
+        if namespace_info
+          submit_namespace_details(namespace_info)
+        else
+          'The namespace could not be found.'
+        end
+      end
+
+      def minutes(name = nil, minutes = nil)
+        return 'You must supply a namespace path or ID to update.' unless name
+        return 'You must specify the total extra minutes.' unless minutes
+
+        client = Gitlab::Client.new(token: gitlab_token)
+        namespace = client.set_namespace_extra_minutes(name, minutes)
+
+        return namespace_not_found_error(name) unless namespace
+
+        minutes_updated(name, minutes)
       end
 
       def submit_namespace_details(namespace)
@@ -60,11 +110,41 @@ module Chatops
                     title: 'Plan',
                     value: namespace.plan,
                     short: true
+                  },
+                  {
+                    title: 'Extra Shared Runners Minutes Limit',
+                    value: namespace.extra_shared_runners_minutes_limit,
+                    short: true
                   }
                 ]
               }
             ]
           )
+      end
+
+      def unsupported_command
+        vals = COMMANDS.to_a.sort.map { |name| Markdown::Code.new(name) }
+        list = Markdown::List.new(vals)
+
+        <<~HELP.strip
+          The provided subcommand is invalid. The following subcommands are available:
+
+          #{list}
+
+          For more information run `user --help`.
+        HELP
+      end
+
+      def namespace_not_found_error(name)
+        "No namespace could be found for #{name.inspect}."
+      end
+
+      def minutes_updated(name, minutes)
+        "Extra minutes for #{name.inspect} updated to #{minutes.inspect}."
+      end
+
+      def minutes_missing_error
+        'You must supply a total amount of minutes to set.'
       end
     end
   end
