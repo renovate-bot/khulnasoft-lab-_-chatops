@@ -70,8 +70,11 @@ module Chatops
       # message - The message to add.
       # starts_at - The start time of the message.
       # ends_at - The stop time of the message.
-      def add_broadcast_message(message, starts_at: nil, ends_at: nil)
-        body = { message: message }
+      def add_broadcast_message(message,
+                                target_path:,
+                                starts_at: nil,
+                                ends_at: nil)
+        body = { message: message, target_path: target_path }
 
         body[:starts_at] = starts_at if starts_at
         body[:ends_at] = ends_at if ends_at

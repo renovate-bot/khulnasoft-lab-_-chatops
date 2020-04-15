@@ -99,9 +99,10 @@ describe Chatops::Gitlab::Client do
       it 'adds a broadcast message without an explicit start and end date' do
         expect(client.internal_client)
           .to receive(:post)
-          .with('/broadcast_messages', body: { message: 'hello' })
+          .with('/broadcast_messages',
+                body: { message: 'hello', target_path: 'world' })
 
-        client.add_broadcast_message('hello')
+        client.add_broadcast_message('hello', target_path: 'world')
       end
     end
 
@@ -111,10 +112,18 @@ describe Chatops::Gitlab::Client do
           .to receive(:post)
           .with(
             '/broadcast_messages',
-            body: { message: 'hello', starts_at: 'foo', ends_at: 'bar' }
+            body: {
+              message: 'hello',
+              target_path: 'world',
+              starts_at: 'foo',
+              ends_at: 'bar'
+            }
           )
 
-        client.add_broadcast_message('hello', starts_at: 'foo', ends_at: 'bar')
+        client.add_broadcast_message('hello',
+                                     target_path: 'world',
+                                     starts_at: 'foo',
+                                     ends_at: 'bar')
       end
     end
   end

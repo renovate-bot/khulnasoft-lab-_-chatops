@@ -4,18 +4,21 @@ require 'spec_helper'
 
 describe Chatops::Commands::Broadcast do
   describe '.perform' do
-    it 'supports a --start and --end option' do
+    it 'supports a --target-path, --start and --end option' do
       instance = instance_double('instance')
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[hello], { start: 'foo', end: 'bar' }, {})
+        .with(%w[hello],
+              { target_path: 'baz', start: 'foo', end: 'bar' }, {})
         .and_return(instance)
 
       expect(instance)
         .to receive(:perform)
 
-      described_class.perform(%w[hello --start foo --end bar])
+      described_class.perform(
+        %w[hello --target-path baz --start foo --end bar]
+      )
     end
   end
 
@@ -28,11 +31,23 @@ describe Chatops::Commands::Broadcast do
       end
     end
 
+    context 'when no target_path is supplied' do
+      it 'returns an error message' do
+        command = described_class.new(%w[hello])
+
+        expect(command.perform).to eq('You must specify a --target-path.')
+      end
+    end
+
     context 'when a message is supplied' do
       it 'adds a new broadcast message' do
         command = described_class.new(
           %w[hello],
-          { start: '2018-01-01 10:00', end: '2018-01-01 12:00' },
+          {
+            target_path: 'world',
+            start: '2018-01-01 10:00',
+            end: '2018-01-01 12:00'
+          },
           'GITLAB_TOKEN' => '123'
         )
 
@@ -47,6 +62,7 @@ describe Chatops::Commands::Broadcast do
           .to receive(:add_broadcast_message)
           .with(
             'hello',
+            target_path: 'world',
             starts_at: Time.new(2018, 1, 1, 10).iso8601,
             ends_at: Time.new(2018, 1, 1, 12).iso8601
           )
