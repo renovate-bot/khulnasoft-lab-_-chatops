@@ -131,7 +131,7 @@ module Chatops
 
           #{list}
 
-          For more information run `user --help`.
+          For more information run `namespace --help`.
         HELP
       end
 
