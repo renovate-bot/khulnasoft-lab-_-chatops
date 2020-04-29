@@ -22,6 +22,13 @@ module Chatops
       # The project name to use for logging the toggling of feature flags.
       LOG_PROJECT = 'gitlab-com/gl-infra/feature-flag-log'
 
+      # The project used for recording ongoing production incidents.
+      INCIDENTS_PROJECT = 'gitlab-com/gl-infra/production'
+
+      # The severity labels applied to an incident issue before it blocks
+      # changing feature flags.
+      SEVERITY_LABELS = %w[S1 S2 S3].freeze
+
       description 'Managing of GitLab feature flags.'
 
       options do |o|
@@ -41,6 +48,11 @@ module Chatops
         o.string(
           '--user',
           'The username of a user to set a feature flag for, e.g. someuser'
+        )
+
+        o.boolean(
+          '--ignore-incidents',
+          "Ignore any ongoing incidents when changing a feature flag's state"
         )
 
         GitlabEnvironments.define_environment_options(o)
@@ -137,6 +149,13 @@ module Chatops
         unless Gitlab::Feature.valid_value?(value)
           return "The value #{value.inspect} is invalid. " \
             'Valid values are: `true`, `false`, or an integer from 0 to 100.'
+        end
+
+        if ongoing_incidents?
+          return "This feature flag's state can't be changed as one or more " \
+            'production incidents are ongoing. If you absolutely must change ' \
+            'the state of this feature flag, specify the --ignore-incidents ' \
+            'option.'
         end
 
         response = Gitlab::Client
@@ -241,36 +260,47 @@ module Chatops
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
 
         host = gitlab_host
-        labels = "host::#{host}, change"
         username = env.fetch('GITLAB_USER_LOGIN')
+        labels = "host::#{host}, change"
+
+        description = <<~DESC
+          * Feature flag: `#{name}`
+          * New value: `#{value}`
+          * Changed by: [`@#{username}`](https://gitlab.com/#{username})
+          * Changed on (in UTC): `#{Time.now.utc.iso8601}`
+          * Host: https://#{host}
+
+          ## Feature flag scopes
+
+          This feature flag applies the following scopes (if any):
+
+          | User                        | Project                        | Group
+          |-----------------------------|--------------------------------|-------------
+          | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}`
+
+          When a value is set to `nil` it means the scope does not apply. If
+          none of these scopes are set it means the feature flag applies to
+          everybody.
+
+          <hr>
+
+          :robot: This issue was generated using [GitLab
+          Chatops](https://gitlab.com/gitlab-com/chatops/).
+        DESC
+
+        if options[:ignore_incidents]
+          labels += ', Incidents ignored'
+
+          description = ':warning: **This feature flag was changed despite ' \
+            'there being one or more ongoing production incidents.**' \
+            "\n\n#{description}"
+        end
+
         issue = client.create_issue(
           LOG_PROJECT,
           "Feature flag #{name.inspect} has been set to #{value.inspect}",
           labels: labels,
-          description: <<~DESC
-            * Feature flag: `#{name}`
-            * New value: `#{value}`
-            * Changed by: [`@#{username}`](https://gitlab.com/#{username})
-            * Changed on (in UTC): `#{Time.now.utc.iso8601}`
-            * Host: https://#{host}
-
-            ## Feature flag scopes
-
-            This feature flag applies the following scopes (if any):
-
-            | User                        | Project                        | Group
-            |-----------------------------|--------------------------------|-------------
-            | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}`
-
-            When a value is set to `nil` it means the scope does not apply. If
-            none of these scopes are set it means the feature flag applies to
-            everybody.
-
-            <hr>
-
-            :robot: This issue was generated using [GitLab
-            Chatops](https://gitlab.com/gitlab-com/chatops/).
-          DESC
+          description: description
         )
 
         client.close_issue(issue.project_id, issue.iid)
@@ -286,6 +316,19 @@ module Chatops
 
       def username
         env.fetch('GITLAB_USER_LOGIN')
+      end
+
+      def ongoing_incidents?
+        return false if options[:ignore_incidents]
+
+        Gitlab::Client
+          .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
+          .issues(INCIDENTS_PROJECT, labels: 'incident', state: 'opened')
+          .auto_paginate do |issue|
+            return true if (issue.labels & SEVERITY_LABELS).any?
+          end
+
+        false
       end
     end
   end

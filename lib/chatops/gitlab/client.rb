@@ -108,6 +108,7 @@ module Chatops
 
       def_delegator :internal_client, :create_issue
       def_delegator :internal_client, :close_issue
+      def_delegator :internal_client, :issues
 
       def commit_refs(project, sha, options = {})
         path = internal_client.url_encode(project)

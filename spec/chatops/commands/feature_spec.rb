@@ -75,6 +75,24 @@ describe Chatops::Commands::Feature do
 
       described_class.perform(%w[feature list --ops])
     end
+
+    it 'supports a --ignore-incidents option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(
+          %w[feature set foo true],
+          a_hash_including(ignore_incidents: true),
+          {}
+        )
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[feature set foo true --ignore-incidents])
+    end
   end
 
   describe '.available_subcommands' do
@@ -225,10 +243,16 @@ describe Chatops::Commands::Feature do
           .with('foo', '10', project: nil, group: nil, user: nil)
           .and_return(feature)
 
-        expect(command).to receive(:send_feature_details).with(
-          feature: an_instance_of(Chatops::Gitlab::Feature),
-          text: 'The feature flag value has been updated!'
-        )
+        expect(command)
+          .to receive(:ongoing_incidents?)
+          .and_return(false)
+
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
 
         annotate = instance_double('annotate')
         expect(Chatops::Grafana::Annotate)
@@ -283,10 +307,16 @@ describe Chatops::Commands::Feature do
                 user: nil)
           .and_return(feature)
 
-        expect(command).to receive(:send_feature_details).with(
-          feature: an_instance_of(Chatops::Gitlab::Feature),
-          text: 'The feature flag value has been updated!'
-        )
+        expect(command)
+          .to receive(:ongoing_incidents?)
+          .and_return(false)
+
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
 
         expect(command).to receive(:log_feature_toggle).with('foo', 'true')
 
@@ -338,10 +368,16 @@ describe Chatops::Commands::Feature do
           .with('foo', 'true', project: nil, group: 'gitlab-org', user: nil)
           .and_return(feature)
 
-        expect(command).to receive(:send_feature_details).with(
-          feature: an_instance_of(Chatops::Gitlab::Feature),
-          text: 'The feature flag value has been updated!'
-        )
+        expect(command)
+          .to receive(:ongoing_incidents?)
+          .and_return(false)
+
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
 
         annotate = instance_double('annotate')
 
@@ -394,10 +430,17 @@ describe Chatops::Commands::Feature do
           .with('foo', 'true', project: nil, group: nil, user: 'myuser')
           .and_return(feature)
 
-        expect(command).to receive(:send_feature_details).with(
-          feature: an_instance_of(Chatops::Gitlab::Feature),
-          text: 'The feature flag value has been updated!'
-        )
+        expect(command)
+          .to receive(:ongoing_incidents?)
+          .and_return(false)
+
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
+
         expect(command).to receive(:log_feature_toggle).with('foo', 'true')
 
         annotate = instance_double('annotate')
@@ -417,6 +460,17 @@ describe Chatops::Commands::Feature do
       end
       # rubocop: enable RSpec/ExampleLength
       # rubocop: enable RSpec/MultipleExpectations
+    end
+
+    context 'when there is an ongoing incident' do
+      it 'does not allow changing the feature flag state' do
+        command =
+          described_class.new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123')
+
+        expect(command).to receive(:ongoing_incidents?).and_return(true)
+
+        expect(command.set).to match(/as one or more production incidents/)
+      end
     end
   end
 
@@ -645,6 +699,143 @@ describe Chatops::Commands::Feature do
         expect(client).to receive(:close_issue).with(1, 2)
 
         command.log_feature_toggle('foo', 'bar')
+      end
+
+      it 'adds a label when incidents are ignored' do
+        command = described_class.new(
+          [],
+          { ignore_incidents: true },
+          'GITLAB_USER_LOGIN' => 'alice',
+          'GITLAB_TOKEN' => 'foo'
+        )
+
+        client = instance_double(Chatops::Gitlab::Client)
+        issue = instance_double('issue', project_id: 1, iid: 2)
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'foo', host: 'gitlab.com')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:create_issue)
+          .with(
+            described_class::LOG_PROJECT,
+            an_instance_of(String),
+            labels: 'host::gitlab.com, change, Incidents ignored',
+            description: an_instance_of(String)
+          )
+          .and_return(issue)
+
+        expect(client).to receive(:close_issue).with(1, 2)
+
+        command.log_feature_toggle('foo', 'bar')
+      end
+    end
+  end
+
+  describe '#ongoing_incidents?' do
+    context 'when there are no incidents' do
+      it 'returns false' do
+        command = described_class.new([], {}, 'GITLAB_TOKEN' => 'foo')
+        client = instance_double(Chatops::Gitlab::Client)
+
+        allow(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'foo', host: 'gitlab.com')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:issues)
+          .with(
+            described_class::INCIDENTS_PROJECT,
+            labels: 'incident',
+            state: 'opened'
+          )
+          .and_return(Gitlab::PaginatedResponse.new([]))
+
+        expect(command.ongoing_incidents?).to eq(false)
+      end
+    end
+
+    context 'when there are incidents' do
+      let(:command) { described_class.new([], {}, 'GITLAB_TOKEN' => 'foo') }
+      let(:client) { instance_double(Chatops::Gitlab::Client) }
+
+      before do
+        allow(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'foo', host: 'gitlab.com')
+          .and_return(client)
+      end
+
+      it 'returns false when the --ignore-incidents option is specified' do
+        command = described_class
+          .new([], { ignore_incidents: true }, 'GITLAB_TOKEN' => 'foo')
+
+        expect(client).not_to receive(:issues)
+
+        expect(command.ongoing_incidents?).to eq(false)
+      end
+
+      it 'returns true when there is an S1 issue' do
+        issue = instance_double('issue', labels: %w[S1 incident foo])
+
+        expect(client)
+          .to receive(:issues)
+          .with(
+            described_class::INCIDENTS_PROJECT,
+            labels: 'incident',
+            state: 'opened'
+          )
+          .and_return(Gitlab::PaginatedResponse.new([issue]))
+
+        expect(command.ongoing_incidents?).to eq(true)
+      end
+
+      it 'returns true when there is an S2 issue' do
+        issue = instance_double('issue', labels: %w[S2 incident foo])
+
+        expect(client)
+          .to receive(:issues)
+          .with(
+            described_class::INCIDENTS_PROJECT,
+            labels: 'incident',
+            state: 'opened'
+          )
+          .and_return(Gitlab::PaginatedResponse.new([issue]))
+
+        expect(command.ongoing_incidents?).to eq(true)
+      end
+
+      it 'returns true when there is an S3 issue' do
+        issue = instance_double('issue', labels: %w[S3 incident foo])
+
+        expect(client)
+          .to receive(:issues)
+          .with(
+            described_class::INCIDENTS_PROJECT,
+            labels: 'incident',
+            state: 'opened'
+          )
+          .and_return(Gitlab::PaginatedResponse.new([issue]))
+
+        expect(command.ongoing_incidents?).to eq(true)
+      end
+
+      it 'returns false when there is an S3 issue' do
+        issue = instance_double('issue', labels: %w[S4 incident foo])
+
+        expect(client)
+          .to receive(:issues)
+          .with(
+            described_class::INCIDENTS_PROJECT,
+            labels: 'incident',
+            state: 'opened'
+          )
+          .and_return(Gitlab::PaginatedResponse.new([issue]))
+
+        expect(command.ongoing_incidents?).to eq(false)
       end
     end
   end
