@@ -38,6 +38,7 @@ require 'chatops/slack'
 require 'chatops/slack/file_upload'
 require 'chatops/slack/message'
 
+require 'chatops/commands/annotate'
 require 'chatops/commands/broadcast'
 require 'chatops/commands/explain'
 require 'chatops/commands/feature'
