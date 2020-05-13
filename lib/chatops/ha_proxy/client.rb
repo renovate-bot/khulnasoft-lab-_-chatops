@@ -19,22 +19,16 @@ module Chatops
         @lbs = lbs
       end
 
-      def set_server_state(servers:, state:, backend: nil)
-        stats = server_stats
-        stats = stats.select { |s| servers.include?(s[:server]) }
-        stats = stats.select { |s| backend == s[:backend] } if backend
-
-        @lbs.each do |lb_ip|
-          stats.each do |s|
-            sock = TCPSocket.new(lb_ip, LB_ADMIN_PORT)
-            begin
-              haproxy_send(
-                cmd: "set server #{s[:backend]}/#{s[:server]} state #{state}",
-                sock: sock
-              )
-            ensure
-              sock.close
-            end
+      def set_server_state(server_stats:, state:)
+        server_stats.each do |s|
+          sock = TCPSocket.new(s[:lb_ip], LB_ADMIN_PORT)
+          begin
+            haproxy_send(
+              cmd: "set server #{s[:backend]}/#{s[:server]} state #{state}",
+              sock: sock
+            )
+          ensure
+            sock.close
           end
         end
       end

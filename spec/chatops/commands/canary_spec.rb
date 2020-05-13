@@ -14,11 +14,8 @@ describe Chatops::Commands::Canary do
       .to receive(:new)
       .and_return(chef_client)
     allow(chef_client)
-      .to receive(:hostnames_from_role)
-      .and_return(['some-cny-server'])
-    allow(chef_client)
       .to receive(:ips_from_role)
-      .and_return([])
+      .and_return(['1.1.1.1'])
   end
 
   describe '#perform' do
@@ -35,7 +32,9 @@ describe Chatops::Commands::Canary do
         {
           state: state,
           conn: '99',
-          server: 'not-a-cny-server',
+          # Canary servers must have the string
+          # '-cny-' in the name
+          server: 'not-a-canary-server',
           backend: 'some-backend',
           lb_ip: '1.1.1.1',
           weight: '100'
@@ -70,11 +69,12 @@ describe Chatops::Commands::Canary do
     end
 
     context 'when state is set to drain' do
-      it 'stets state to drain' do
+      it 'sets state to drain' do
         expect(ha_proxy_client).to receive(:set_server_state)
           .with(
-            backend: nil,
-            servers: ['some-cny-server'],
+            server_stats: gen_status(
+              'DRAIN'
+            ).select { |s| s[:server] == 'some-cny-server' },
             state: 'drain'
           )
         allow(ha_proxy_client)
@@ -98,11 +98,12 @@ describe Chatops::Commands::Canary do
     end
 
     context 'when state is set to maint' do
-      it 'stets state to maint' do
+      it 'sets state to maint' do
         expect(ha_proxy_client).to receive(:set_server_state)
           .with(
-            backend: nil,
-            servers: ['some-cny-server'],
+            server_stats: gen_status(
+              'MAINT'
+            ).select { |s| s[:server] == 'some-cny-server' },
             state: 'maint'
           )
         allow(ha_proxy_client)
@@ -126,11 +127,12 @@ describe Chatops::Commands::Canary do
     end
 
     context 'when state is set to ready' do
-      it 'stets state to ready' do
+      it 'sets state to ready' do
         expect(ha_proxy_client).to receive(:set_server_state)
           .with(
-            backend: nil,
-            servers: ['some-cny-server'],
+            server_stats: gen_status(
+              'UP'
+            ).select { |s| s[:server] == 'some-cny-server' },
             state: 'ready'
           )
         allow(ha_proxy_client)
