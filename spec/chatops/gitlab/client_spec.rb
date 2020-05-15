@@ -82,6 +82,18 @@ describe Chatops::Gitlab::Client do
 
       client.set_feature('foo', 'true', user: 'myuser')
     end
+
+    it 'sets the percentage of actors rollout' do
+      expect(client.internal_client)
+        .to receive(:post)
+        .with('/features/foo',
+              body: {
+                value: '42',
+                key: 'percentage_of_actors'
+              })
+
+      client.set_feature('foo', '42', actors: true)
+    end
   end
 
   describe '#delete_feature' do

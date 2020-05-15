@@ -240,7 +240,7 @@ describe Chatops::Commands::Feature do
 
         expect(client)
           .to receive(:set_feature)
-          .with('foo', '10', project: nil, group: nil, user: nil)
+          .with('foo', '10', project: nil, group: nil, user: nil, actors: nil)
           .and_return(feature)
 
         expect(command)
@@ -304,7 +304,8 @@ describe Chatops::Commands::Feature do
           .with('foo', 'true',
                 project: 'gitlab-org/gitaly',
                 group: nil,
-                user: nil)
+                user: nil,
+                actors: nil)
           .and_return(feature)
 
         expect(command)
@@ -365,7 +366,11 @@ describe Chatops::Commands::Feature do
 
         expect(client)
           .to receive(:set_feature)
-          .with('foo', 'true', project: nil, group: 'gitlab-org', user: nil)
+          .with('foo', 'true',
+                project: nil,
+                group: 'gitlab-org',
+                user: nil,
+                actors: nil)
           .and_return(feature)
 
         expect(command)
@@ -427,7 +432,10 @@ describe Chatops::Commands::Feature do
 
         expect(client)
           .to receive(:set_feature)
-          .with('foo', 'true', project: nil, group: nil, user: 'myuser')
+          .with('foo', 'true', project: nil,
+                               group: nil,
+                               user: 'myuser',
+                               actors: nil)
           .and_return(feature)
 
         expect(command)

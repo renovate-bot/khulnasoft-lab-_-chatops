@@ -49,6 +49,8 @@ module Chatops
           '--user',
           'The username of a user to set a feature flag for, e.g. someuser'
         )
+        o.bool('--actors',
+               'Modifier to roll out a feature flag to a percentage of actors')
 
         o.boolean(
           '--ignore-incidents',
@@ -100,6 +102,9 @@ module Chatops
 
           # To enable a feature 50% of the time:
           feature set gitaly_tags 50
+
+          # To enable a feature 50% of the actors:
+          feature set gitaly_tags 50 --actors
 
           # To enable a feature for a project
           feature set --project=gitlab-org/gitaly gitaly_tags
@@ -162,7 +167,8 @@ module Chatops
           .new(token: gitlab_token, host: gitlab_host)
           .set_feature(name, value, project: options[:project],
                                     group: options[:group],
-                                    user: options[:user])
+                                    user: options[:user],
+                                    actors: options[:actors])
 
         feature = Gitlab::Feature.from_api_response(response)
 
@@ -266,6 +272,7 @@ module Chatops
         description = <<~DESC
           * Feature flag: `#{name}`
           * New value: `#{value}`
+          * Percentage of actors: `#{options[:actors]}`
           * Changed by: [`@#{username}`](https://gitlab.com/#{username})
           * Changed on (in UTC): `#{Time.now.utc.iso8601}`
           * Host: https://#{host}

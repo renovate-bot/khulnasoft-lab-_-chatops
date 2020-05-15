@@ -48,12 +48,24 @@ module Chatops
       #
       # name - The name of the flag.
       # value - The value to set for the flag.
-      def set_feature(name, value, project: nil, group: nil, user: nil)
+      # project - A project actor
+      # group - A group actor
+      # user - A user actor
+      # value - The value to set for the flag.
+      # actors - Use a percentage of actors rollout
+      def set_feature(name,
+                      value,
+                      project: nil,
+                      group: nil,
+                      user: nil,
+                      actors: false)
+
         body = { value: value }
 
         body[:project] = project if project
         body[:group] = group if group
         body[:user] = user if user
+        body[:key] = 'percentage_of_actors' if actors
 
         internal_client.post("/features/#{name}", body: body)
       end
