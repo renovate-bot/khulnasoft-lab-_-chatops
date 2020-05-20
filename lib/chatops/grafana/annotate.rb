@@ -11,22 +11,33 @@ module Chatops
         @token = token
       end
 
-      def annotate!(text, tags: [])
+      def annotate!(text, tags: [], dashboard_id: nil)
         1.upto(ANNOTATE_RETRIES) do
+          payload = {
+            text: text,
+            tags: tags
+          }
+          payload[:dashboardId] = dashboard_id if dashboard_id
+
           resp = HTTP
             .auth("Bearer #{@token}")
-            .post(
-              "#{GRAFANA_URL}/api/annotations",
-              json: {
-                text: text,
-                tags: tags
-              }
-            )
-          return if resp.status.ok?
+            .post("#{GRAFANA_URL}/api/annotations", json: payload)
 
-          sleep ANNOTATE_RETRY_INTERVAL
+          resp_json = parse_response_body(resp)
+
+          return resp_json if resp.status.ok?
+
+          sleep(ANNOTATE_RETRY_INTERVAL)
         end
         raise "Failed to annotate after #{ANNOTATE_RETRIES} retries"
+      end
+
+      private
+
+      def parse_response_body(response)
+        JSON.parse(response.body.to_s)
+      rescue JSON::ParserError => e
+        raise "Failed to parse Grafana response #{response}; reason: #{e}"
       end
     end
   end
