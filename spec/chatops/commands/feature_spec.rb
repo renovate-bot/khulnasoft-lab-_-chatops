@@ -757,7 +757,7 @@ describe Chatops::Commands::Feature do
           .to receive(:issues)
           .with(
             described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Open',
+            labels: 'Incident::Active',
             state: 'opened'
           )
           .and_return(Gitlab::PaginatedResponse.new([]))
@@ -793,7 +793,7 @@ describe Chatops::Commands::Feature do
           .to receive(:issues)
           .with(
             described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Open',
+            labels: 'Incident::Active',
             state: 'opened'
           )
           .and_return(Gitlab::PaginatedResponse.new([issue]))
@@ -808,7 +808,7 @@ describe Chatops::Commands::Feature do
           .to receive(:issues)
           .with(
             described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Open',
+            labels: 'Incident::Active',
             state: 'opened'
           )
           .and_return(Gitlab::PaginatedResponse.new([issue]))
@@ -817,13 +817,13 @@ describe Chatops::Commands::Feature do
       end
 
       it 'returns true when there is an S3 issue' do
-        issue = instance_double('issue', labels: %w[S3 Incident::Open foo])
+        issue = instance_double('issue', labels: %w[S3 Incident::Active foo])
 
         expect(client)
           .to receive(:issues)
           .with(
             described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Open',
+            labels: 'Incident::Active',
             state: 'opened'
           )
           .and_return(Gitlab::PaginatedResponse.new([issue]))
@@ -832,13 +832,13 @@ describe Chatops::Commands::Feature do
       end
 
       it 'returns false when there is an S4 issue' do
-        issue = instance_double('issue', labels: %w[S4 Incident::Open foo])
+        issue = instance_double('issue', labels: %w[S4 Incident::Active foo])
 
         expect(client)
           .to receive(:issues)
           .with(
             described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Open',
+            labels: 'Incident::Active',
             state: 'opened'
           )
           .and_return(Gitlab::PaginatedResponse.new([issue]))

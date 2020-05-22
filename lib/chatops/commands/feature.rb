@@ -330,7 +330,7 @@ module Chatops
 
         Gitlab::Client
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
-          .issues(INCIDENTS_PROJECT, labels: 'Incident::Open', state: 'opened')
+          .issues(INCIDENTS_PROJECT, labels: 'Incident::Active', state: 'opened')
           .auto_paginate do |issue|
             return true if (issue.labels & SEVERITY_LABELS).any?
           end
