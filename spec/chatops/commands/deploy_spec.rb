@@ -46,6 +46,20 @@ describe Chatops::Commands::Deploy do
       described_class.perform(%w[--pre])
     end
 
+    it 'supports a --release option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[], a_hash_including(release: true), {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[--release])
+    end
+
     it 'supports a --allow-precheck-failure option' do
       instance = instance_double('instance')
 
@@ -434,6 +448,12 @@ describe Chatops::Commands::Deploy do
       expect(command.environment).to eq('pre')
     end
 
+    it 'returns release when the --release option is set' do
+      command = described_class.new([], release: true)
+
+      expect(command.environment).to eq('release')
+    end
+
     it 'returns gprd-cny when the --production and --canary options are set' do
       command = described_class.new([], production: true, canary: true)
 
@@ -472,6 +492,43 @@ describe Chatops::Commands::Deploy do
       command = described_class.new([])
 
       expect(command.version?).to eq(false)
+    end
+  end
+
+  describe 'protects release environment' do
+    it 'allows packaged releases to be deployed' do
+      version = '13.0.1-ee.0'
+      command = described_class.new([version], release: true)
+
+      expect(command.environment).to eq('release')
+      expect(command)
+        .to receive(:schedule_deploy)
+        .with(version)
+
+      command.perform
+    end
+
+    it 'does not allow RCs to be deployed' do
+      version = '11.3.0-rc1.ee.0'
+      command = described_class.new([version], release: true)
+
+      expect(command.environment).to eq('release')
+      expect(command)
+        .not_to receive(:schedule_deploy)
+        .with(version)
+
+      command.perform
+    end
+    it 'does not allow auto-deploys to be deployed' do
+      version = '12.0.201906051128-30e31e4afb1.bd6aadb8c50'
+      command = described_class.new([version], release: true)
+
+      expect(command.environment).to eq('release')
+      expect(command)
+        .not_to receive(:schedule_deploy)
+        .with(version)
+
+      command.perform
     end
   end
 end

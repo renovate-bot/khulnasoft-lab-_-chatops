@@ -27,8 +27,6 @@ module Chatops
       options do |o|
         o.bool('--production', 'Deploy to production, instead of staging')
 
-        o.bool('--dr', 'Deploy to dr, instead of staging')
-
         o.bool(
           '--canary',
           'Only deploy to a canary, instead of the entire environment'
@@ -38,6 +36,8 @@ module Chatops
           '--pre',
           'Deploy to the PreProd environment'
         )
+
+        o.bool('--release', 'Deploy to the Release environment')
 
         o.bool('--warmup', 'Only perform a warmup, instead of a full deploy')
 
@@ -69,6 +69,12 @@ module Chatops
         unless version_valid?(version)
           return 'The specified version is invalid. ' \
             'Versions must be in the format MAJOR.MINOR.PATCH(-rcN)'
+        end
+
+        if environment == 'release' && !version.match?(VERSION_REGEX)
+          return 'The release environment is only allowed to receive ' \
+            'packages soon to be released.  Auto-deploys and RC\'s are ' \
+            'not allowed.'
         end
 
         schedule_deploy(version)
@@ -166,8 +172,8 @@ module Chatops
             'gprd'
           elsif options[:pre]
             'pre'
-          elsif options[:dr]
-            'dr'
+          elsif options[:release]
+            'release'
           else
             'gstg'
           end
