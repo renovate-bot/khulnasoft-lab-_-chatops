@@ -10,7 +10,9 @@ module Chatops
       usage "#{command_name} SUBCOMMAND [OPTIONS]"
       description 'Perform release-related tasks.'
 
-      COMMANDS = Set.new(%w[issue merge prepare qa stable_branch status tag])
+      COMMANDS = Set.new(
+        %w[issue merge prepare qa stable_branch status sync_remotes tag]
+      )
 
       options do |o|
         o.bool '--security',
@@ -67,6 +69,10 @@ module Chatops
             Tag 1.2.3 as a security release
 
               release tag --security 1.2.3
+
+            Sync master and auto-deploy branches after a security release
+
+              release sync_remotes --security
         HELP
       end
 
@@ -145,6 +151,10 @@ module Chatops
       def tag(version)
         validate_version!(version)
 
+        trigger_release(version, "#{namespace}:#{__method__}")
+      end
+
+      def sync_remotes(version = nil)
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 

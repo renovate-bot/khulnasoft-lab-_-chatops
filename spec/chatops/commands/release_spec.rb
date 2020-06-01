@@ -232,5 +232,16 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
     end
+
+    describe '#sync_remotes' do
+      it 'triggers sync_remotes in a security release' do
+        instance = stubbed_instance('sync_remotes', nil, security: true)
+
+        expect(instance).to receive(:trigger_release)
+          .with(nil, 'security:sync_remotes')
+
+        instance.perform
+      end
+    end
   end
 end
