@@ -48,7 +48,7 @@ uploads a file to Slack. For this to work you also need to:
 1. Make sure the bot is present in the channel.
 1. Expose the API token via the `SLACK_TOKEN` environment variable.
 
-Tip: To find the `CHAT_CHANNEL` ID, look at the link to a Slack message from 
+Tip: To find the `CHAT_CHANNEL` ID, look at the link to a Slack message from
 the channel. The ID is the first set of random looking characters.
 
 Other commands may require additional tokens such as a GitLab or Twitter API
