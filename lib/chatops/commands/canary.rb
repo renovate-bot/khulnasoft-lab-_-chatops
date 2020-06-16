@@ -3,6 +3,7 @@
 module Chatops
   module Commands
     class Canary
+      DRAIN_INTERVAL = 60 # Wait 60 seconds for connections to drain
       include Command
       include HAProxy::Disp
       include Chef::Config
@@ -14,19 +15,27 @@ module Chatops
                'Control production canary traffic instead of staging')
         o.bool('--ready',
                'Set canary to enable connections')
+        o.bool('--enable',
+               'Set canary to enable connections (same as --ready)')
         o.bool('--drain',
                'Set canary to drain connections')
         o.bool('--maint',
-               'Set canary to be disabled')
+               'Set canary to be in maint state')
+        o.bool('--disable',
+               'Set canary to be disabled, drains and then sets maint state')
       end
 
       def perform
         # If there is a new state transition, make it here. Otherwise
         # we just print the status and a note about usage
-        if server_state_command
+        server_state_commands.each do |state|
           canary_server_state!(
-            state: server_state_command
+            state: state
           )
+          if options[:disable] &&
+             state == Chatops::HAProxy::State::DRAIN
+            sleep(DRAIN_INTERVAL)
+          end
         end
 
         # tweet tweet tweet - helps to identify that the response is canary
@@ -44,31 +53,37 @@ module Chatops
       def usage_disp
         # display some additional text if no options are
         # specifified
-        return [] if server_state_command
+        return [] unless options.empty?
 
         ['_Use `/chatops run canary --help` to list canary commands_',
          'Displaying the current canary status:']
       end
 
-      def server_state_command
-        if options[:ready]
-          'ready'
+      def server_state_commands
+        if options[:ready] || options[:enable]
+          [Chatops::HAProxy::State::READY]
+        elsif options[:disable]
+          [Chatops::HAProxy::State::DRAIN, Chatops::HAProxy::State::MAINT]
         elsif options[:drain]
-          'drain'
+          [Chatops::HAProxy::State::DRAIN]
         elsif options[:maint]
-          'maint'
+          [Chatops::HAProxy::State::MAINT]
+        else
+          []
         end
       end
 
       def canary_server_state!(state:)
-        stats = haproxy_client.server_stats.select do |s|
-          canary_server_name?(s[:server])
-        end
-
         haproxy_client.set_server_state(
-          server_stats: stats,
+          server_stats: canary_stats,
           state: state
         )
+      end
+
+      def canary_stats
+        haproxy_client.server_stats.select do |s|
+          canary_server_name?(s[:server])
+        end
       end
 
       def canary_servers

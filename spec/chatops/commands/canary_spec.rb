@@ -126,7 +126,7 @@ describe Chatops::Commands::Canary do
       end
     end
 
-    context 'when state is set to ready' do
+    shared_examples 'enabling the canary' do
       it 'sets state to ready' do
         expect(ha_proxy_client).to receive(:set_server_state)
           .with(
@@ -138,11 +138,6 @@ describe Chatops::Commands::Canary do
         allow(ha_proxy_client)
           .to receive(:server_stats)
           .and_return(gen_status('UP'))
-        command = described_class.new(
-          [], { ready: true },
-          'CHEF_USERNAME' => 'fake-user',
-          'CHEF_PEM_KEY' => 'fake-pem'
-        )
         expect(command.perform).to eq(
           <<~CNY_RESULT.chomp
             :canary: :canary: :canary:
@@ -150,6 +145,70 @@ describe Chatops::Commands::Canary do
             some-backend        : conn:99 UP:1
             ```
             *UP*: some-cny-server
+          CNY_RESULT
+        )
+      end
+    end
+
+    context 'when state is set to ready' do
+      let(:command) do
+        described_class.new(
+          [], { ready: true },
+          'CHEF_USERNAME' => 'fake-user',
+          'CHEF_PEM_KEY' => 'fake-pem'
+        )
+      end
+
+      it_behaves_like 'enabling the canary'
+    end
+
+    context 'when state is set to enable' do
+      let(:command) do
+        described_class.new(
+          [], { enable: true },
+          'CHEF_USERNAME' => 'fake-user',
+          'CHEF_PEM_KEY' => 'fake-pem'
+        )
+      end
+
+      it_behaves_like 'enabling the canary'
+    end
+
+    context 'when state is set to disable' do
+      let(:command) do
+        described_class.new(
+          [], { disable: true },
+          'CHEF_USERNAME' => 'fake-user',
+          'CHEF_PEM_KEY' => 'fake-pem'
+        )
+      end
+
+      it 'sets state to drain and then ready' do
+        expect(command).to receive(:sleep).once.with(60)
+        allow(ha_proxy_client)
+          .to receive(:server_stats)
+          .and_return(
+            gen_status('DRAIN'),
+            gen_status('MAINT')
+          )
+
+        %w[drain maint].each do |state|
+          expect(ha_proxy_client).to receive(:set_server_state)
+            .once.ordered.with(
+              server_stats: gen_status(
+                state.upcase
+              ).select { |s| s[:server] == 'some-cny-server' },
+              state: state
+            )
+        end
+
+        expect(command.perform).to eq(
+          <<~CNY_RESULT.chomp
+            :canary: :canary: :canary:
+            ```
+            some-backend        : conn:99 MAINT:1
+            ```
+            *MAINT*: some-cny-server
           CNY_RESULT
         )
       end
