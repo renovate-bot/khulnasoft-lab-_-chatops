@@ -128,3 +128,6 @@ mirror:
 
 annotate:
   <<: *chatops
+
+hotpatch:
+  <<: *chatops
