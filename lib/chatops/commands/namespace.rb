@@ -112,6 +112,11 @@ module Chatops
                     short: true
                   },
                   {
+                    title: 'Pipeline minutes quota',
+                    value: namespace.actual_shared_runners_minutes_limit,
+                    short: true
+                  },
+                  {
                     title: 'Extra Shared Runners Minutes Limit',
                     value: namespace.extra_shared_runners_minutes_limit,
                     short: true
