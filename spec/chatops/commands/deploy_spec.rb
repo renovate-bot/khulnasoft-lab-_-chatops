@@ -223,7 +223,8 @@ describe Chatops::Commands::Deploy do
           'TAKEOFF_TRIGGER_TOKEN' => '123',
           'TAKEOFF_TRIGGER_PROJECT' => 'foo',
           'TAKEOFF_TRIGGER_HOST' => 'example.com',
-          'GITLAB_USER_NAME' => 'Alice'
+          'GITLAB_USER_NAME' => 'Alice',
+          'GITLAB_USER_LOGIN' => 'alice42'
         )
 
         response = instance_double('response', web_url: 'bar')
@@ -237,7 +238,8 @@ describe Chatops::Commands::Deploy do
             'DEPLOY_ENVIRONMENT': 'gstg',
             'DEPLOY_VERSION': '11.3.0-rc1.ee.0',
             'DEPLOY_REPO': 'gitlab/pre-release',
-            'DEPLOY_USER': 'Alice'
+            'DEPLOY_USER': 'Alice',
+            'RELEASE_MANAGER': 'alice42'
           )
           .and_return(response)
 

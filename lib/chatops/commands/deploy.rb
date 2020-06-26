@@ -131,7 +131,8 @@ module Chatops
           'DEPLOY_ENVIRONMENT': environment,
           'DEPLOY_VERSION': version,
           'DEPLOY_REPO': repository,
-          'DEPLOY_USER': env['GITLAB_USER_NAME']
+          'DEPLOY_USER': env['GITLAB_USER_NAME'],
+          'RELEASE_MANAGER': env['GITLAB_USER_LOGIN']
         }
 
         vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]
