@@ -262,6 +262,18 @@ describe Chatops::Commands::Deploycmd do
     end
 
     context 'with a valid command' do
+      def trigger_args
+        [
+          '777',
+          'florb',
+          :master,
+          CHECKMODE: 'true',
+          CMD: 'foo',
+          CURRENT_DEPLOY_ENVIRONMENT: 'gstg',
+          GITLAB_ROLES: 'bar'
+        ]
+      end
+
       it 'returns success' do
         command = described_class.new(
           %w[foo bar],
@@ -287,6 +299,7 @@ describe Chatops::Commands::Deploycmd do
 
         expect(client)
           .to receive(:run_trigger)
+          .with(*trigger_args)
           .and_return(response)
 
         expect(client)

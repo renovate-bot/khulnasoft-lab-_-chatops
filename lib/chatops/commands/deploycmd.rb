@@ -66,7 +66,7 @@ module Chatops
       def run_command(command_name, role)
         vars = {
           'CMD': command_name,
-          'GITLAB_ROLE': role,
+          'GITLAB_ROLES': role,
           'CURRENT_DEPLOY_ENVIRONMENT': environment
         }
         vars[:CHECKMODE] = options[:no_check] ? 'false' : 'true'
