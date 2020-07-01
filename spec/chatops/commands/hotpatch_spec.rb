@@ -65,7 +65,7 @@ describe Chatops::Commands::Hotpatch do
           Initiated a hot patch for incident <https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234|#1234>
           :swiss-tanuki: :swiss-tanuki: :swiss-tanuki:
           • :git-branch: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-branch|fake-user-1234>
-          • :party-tanuki: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
+          • *production*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
           • :mr: MR <https://gitlab.example.com/proj/-/merge_requests/9000|!9000>
 
           Please see the <https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md|release docs> for instructions
@@ -111,9 +111,9 @@ describe Chatops::Commands::Hotpatch do
           Initiated a hot patch for incident <https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234|#1234>
           :swiss-tanuki: :swiss-tanuki: :swiss-tanuki:
           • :git-branch: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-branch|fake-user-1234>
-          • :party-tanuki: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
-          • :canary: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
-          • :building_construction: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
+          • *production*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
+          • *canary*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
+          • *staging*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
           • :mr: MR <https://gitlab.example.com/proj/-/merge_requests/9000|!9000>
 
           Please see the <https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md|release docs> for instructions
@@ -171,7 +171,7 @@ describe Chatops::Commands::Hotpatch do
           Initiated a hot patch for incident <https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234|#1234>
           :swiss-tanuki: :swiss-tanuki: :swiss-tanuki:
           • :git-branch: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-branch|fake-user-1234>
-          • :question: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
+          • *unknown env*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
           • :mr: MR <https://gitlab.example.com/proj/-/merge_requests/9000|!9000>
 
           Please see the <https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md|release docs> for instructions

@@ -17,14 +17,20 @@ module Chatops
       options do |o|
         o.integer(
           '--incident',
-          'Incident for the patch, ex: 1234',
+          'Incident for the patch, this number is required and should ' \
+          'match the incident number in the production incident tracker. '\
+          'If GitLab.com is down or you cannot provide a number, '\
+          'any number will suffice. ex: `1234`',
           required: true
         )
         o.string(
           '--package',
           'Instead of using the default packages, ' \
-            'set an explicit package ' \
-            'version. ex: 13.1.202006180140-d76aead293f.e70555ca117'
+          'set an explicit package version. ' \
+          'This is necessary when the version ' \
+          'that needs to be patched is not the version reported by ' \
+          '/chatops run auto_deploy status`. '\
+          'ex: `13.1.202006180140-d76aead293f.e70555ca117`'
         )
       end
 
@@ -87,13 +93,13 @@ module Chatops
           '',
           "Creating patch dir for #{package_version}"
         )
-        ":#{env_icon(env)}: "\
+        "*#{env_text(env)}*: "\
           "<#{PATCHER_PROJECT}/-/tree/#{branch_name}/#{resp.file_path}|" \
           'patch directory>'
       rescue ::Gitlab::Error::BadRequest => e
         raise if e.response_status != 400
 
-        ":information_source: :#{env_icon(env)}: "\
+        ":information_source: *#{env_text(env)}*: "\
           "Directory <#{PATCHER_PROJECT}/-/tree/#{branch_name}/#{file_path}|" \
           "#{package_version}> already exists"
       end
@@ -132,16 +138,16 @@ module Chatops
         "#{PROD_PROJECT}/-/issues/#{options[:incident]}"
       end
 
-      def env_icon(env)
+      def env_text(env)
         case env
         when 'gstg'
-          'building_construction'
+          'staging'
         when 'gprd'
-          'party-tanuki'
+          'production'
         when 'gprd-cny'
           'canary'
         else
-          'question'
+          'unknown env'
         end
       end
     end
