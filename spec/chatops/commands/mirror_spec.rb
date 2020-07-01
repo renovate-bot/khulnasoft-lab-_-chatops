@@ -126,14 +126,14 @@ class MirrorStatusBlockMatcher
   def includes_security_error?(other)
     other.one? do |block|
       block[:type] == 'section' &&
-        block[:text][:text] == "```#{@status.security_error}```"
+        block[:text][:text] == "*Security*:\n```#{@status.security_error}```"
     end
   end
 
   def includes_build_error?(other)
     other.one? do |block|
       block[:type] == 'section' &&
-        block[:text][:text] == "```#{@status.build_error}```"
+        block[:text][:text] == "*Build*:\n```#{@status.build_error}```"
     end
   end
 end

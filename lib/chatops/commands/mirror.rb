@@ -77,13 +77,13 @@ module Chatops
         # rubocop:disable Style/GuardClause
         if mirror.security_error
           blocks.section do |s|
-            s.mrkdwn(text: "```#{mirror.security_error}```")
+            s.mrkdwn(text: "*Security*:\n```#{mirror.security_error}```")
           end
         end
 
         if mirror.build_error
           blocks.section do |s|
-            s.mrkdwn(text: "```#{mirror.build_error}```")
+            s.mrkdwn(text: "*Build*:\n```#{mirror.build_error}```")
           end
         end
         # rubocop:enable Style/GuardClause
