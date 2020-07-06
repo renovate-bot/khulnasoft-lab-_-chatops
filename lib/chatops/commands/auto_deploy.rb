@@ -10,7 +10,7 @@ module Chatops
       COMMANDS = Set.new(%w[pause prepare status tag unpause])
 
       SOURCE_HOST = 'https://gitlab.com'
-      SOURCE_PROJECT = 'gitlab-org/gitlab'
+      SOURCE_PROJECT = 'gitlab-org/security/gitlab'
 
       options do |o|
         o.bool '--security',
