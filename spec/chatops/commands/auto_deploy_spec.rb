@@ -314,6 +314,148 @@ describe Chatops::Commands::AutoDeploy do
       end
     end
   end
+
+  describe '#blockers' do
+    let(:command) { described_class.new([], *env) }
+    let(:blocks) { instance_spy(Slack::BlockKit::Blocks) }
+    let(:section1) { instance_spy(Slack::BlockKit::Layout::Section) }
+    let(:section2) { instance_spy(Slack::BlockKit::Layout::Section) }
+    let(:context) { instance_spy(Slack::BlockKit::Layout::Context) }
+
+    before do
+      allow(Slack::BlockKit).to receive(:blocks).and_return(blocks)
+      allow(blocks).to receive(:section).and_return(section1, section2)
+      allow(blocks).to receive(:context).and_return(context)
+    end
+
+    context 'when there are no open issues' do
+      it 'submits a message saying there are no issues' do
+        allow(command).to receive(:production_issues).and_return([])
+
+        expect(section1)
+          .to receive(:mrkdwn)
+          .with(text: a_string_including('no ongoing incidents'))
+
+        expect(section2)
+          .to receive(:mrkdwn)
+          .with(text: a_string_including('no ongoing changes'))
+
+        expect(command.send(:slack_message)).to receive(:send)
+
+        command.blockers
+      end
+    end
+
+    context 'when there is one incident and one change issue' do
+      it 'submits a message including details about the issues' do
+        incident =
+          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+
+        change =
+          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
+
+        allow(command)
+          .to receive(:production_issues)
+          .with(described_class::INCIDENT_ISSUE_LABEL_PAIRS)
+          .and_return([incident])
+
+        allow(command)
+          .to receive(:production_issues)
+          .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
+          .and_return([change])
+
+        expect(section1)
+          .to receive(:mrkdwn)
+          .with(text: a_string_including('1 ongoing incident'))
+
+        expect(section2)
+          .to receive(:mrkdwn)
+          .with(text: a_string_including('1 ongoing change'))
+
+        expect(command.send(:slack_message)).to receive(:send)
+
+        command.blockers
+      end
+    end
+
+    context 'when there are multiple incidents and changes' do
+      it 'submits a message including details about the issues' do
+        incident =
+          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+
+        change =
+          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
+
+        allow(command)
+          .to receive(:production_issues)
+          .with(described_class::INCIDENT_ISSUE_LABEL_PAIRS)
+          .and_return([incident, incident])
+
+        allow(command)
+          .to receive(:production_issues)
+          .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
+          .and_return([change, change])
+
+        expect(section1)
+          .to receive(:mrkdwn)
+          .with(text: a_string_including('2 ongoing incidents'))
+
+        expect(section2)
+          .to receive(:mrkdwn)
+          .with(text: a_string_including('2 ongoing changes'))
+
+        expect(command.send(:slack_message)).to receive(:send)
+
+        command.blockers
+      end
+    end
+  end
+
+  describe '#production_issues' do
+    it 'returns all production issues that have certain labels' do
+      command = described_class.new([], *env)
+      issue = instance_double('issue')
+
+      allow(fake_client)
+        .to receive(:issues)
+        .with(described_class::PRODUCTION_PROJECT, labels: 'a', state: 'opened')
+        .and_return(Gitlab::PaginatedResponse.new([issue]))
+
+      expect(command.send(:production_issues, %w[a])).to eq([issue])
+    end
+  end
+
+  describe '#issue_severity_indicator' do
+    it 'returns the issue severity indicator when found' do
+      issue =
+        instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+
+      expect(described_class.new.send(:issue_severity_indicator, issue))
+        .to eq(':red_circle:')
+    end
+
+    it 'returns a fallback indicator when no indicator could be found' do
+      issue =
+        instance_double('issue', web_url: 'foo', title: 'Foo', labels: [])
+
+      expect(described_class.new.send(:issue_severity_indicator, issue))
+        .to eq(':white_circle:')
+    end
+  end
+
+  describe '#add_blocking_issue_contexts' do
+    it 'adds a context for an issue' do
+      blocks = instance_spy(Slack::BlockKit::Blocks)
+      context = instance_spy(Slack::BlockKit::Layout::Context)
+      issue =
+        instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+
+      expect(blocks).to receive(:context).and_return(context)
+      expect(context).to receive(:mrkdwn).with(text: ':red_circle: <foo|Foo>')
+
+      described_class.new.send(:add_blocking_issue_contexts, blocks, [issue])
+    end
+  end
 end
 
 # RSpec argument matcher for verifying the complex `block` Hash passed to
