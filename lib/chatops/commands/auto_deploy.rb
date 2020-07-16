@@ -152,30 +152,30 @@ module Chatops
         changes = production_issues(CHANGE_ISSUE_LABEL_PAIRS)
         blocks = ::Slack::BlockKit.blocks
 
-        case (count = incidents.length)
-        when 0
-          blocks.section.mrkdwn(text: ':tada: There are no ongoing incidents')
-        when 1
-          blocks.section.mrkdwn(text: ':fine: There is 1 ongoing incident:')
-        else
-          blocks
-            .section
-            .mrkdwn(text: ":fine: There are #{count} ongoing incidents:")
+        blocks.section do |section|
+          case (count = incidents.length)
+          when 0
+            section.mrkdwn(text: ':tada: There are no ongoing incidents')
+          when 1
+            section.mrkdwn(text: ':fine: There is 1 ongoing incident:')
+          else
+            section.mrkdwn(text: ":fine: There are #{count} ongoing incidents:")
+          end
         end
 
         add_blocking_issue_contexts(blocks, incidents)
 
-        case (count = changes.length)
-        when 0
-          blocks.section.mrkdwn(text: ':tada: There are no ongoing changes')
-        when 1
-          blocks
-            .section
-            .mrkdwn(text: ':construction: There is 1 ongoing change:')
-        else
-          blocks.section.mrkdwn(
-            text: ":construction: There are #{count} ongoing changes:"
-          )
+        blocks.section do |section|
+          case (count = changes.length)
+          when 0
+            section.mrkdwn(text: ':tada: There are no ongoing changes')
+          when 1
+            section.mrkdwn(text: ':construction: There is 1 ongoing change:')
+          else
+            section.mrkdwn(
+              text: ":construction: There are #{count} ongoing changes:"
+            )
+          end
         end
 
         add_blocking_issue_contexts(blocks, changes)
@@ -445,9 +445,10 @@ module Chatops
         issues.each do |issue|
           indicator = issue_severity_indicator(issue)
 
-          blocks
-            .context
-            .mrkdwn(text: "#{indicator} <#{issue.web_url}|#{issue.title}>")
+          blocks.context do |context|
+            context
+              .mrkdwn(text: "#{indicator} <#{issue.web_url}|#{issue.title}>")
+          end
         end
       end
     end

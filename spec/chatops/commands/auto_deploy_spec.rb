@@ -318,13 +318,12 @@ describe Chatops::Commands::AutoDeploy do
   describe '#blockers' do
     let(:command) { described_class.new([], *env) }
     let(:blocks) { instance_spy(Slack::BlockKit::Blocks) }
-    let(:section1) { instance_spy(Slack::BlockKit::Layout::Section) }
-    let(:section2) { instance_spy(Slack::BlockKit::Layout::Section) }
+    let(:section) { instance_spy(Slack::BlockKit::Layout::Section) }
     let(:context) { instance_spy(Slack::BlockKit::Layout::Context) }
 
     before do
       allow(Slack::BlockKit).to receive(:blocks).and_return(blocks)
-      allow(blocks).to receive(:section).and_return(section1, section2)
+      allow(blocks).to receive(:section).and_yield(section)
       allow(blocks).to receive(:context).and_return(context)
     end
 
@@ -332,11 +331,11 @@ describe Chatops::Commands::AutoDeploy do
       it 'submits a message saying there are no issues' do
         allow(command).to receive(:production_issues).and_return([])
 
-        expect(section1)
+        expect(section)
           .to receive(:mrkdwn)
           .with(text: a_string_including('no ongoing incidents'))
 
-        expect(section2)
+        expect(section)
           .to receive(:mrkdwn)
           .with(text: a_string_including('no ongoing changes'))
 
@@ -364,11 +363,11 @@ describe Chatops::Commands::AutoDeploy do
           .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
           .and_return([change])
 
-        expect(section1)
+        expect(section)
           .to receive(:mrkdwn)
           .with(text: a_string_including('1 ongoing incident'))
 
-        expect(section2)
+        expect(section)
           .to receive(:mrkdwn)
           .with(text: a_string_including('1 ongoing change'))
 
@@ -396,11 +395,11 @@ describe Chatops::Commands::AutoDeploy do
           .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
           .and_return([change, change])
 
-        expect(section1)
+        expect(section)
           .to receive(:mrkdwn)
           .with(text: a_string_including('2 ongoing incidents'))
 
-        expect(section2)
+        expect(section)
           .to receive(:mrkdwn)
           .with(text: a_string_including('2 ongoing changes'))
 
@@ -450,7 +449,7 @@ describe Chatops::Commands::AutoDeploy do
       issue =
         instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
 
-      expect(blocks).to receive(:context).and_return(context)
+      expect(blocks).to receive(:context).and_yield(context)
       expect(context).to receive(:mrkdwn).with(text: ':red_circle: <foo|Foo>')
 
       described_class.new.send(:add_blocking_issue_contexts, blocks, [issue])
