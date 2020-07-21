@@ -115,6 +115,13 @@ module Chatops
             @#{gitlab_user} has initiated a hot patch for incident #{incident_link}
 
             Please see the [release-docs](https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md) for instructions
+
+            # TODO
+
+            * [ ] Disable auto-deployments by setting `CNY_MANUAL_PROMOTE` as a CI variable in https://ops.gitlab.net/gitlab-com/gl-infra/deployer
+            * [ ] Ensure a developer is working on a fix, and the MR has the appropriate labels (e.g. `Pick into auto-deploy`)
+
+            cc @gitlab-org/release/managers
           MR_DESC
         )
         ":mr: MR <#{resp.web_url}|!#{resp.iid}>"

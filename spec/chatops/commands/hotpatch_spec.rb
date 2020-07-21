@@ -43,11 +43,7 @@ describe Chatops::Commands::Hotpatch do
     end
 
     let(:mr_description) do
-      <<~MR_DESC.chomp
-        @fake-user has initiated a hot patch for incident https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234
-
-        Please see the [release-docs](https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md) for instructions
-      MR_DESC
+      %r{fake-user has initiated a hot patch for incident https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234}
     end
 
     before do
