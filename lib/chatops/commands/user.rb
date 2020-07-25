@@ -156,6 +156,11 @@ module Chatops
                     short: true
                   },
                   {
+                    title: 'Confirmed At',
+                    value: user.confirmed_at,
+                    short: true
+                  },
+                  {
                     title: 'Last Active At',
                     value: user.last_activity_on,
                     short: true

@@ -303,6 +303,7 @@ describe Chatops::Commands::User do
         email: 'alice@example.com',
         two_factor_enabled: true,
         created_at: Time.now.iso8601,
+        confirmed_at: Time.now.iso8601,
         last_activity_on: Time.now.iso8601,
         current_sign_in_at: Time.now.iso8601,
         projects_limit: 5,
