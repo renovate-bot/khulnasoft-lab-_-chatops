@@ -23,6 +23,10 @@ module Chatops
                'Act as a critical security release',
                default: false
 
+        o.bool '--master',
+               'Merge MRs targeting the master branch',
+               default: false
+
         o.bool '--dry-run',
                'Operate in dry-run mode, which will avoid making changes',
                default: false
@@ -110,9 +114,19 @@ module Chatops
       end
 
       def merge(version = nil)
-        validate_version!(version) unless options[:security]
+        if options[:security]
+          merge_master = options[:master] ? '1' : ''
 
-        trigger_release(version, "#{namespace}:#{__method__}")
+          trigger_release(
+            version,
+            "#{namespace}:#{__method__}",
+            'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_master
+          )
+        else
+          validate_version!(version)
+
+          trigger_release(version, "#{namespace}:#{__method__}")
+        end
       end
 
       def prepare(version = nil)
