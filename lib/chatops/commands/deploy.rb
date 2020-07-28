@@ -24,7 +24,7 @@ module Chatops
       # Default package repository to use if TAKEOFF_DEPLOY_REPO is undefined
       DEFAULT_REPO = 'gitlab/pre-release'
 
-      options do |o|
+      options do |o| # rubocop:disable Metrics/BlockLength
         o.bool('--production', 'Deploy to production, instead of staging')
 
         o.bool(
@@ -54,6 +54,12 @@ module Chatops
         o.bool(
           '--rollback',
           'Initiate a rollback deploy'
+        )
+
+        o.string(
+          '--ignore-production-checks',
+          'Reason for bypassing production checks',
+          default: 'false'
         )
       end
 
@@ -132,7 +138,8 @@ module Chatops
           'DEPLOY_VERSION': version,
           'DEPLOY_REPO': repository,
           'DEPLOY_USER': env['GITLAB_USER_NAME'],
-          'RELEASE_MANAGER': env['GITLAB_USER_LOGIN']
+          'RELEASE_MANAGER': env['GITLAB_USER_LOGIN'],
+          'IGNORE_PRODUCTION_CHECKS': options[:ignore_production_checks]
         }
 
         vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]

@@ -101,6 +101,37 @@ describe Chatops::Commands::Deploy do
 
       described_class.perform(%w[--rollback])
     end
+
+    describe '--ignore-production-checks option' do
+      it 'defaults to false' do
+        instance = instance_double('instance')
+
+        expect(described_class)
+          .to receive(:new)
+          .with(%w[], a_hash_including(ignore_production_checks: 'false'), {})
+          .and_return(instance)
+
+        expect(instance)
+          .to receive(:perform)
+
+        described_class.perform
+      end
+
+      it 'supports a string option' do
+        instance = instance_double('instance')
+        reason = 'some reason to bypass the checks'
+
+        expect(described_class)
+          .to receive(:new)
+          .with(%w[], a_hash_including(ignore_production_checks: reason), {})
+          .and_return(instance)
+
+        expect(instance)
+          .to receive(:perform)
+
+        described_class.perform(["--ignore-production-checks=#{reason}"])
+      end
+    end
   end
 
   describe '#perform' do
@@ -219,7 +250,7 @@ describe Chatops::Commands::Deploy do
       it 'returns a success message' do
         command = described_class.new(
           %w[11.3.0-rc1.ee.0],
-          {},
+          { ignore_production_checks: 'reason' },
           'TAKEOFF_TRIGGER_TOKEN' => '123',
           'TAKEOFF_TRIGGER_PROJECT' => 'foo',
           'TAKEOFF_TRIGGER_HOST' => 'example.com',
@@ -239,7 +270,8 @@ describe Chatops::Commands::Deploy do
             'DEPLOY_VERSION': '11.3.0-rc1.ee.0',
             'DEPLOY_REPO': 'gitlab/pre-release',
             'DEPLOY_USER': 'Alice',
-            'RELEASE_MANAGER': 'alice42'
+            'RELEASE_MANAGER': 'alice42',
+            'IGNORE_PRODUCTION_CHECKS': 'reason'
           )
           .and_return(response)
 
