@@ -183,7 +183,7 @@ describe Chatops::Commands::Deploycmd do
         )
 
         expect(command.perform)
-          .to eq('No command specified.')
+          .to eq(':unicorn_face: No command specified.')
       end
     end
 
@@ -197,7 +197,7 @@ describe Chatops::Commands::Deploycmd do
         )
 
         expect(command.perform)
-          .to eq('No role specified.')
+          .to eq(':unicorn_face: No role specified.')
       end
     end
 
@@ -292,11 +292,6 @@ describe Chatops::Commands::Deploycmd do
           .with(host: 'ops.gitlab.net', token: '12345')
           .and_return(client)
 
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(host: 'ops.gitlab.net', token: nil)
-          .and_return(client)
-
         expect(client)
           .to receive(:run_trigger)
           .with(*trigger_args)
@@ -328,11 +323,6 @@ describe Chatops::Commands::Deploycmd do
         expect(Chatops::Gitlab::Client)
           .to receive(:new)
           .with(host: 'ops.gitlab.net', token: '12345')
-          .and_return(client)
-
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(host: 'ops.gitlab.net', token: nil)
           .and_return(client)
 
         expect(client)

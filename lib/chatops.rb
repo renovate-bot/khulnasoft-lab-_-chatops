@@ -39,6 +39,7 @@ require 'chatops/release/command'
 require 'chatops/slack'
 require 'chatops/slack/file_upload'
 require 'chatops/slack/message'
+require 'chatops/yaml_cmd'
 
 require 'chatops/commands/annotate'
 require 'chatops/commands/broadcast'

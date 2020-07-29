@@ -8,6 +8,7 @@ module Chatops
   module Commands
     class Deploycmd
       include Command
+      include YamlCmd
 
       COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/
 
@@ -26,41 +27,19 @@ module Chatops
       end
 
       def perform
+        ":unicorn_face: #{execute}"
+      end
+
+      def execute
         return list_commands if options[:list]
 
         command_name, role = arguments
 
         return 'No command specified.' unless command_name
         return 'No role specified.' unless role
-        return unsupported_command unless fetch_commands.include?(command_name)
+        return unsupported_command unless commands.include?(command_name)
 
         run_command(command_name, role)
-      end
-
-      def list_commands
-        vals = fetch_commands.to_a.sort.map { |name| Markdown::Code.new(name) }
-        list = Markdown::List.new(vals)
-
-        <<~HELP.strip
-          :unicorn_face: The following commands are available:
-
-          #{list}
-
-          For more information run `deploycmd --help`.
-        HELP
-      end
-
-      def unsupported_command
-        vals = fetch_commands.to_a.sort.map { |name| Markdown::Code.new(name) }
-        list = Markdown::List.new(vals)
-
-        <<~HELP.strip
-          :unicorn_face: The provided command is invalid. The following commands are available:
-
-          #{list}
-
-          For more information run `deploycmd --help`.
-        HELP
       end
 
       def run_command(command_name, role)
@@ -79,15 +58,17 @@ module Chatops
           vars
         )
 
-        ":unicorn_face: Command `#{command_name}` was issued to "\
+        "Command `#{command_name}` was issued to "\
         "`#{role}` in `#{environment}`: <#{response.web_url}>"
       rescue StandardError => error
-        ":unicorn_face: The command could not be run: #{error.message}"
+        "The command could not be run: #{error.message}"
       end
 
       def client
-        # For triggers we don't need an API token, so explicitly set it to nil
-        @client ||= Gitlab::Client.new(token: nil, host: trigger_host)
+        @client ||= Gitlab::Client.new(
+          token: gitlab_ops_token,
+          host: trigger_host
+        )
       end
 
       def trigger_token
@@ -121,20 +102,10 @@ module Chatops
         end
       end
 
-      def repository_tree
-        @repository_tree ||= Gitlab::Client
-          .new(token: gitlab_ops_token, host: trigger_host)
-          .repository_tree(
-            'gitlab-com/gl-infra/deploy-tooling',
-            path: 'cmds'
-          )
-      end
-
-      def fetch_commands
-        @fetch_commands ||=
-          repository_tree
-            .select { |file| file.name.match?(COMMAND_FILE_PATTERN) }
-            .map { |file| file.name.gsub(COMMAND_FILE_PATTERN, '\1') }
+      def command_files
+        # Get available commands from the yaml files in this folder of the repo
+        @command_files ||= client
+          .repository_tree('gitlab-com/gl-infra/deploy-tooling', path: 'cmds')
       end
     end
   end
