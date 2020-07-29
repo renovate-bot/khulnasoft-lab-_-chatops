@@ -105,7 +105,7 @@ module Chatops
       end
 
       def database_connection
-        Database::ReadOnlyConnection.from_environment(env)
+        Chatops::Database::ReadOnlyConnection.from_environment(env)
       end
 
       # Uploads a query plan to Slack.

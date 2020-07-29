@@ -137,7 +137,7 @@ module Chatops
       end
 
       def database_connection
-        Database::ReadOnlyConnection
+        Chatops::Database::ReadOnlyConnection
           .from_environment(database_environment_variables)
       end
 
