@@ -139,7 +139,9 @@ module Chatops
           'DEPLOY_REPO': repository,
           'DEPLOY_USER': env['GITLAB_USER_NAME'],
           'RELEASE_MANAGER': env['GITLAB_USER_LOGIN'],
-          'IGNORE_PRODUCTION_CHECKS': options[:ignore_production_checks]
+          'IGNORE_PRODUCTION_CHECKS': sanitize_reason(
+            options[:ignore_production_checks]
+          )
         }
 
         vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]
@@ -160,6 +162,10 @@ module Chatops
 
       def repository
         env.fetch('TAKEOFF_DEPLOY_REPO', DEFAULT_REPO)
+      end
+
+      def sanitize_reason(input)
+        CGI.escape(input) if input
       end
 
       def trigger_token

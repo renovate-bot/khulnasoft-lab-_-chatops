@@ -119,7 +119,7 @@ describe Chatops::Commands::Deploy do
 
       it 'supports a string option' do
         instance = instance_double('instance')
-        reason = 'some reason to bypass the checks'
+        reason = 'some reason, to bypass the checks'
 
         expect(described_class)
           .to receive(:new)
@@ -394,6 +394,21 @@ describe Chatops::Commands::Deploy do
         vars = command.environment_variables_for('1.0')
 
         expect(vars.key?(:DEPLOY_ROLLBACK)).to eq(false)
+      end
+    end
+
+    context 'when IGNORE_PRODUCTION_CHECKS contains reason' do
+      it 'sanitizes input for safe HTML form handling' do
+        provided_reason = 'some reason, to bypass the checks'
+        expected_reason = 'some+reason%2C+to+bypass+the+checks'
+        command = described_class.new(
+          [],
+          { ignore_production_checks: provided_reason },
+          {}
+        )
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars[:IGNORE_PRODUCTION_CHECKS]).to eq(expected_reason)
       end
     end
   end
