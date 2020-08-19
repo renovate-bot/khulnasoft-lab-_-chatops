@@ -5,6 +5,7 @@ require 'spec_helper'
 describe Chatops::Commands::Hotpatch do
   let(:chef_client) { instance_spy(Chatops::Chef::Client) }
   let(:gitlab_client) { instance_spy(Gitlab::Client) }
+
   let(:fake_mr) do
     instance_double(
       'mr',
@@ -12,9 +13,11 @@ describe Chatops::Commands::Hotpatch do
       iid: '9000'
     )
   end
+
   let(:fake_branch) do
     instance_double('branch', web_url: 'https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-branch')
   end
+
   let(:fake_file) do
     instance_double('file', file_path: 'patcher/fake-file/.gitkeep')
   end
@@ -43,7 +46,21 @@ describe Chatops::Commands::Hotpatch do
     end
 
     let(:mr_description) do
-      %r{fake-user has initiated a hot patch for incident https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234}
+      <<~DESCRIPTION.chomp
+        @fake-user has initiated a hot patch for incident https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234
+
+        **NOTE: Hot patch should only proceed if GitLab.com is down or if there's evidence of an S1 security vulnerability being actively exploited,
+        for all other scenarios please rely on the auto-deploy process.**
+
+        Please see the [release-docs](https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md) for instructions
+
+        # TODO
+
+        * [ ] Disable auto-deployments by setting `CNY_MANUAL_PROMOTE` as a CI variable in https://ops.gitlab.net/gitlab-com/gl-infra/deployer
+        * [ ] Ensure a developer is working on a fix, and the MR has the appropriate labels (e.g. `Pick into auto-deploy`)
+
+        cc @gitlab-org/release/managers
+      DESCRIPTION
     end
 
     before do

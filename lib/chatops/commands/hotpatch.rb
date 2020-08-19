@@ -111,18 +111,7 @@ module Chatops
           source_branch: branch_name,
           target_branch: 'master',
           remove_source_branch: true,
-          description: <<~MR_DESC.strip
-            @#{gitlab_user} has initiated a hot patch for incident #{incident_link}
-
-            Please see the [release-docs](https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md) for instructions
-
-            # TODO
-
-            * [ ] Disable auto-deployments by setting `CNY_MANUAL_PROMOTE` as a CI variable in https://ops.gitlab.net/gitlab-com/gl-infra/deployer
-            * [ ] Ensure a developer is working on a fix, and the MR has the appropriate labels (e.g. `Pick into auto-deploy`)
-
-            cc @gitlab-org/release/managers
-          MR_DESC
+          description: merge_request_description
         )
         ":mr: MR <#{resp.web_url}|!#{resp.iid}>"
       rescue ::Gitlab::Error::Conflict => e
@@ -156,6 +145,26 @@ module Chatops
         else
           'unknown env'
         end
+      end
+
+      private
+
+      def merge_request_description
+        <<~MR_DESC.strip
+          @#{gitlab_user} has initiated a hot patch for incident #{incident_link}
+
+          **NOTE: Hot patch should only proceed if GitLab.com is down or if there's evidence of an S1 security vulnerability being actively exploited,
+          for all other scenarios please rely on the auto-deploy process.**
+
+          Please see the [release-docs](https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md) for instructions
+
+          # TODO
+
+          * [ ] Disable auto-deployments by setting `CNY_MANUAL_PROMOTE` as a CI variable in https://ops.gitlab.net/gitlab-com/gl-infra/deployer
+          * [ ] Ensure a developer is working on a fix, and the MR has the appropriate labels (e.g. `Pick into auto-deploy`)
+
+          cc @gitlab-org/release/managers
+        MR_DESC
       end
     end
   end
