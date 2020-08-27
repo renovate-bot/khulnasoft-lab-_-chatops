@@ -11,7 +11,17 @@ module Chatops
       description 'Perform release-related tasks.'
 
       COMMANDS = Set.new(
-        %w[issue merge prepare qa stable_branch status sync_remotes tag]
+        %w[
+          issue
+          merge
+          prepare
+          qa
+          stable_branch
+          status
+          sync_remotes
+          tag
+          close_issues
+        ]
       )
 
       options do |o|
@@ -77,6 +87,10 @@ module Chatops
             Sync master and auto-deploy branches after a security release
 
               release sync_remotes --security
+
+            Close security implementation issues associated with the Security Release Tracking Issue
+
+              release close_issues --security
         HELP
       end
 
@@ -169,6 +183,10 @@ module Chatops
       end
 
       def sync_remotes(version = nil)
+        trigger_release(version, "#{namespace}:#{__method__}")
+      end
+
+      def close_issues(version = nil)
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 

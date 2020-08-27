@@ -257,5 +257,16 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
     end
+
+    describe '#close_issues' do
+      it 'triggers close_issues in a security release' do
+        instance = stubbed_instance('close_issues', nil, security: true)
+
+        expect(instance).to receive(:trigger_release)
+          .with(nil, 'security:close_issues')
+
+        instance.perform
+      end
+    end
   end
 end
