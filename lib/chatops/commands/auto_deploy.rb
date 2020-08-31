@@ -14,9 +14,9 @@ module Chatops
       PRODUCTION_PROJECT = 'gitlab-com/gl-infra/production'
 
       INCIDENT_ISSUE_LABEL_PAIRS = %w[
-        Incident::Active,S1
-        Incident::Active,S2
-        Incident::Active,S3
+        Incident::Active,severity::1
+        Incident::Active,severity::2
+        Incident::Active,severity::3
       ].freeze
 
       CHANGE_ISSUE_LABEL_PAIRS = %w[
@@ -25,9 +25,9 @@ module Chatops
       ].freeze
 
       SEVERITY_INDICATOR = {
-        'S1' => ':red_circle:',
-        'S2' => ':orange_circle:',
-        'S3' => ':yellow_circle:',
+        'severity::1' => ':red_circle:',
+        'severity::2' => ':orange_circle:',
+        'severity::3' => ':yellow_circle:',
         'C1' => ':red_circle:',
         'C2' => ':orange_circle:'
       }.freeze

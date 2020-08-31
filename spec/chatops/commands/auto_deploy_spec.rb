@@ -347,8 +347,12 @@ describe Chatops::Commands::AutoDeploy do
 
     context 'when there is one incident and one change issue' do
       it 'submits a message including details about the issues' do
-        incident =
-          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+        incident = instance_double(
+          'issue',
+          web_url: 'foo',
+          title: 'Foo',
+          labels: %w[severity::1]
+        )
 
         change =
           instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
@@ -379,8 +383,12 @@ describe Chatops::Commands::AutoDeploy do
 
     context 'when there are multiple incidents and changes' do
       it 'submits a message including details about the issues' do
-        incident =
-          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+        incident = instance_double(
+          'issue',
+          web_url: 'foo',
+          title: 'Foo',
+          labels: %w[severiy::1]
+        )
 
         change =
           instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
@@ -426,8 +434,12 @@ describe Chatops::Commands::AutoDeploy do
 
   describe '#issue_severity_indicator' do
     it 'returns the issue severity indicator when found' do
-      issue =
-        instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+      issue = instance_double(
+        'issue',
+        web_url: 'foo',
+        title: 'Foo',
+        labels: %w[severity::1]
+      )
 
       expect(described_class.new.send(:issue_severity_indicator, issue))
         .to eq(':red_circle:')
@@ -446,8 +458,12 @@ describe Chatops::Commands::AutoDeploy do
     it 'adds a context for an issue' do
       blocks = instance_spy(Slack::BlockKit::Blocks)
       context = instance_spy(Slack::BlockKit::Layout::Context)
-      issue =
-        instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[S1])
+      issue = instance_double(
+        'issue',
+        web_url: 'foo',
+        title: 'Foo',
+        labels: %w[severity::1]
+      )
 
       expect(blocks).to receive(:context).and_yield(context)
       expect(context).to receive(:mrkdwn).with(text: ':red_circle: <foo|Foo>')
