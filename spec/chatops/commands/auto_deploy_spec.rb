@@ -176,12 +176,33 @@ describe Chatops::Commands::AutoDeploy do
       end
 
       it 'send a formatted Slack message' do
+        allow(command).to receive(:trigger_production_checks?).and_return(true)
+
         allow(command).to receive(:environment_status)
           .and_return(production_status)
         expect_slack_message(blocks: StatusBlockMatcher.new(production_status))
+        expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true')
 
         command.perform
       end
+
+      # rubocop:disable RSpec/NestedGroups
+      context 'when TRIGGER_PRODUCTION_CHECKS not set' do
+        it 'will not trigger a production check' do
+          allow(command).to receive(:trigger_production_checks?)
+            .and_return(false)
+
+          allow(command).to receive(:environment_status)
+            .and_return(production_status)
+          expect_slack_message(
+            blocks: StatusBlockMatcher.new(production_status)
+          )
+          expect(command).not_to receive(:run_trigger)
+
+          command.perform
+        end
+      end
+      # rubocop:enable RSpec/NestedGroups
     end
 
     context 'with a valid commit SHA' do
@@ -317,105 +338,124 @@ describe Chatops::Commands::AutoDeploy do
 
   describe '#blockers' do
     let(:command) { described_class.new([], *env) }
-    let(:blocks) { instance_spy(Slack::BlockKit::Blocks) }
-    let(:section) { instance_spy(Slack::BlockKit::Layout::Section) }
-    let(:context) { instance_spy(Slack::BlockKit::Layout::Context) }
 
-    before do
-      allow(Slack::BlockKit).to receive(:blocks).and_return(blocks)
-      allow(blocks).to receive(:section).and_yield(section)
-      allow(blocks).to receive(:context).and_return(context)
+    it 'triggers a release-tools production check' do
+      allow(command).to receive(:trigger_production_checks?).and_return(true)
+
+      expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true')
+
+      command.blockers
     end
 
-    context 'when there are no open issues' do
-      it 'submits a message saying there are no issues' do
-        allow(command).to receive(:production_issues).and_return([])
+    context 'when TRIGGER_PRODUCTION_CHECKS not set' do
+      # rubocop:disable Metrics/LineLength
+      # rubocop:disable RSpec/NestedGroups
 
-        expect(section)
-          .to receive(:mrkdwn)
-          .with(text: a_string_including('no ongoing incidents'))
+      let(:blocks) { instance_spy(Slack::BlockKit::Blocks) }
+      let(:section) { instance_spy(Slack::BlockKit::Layout::Section) }
+      let(:context) { instance_spy(Slack::BlockKit::Layout::Context) }
 
-        expect(section)
-          .to receive(:mrkdwn)
-          .with(text: a_string_including('no ongoing changes'))
+      before do
+        allow(command).to receive(:trigger_production_checks?).and_return(false)
 
-        expect(command.send(:slack_message)).to receive(:send)
+        allow(Slack::BlockKit).to receive(:blocks).and_return(blocks)
+        allow(blocks).to receive(:section).and_yield(section)
+        allow(blocks).to receive(:context).and_return(context)
+      end
 
-        command.blockers
+      context 'when there are no open issues' do
+        it 'submits a message saying there are no issues' do
+          allow(command).to receive(:production_issues).and_return([])
+
+          expect(section)
+            .to receive(:mrkdwn)
+            .with(text: a_string_including('no ongoing incidents'))
+
+          expect(section)
+            .to receive(:mrkdwn)
+            .with(text: a_string_including('no ongoing changes'))
+
+          expect(command.send(:slack_message)).to receive(:send)
+          expect(command).not_to receive(:run_trigger)
+
+          command.blockers
+        end
+      end
+
+      context 'when there is one incident and one change issue' do
+        it 'submits a message including details about the issues' do
+          incident = instance_double(
+            'issue',
+            web_url: 'foo',
+            title: 'Foo',
+            labels: %w[severity::1]
+          )
+
+          change =
+            instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
+
+          allow(command)
+            .to receive(:production_issues)
+            .with(described_class::INCIDENT_ISSUE_LABEL_PAIRS)
+            .and_return([incident])
+
+          allow(command)
+            .to receive(:production_issues)
+            .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
+            .and_return([change])
+
+          expect(section)
+            .to receive(:mrkdwn)
+            .with(text: a_string_including('1 ongoing incident'))
+
+          expect(section)
+            .to receive(:mrkdwn)
+            .with(text: a_string_including('1 ongoing change'))
+
+          expect(command.send(:slack_message)).to receive(:send)
+
+          command.blockers
+        end
+      end
+
+      context 'when there are multiple incidents and changes' do
+        it 'submits a message including details about the issues' do
+          incident = instance_double(
+            'issue',
+            web_url: 'foo',
+            title: 'Foo',
+            labels: %w[severiy::1]
+          )
+
+          change =
+            instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
+
+          allow(command)
+            .to receive(:production_issues)
+            .with(described_class::INCIDENT_ISSUE_LABEL_PAIRS)
+            .and_return([incident, incident])
+
+          allow(command)
+            .to receive(:production_issues)
+            .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
+            .and_return([change, change])
+
+          expect(section)
+            .to receive(:mrkdwn)
+            .with(text: a_string_including('2 ongoing incidents'))
+
+          expect(section)
+            .to receive(:mrkdwn)
+            .with(text: a_string_including('2 ongoing changes'))
+
+          expect(command.send(:slack_message)).to receive(:send)
+
+          command.blockers
+        end
       end
     end
-
-    context 'when there is one incident and one change issue' do
-      it 'submits a message including details about the issues' do
-        incident = instance_double(
-          'issue',
-          web_url: 'foo',
-          title: 'Foo',
-          labels: %w[severity::1]
-        )
-
-        change =
-          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
-
-        allow(command)
-          .to receive(:production_issues)
-          .with(described_class::INCIDENT_ISSUE_LABEL_PAIRS)
-          .and_return([incident])
-
-        allow(command)
-          .to receive(:production_issues)
-          .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
-          .and_return([change])
-
-        expect(section)
-          .to receive(:mrkdwn)
-          .with(text: a_string_including('1 ongoing incident'))
-
-        expect(section)
-          .to receive(:mrkdwn)
-          .with(text: a_string_including('1 ongoing change'))
-
-        expect(command.send(:slack_message)).to receive(:send)
-
-        command.blockers
-      end
-    end
-
-    context 'when there are multiple incidents and changes' do
-      it 'submits a message including details about the issues' do
-        incident = instance_double(
-          'issue',
-          web_url: 'foo',
-          title: 'Foo',
-          labels: %w[severiy::1]
-        )
-
-        change =
-          instance_double('issue', web_url: 'foo', title: 'Foo', labels: %w[C1])
-
-        allow(command)
-          .to receive(:production_issues)
-          .with(described_class::INCIDENT_ISSUE_LABEL_PAIRS)
-          .and_return([incident, incident])
-
-        allow(command)
-          .to receive(:production_issues)
-          .with(described_class::CHANGE_ISSUE_LABEL_PAIRS)
-          .and_return([change, change])
-
-        expect(section)
-          .to receive(:mrkdwn)
-          .with(text: a_string_including('2 ongoing incidents'))
-
-        expect(section)
-          .to receive(:mrkdwn)
-          .with(text: a_string_including('2 ongoing changes'))
-
-        expect(command.send(:slack_message)).to receive(:send)
-
-        command.blockers
-      end
-    end
+    # rubocop:enable Metrics/LineLength
+    # rubocop:enable RSpec/NestedGroups
   end
 
   describe '#production_issues' do

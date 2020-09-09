@@ -144,10 +144,17 @@ module Chatops
           post_commit_status(sha, deployed)
         else
           post_environment_status(envs)
+          production_checks if trigger_production_checks?
         end
       end
 
       def blockers
+        if trigger_production_checks?
+          production_checks
+
+          return
+        end
+
         incidents = production_issues(INCIDENT_ISSUE_LABEL_PAIRS)
         changes = production_issues(CHANGE_ISSUE_LABEL_PAIRS)
         blocks = ::Slack::BlockKit.blocks
@@ -183,6 +190,14 @@ module Chatops
       end
 
       private
+
+      def trigger_production_checks?
+        ENV['TRIGGER_PRODUCTION_CHECKS'] == 'true'
+      end
+
+      def production_checks
+        run_trigger(CHECK_PRODUCTION: 'true')
+      end
 
       def post_task_status(tasks)
         blocks = ::Slack::BlockKit.blocks
