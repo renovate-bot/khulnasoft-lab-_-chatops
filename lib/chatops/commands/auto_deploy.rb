@@ -149,11 +149,7 @@ module Chatops
       end
 
       def blockers
-        if trigger_production_checks?
-          production_checks
-
-          return
-        end
+        return production_checks if trigger_production_checks?
 
         incidents = production_issues(INCIDENT_ISSUE_LABEL_PAIRS)
         changes = production_issues(CHANGE_ISSUE_LABEL_PAIRS)
@@ -197,6 +193,8 @@ module Chatops
 
       def production_checks
         run_trigger(CHECK_PRODUCTION: 'true')
+
+        'Production checks triggered, the results will appear shortly.'
       end
 
       def post_task_status(tasks)

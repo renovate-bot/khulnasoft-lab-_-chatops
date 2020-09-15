@@ -344,7 +344,8 @@ describe Chatops::Commands::AutoDeploy do
 
       expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true')
 
-      command.blockers
+      expect(command.blockers)
+        .to eq('Production checks triggered, the results will appear shortly.')
     end
 
     context 'when TRIGGER_PRODUCTION_CHECKS not set' do
