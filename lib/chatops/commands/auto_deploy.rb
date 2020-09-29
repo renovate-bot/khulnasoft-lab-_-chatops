@@ -11,26 +11,6 @@ module Chatops
 
       SOURCE_HOST = 'https://gitlab.com'
       SOURCE_PROJECT = 'gitlab-org/security/gitlab'
-      PRODUCTION_PROJECT = 'gitlab-com/gl-infra/production'
-
-      INCIDENT_ISSUE_LABEL_PAIRS = %w[
-        Incident::Active,severity::1
-        Incident::Active,severity::2
-        Incident::Active,severity::3
-      ].freeze
-
-      CHANGE_ISSUE_LABEL_PAIRS = %w[
-        change::in-progress,C1
-        change::in-progress,C2
-      ].freeze
-
-      SEVERITY_INDICATOR = {
-        'severity::1' => ':red_circle:',
-        'severity::2' => ':orange_circle:',
-        'severity::3' => ':yellow_circle:',
-        'C1' => ':red_circle:',
-        'C2' => ':orange_circle:'
-      }.freeze
 
       options do |o|
         o.bool '--security',
@@ -144,52 +124,15 @@ module Chatops
           post_commit_status(sha, deployed)
         else
           post_environment_status(envs)
-          production_checks if trigger_production_checks?
+          production_checks
         end
       end
 
       def blockers
-        return production_checks if trigger_production_checks?
-
-        incidents = production_issues(INCIDENT_ISSUE_LABEL_PAIRS)
-        changes = production_issues(CHANGE_ISSUE_LABEL_PAIRS)
-        blocks = ::Slack::BlockKit.blocks
-
-        blocks.section do |section|
-          case (count = incidents.length)
-          when 0
-            section.mrkdwn(text: ':tada: There are no ongoing incidents')
-          when 1
-            section.mrkdwn(text: ':fine: There is 1 ongoing incident:')
-          else
-            section.mrkdwn(text: ":fine: There are #{count} ongoing incidents:")
-          end
-        end
-
-        add_blocking_issue_contexts(blocks, incidents)
-
-        blocks.section do |section|
-          case (count = changes.length)
-          when 0
-            section.mrkdwn(text: ':tada: There are no ongoing changes')
-          when 1
-            section.mrkdwn(text: ':construction: There is 1 ongoing change:')
-          else
-            section.mrkdwn(
-              text: ":construction: There are #{count} ongoing changes:"
-            )
-          end
-        end
-
-        add_blocking_issue_contexts(blocks, changes)
-        slack_message.send(blocks: blocks.as_json)
+        production_checks
       end
 
       private
-
-      def trigger_production_checks?
-        ENV['TRIGGER_PRODUCTION_CHECKS'] == 'true'
-      end
 
       def production_checks
         run_trigger(CHECK_PRODUCTION: 'true')
@@ -434,35 +377,6 @@ module Chatops
         whats_new_link = compare_link(promotable_env_revision, current_revision)
 
         "#{revision_link} - #{whats_new_link}"
-      end
-
-      def production_issues(pairs)
-        pairs.reduce([]) do |issues, labels|
-          issues + production_client
-            .issues(PRODUCTION_PROJECT, labels: labels, state: 'opened')
-            .auto_paginate
-        end
-      end
-
-      def issue_severity_indicator(issue)
-        issue.labels.each do |label|
-          if (color = SEVERITY_INDICATOR[label])
-            return color
-          end
-        end
-
-        ':white_circle:'
-      end
-
-      def add_blocking_issue_contexts(blocks, issues)
-        issues.each do |issue|
-          indicator = issue_severity_indicator(issue)
-
-          blocks.context do |context|
-            context
-              .mrkdwn(text: "#{indicator} <#{issue.web_url}|#{issue.title}>")
-          end
-        end
       end
     end
   end
