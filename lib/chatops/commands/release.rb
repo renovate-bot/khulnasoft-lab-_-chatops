@@ -16,7 +16,6 @@ module Chatops
           merge
           prepare
           qa
-          stable_branch
           status
           sync_remotes
           tag
@@ -75,10 +74,6 @@ module Chatops
             Create a QA issue for changes between 1.2.0-rc1 and 1.2.0-rc3
 
               release qa 1.2.0-rc1 1.2.0-rc3
-
-            Create stable branches for 1.2.0 from the last production deployment
-
-              release stable_branch 1.2.0
 
             Tag 1.2.3 as a security release
 
@@ -156,18 +151,6 @@ module Chatops
         validate_comparison!(tags)
 
         trigger_release(tags.join(','), "#{namespace}:#{__method__}")
-      end
-
-      def stable_branch(version, source = nil)
-        validate_version!(version) unless options[:security]
-
-        variables = { 'SOURCE_OF_STABLE_BRANCH' => source }.compact
-
-        trigger_release(
-          version,
-          "#{namespace}:#{__method__}",
-          variables
-        )
       end
 
       def status(version = nil)
