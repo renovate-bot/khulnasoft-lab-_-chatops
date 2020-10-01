@@ -536,7 +536,7 @@ describe Chatops::Commands::Feature do
         .and_return(message)
 
       expect(message).to receive(:send)
-        .with(text: 'Feature flag foo has been removed!')
+        .with(text: 'Feature flag foo has been removed from gitlab.com!')
 
       command.delete
     end
