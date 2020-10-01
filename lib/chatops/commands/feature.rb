@@ -219,7 +219,9 @@ module Chatops
 
         Slack::Message
           .new(token: slack_token, channel: channel)
-          .send(text: "Feature flag #{name} has been removed from #{gitlab_host}!")
+          .send(
+            text: "Feature flag #{name} has been removed from #{gitlab_host}!"
+          )
       end
 
       # Sends the details of a single feature back to Slack.
