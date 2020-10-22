@@ -64,26 +64,30 @@ module Chatops
       end
 
       def perform
-        version = arguments[0]
-
         unless version?
           return 'The first argument must be the version to deploy'
         end
 
-        version = prepare_version(version)
+        prepared_version = prepare_version(version)
 
-        unless version_valid?(version)
+        unless version_valid?(prepared_version)
           return 'The specified version is invalid. ' \
             'Versions must be in the format MAJOR.MINOR.PATCH(-rcN)'
         end
 
-        if environment == 'release' && !version.match?(VERSION_REGEX)
+        if environment == 'release' && !prepared_version.match?(VERSION_REGEX)
           return 'The release environment is only allowed to receive ' \
             'packages soon to be released.  Auto-deploys and RC\'s are ' \
             'not allowed.'
         end
 
-        schedule_deploy(version)
+        if arguments.any?
+          return "Unprocessed arguments detected: `#{arguments.inspect}`. " \
+            'You may have forgotten quotes around the message for ' \
+            '`--ignore-production-checks`?'
+        end
+
+        schedule_deploy(prepared_version)
       end
 
       def prepare_version(version)
@@ -200,7 +204,7 @@ module Chatops
       end
 
       def version
-        arguments[0]
+        @version ||= arguments.shift
       end
 
       def version?

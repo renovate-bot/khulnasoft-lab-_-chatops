@@ -209,6 +209,17 @@ describe Chatops::Commands::Deploy do
         command.perform
       end
     end
+
+    context 'with extraneous arguments' do
+      it 'returns an error' do
+        command = described_class
+          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50 --invalid-argument])
+
+        result = command.perform
+
+        expect(result).to include('Unprocessed arguments')
+      end
+    end
   end
 
   describe '#prepare_version' do
@@ -250,7 +261,7 @@ describe Chatops::Commands::Deploy do
       it 'returns a success message' do
         command = described_class.new(
           %w[11.3.0-rc1.ee.0],
-          { ignore_production_checks: 'reason' },
+          { ignore_production_checks: 'false' },
           'TAKEOFF_TRIGGER_TOKEN' => '123',
           'TAKEOFF_TRIGGER_PROJECT' => 'foo',
           'TAKEOFF_TRIGGER_HOST' => 'example.com',
@@ -271,7 +282,7 @@ describe Chatops::Commands::Deploy do
             'DEPLOY_REPO': 'gitlab/pre-release',
             'DEPLOY_USER': 'Alice',
             'RELEASE_MANAGER': 'alice42',
-            'IGNORE_PRODUCTION_CHECKS': 'reason'
+            'IGNORE_PRODUCTION_CHECKS': 'false'
           )
           .and_return(response)
 
