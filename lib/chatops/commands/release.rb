@@ -24,6 +24,7 @@ module Chatops
         ]
       )
 
+      # rubocop: disable Metrics/BlockLength
       options do |o|
         o.bool '--security',
                'Act as a security release',
@@ -40,6 +41,21 @@ module Chatops
         o.bool '--dry-run',
                'Operate in dry-run mode, which will avoid making changes',
                default: false
+
+        o.string '--gitaly-sha',
+                 'The SHA to use for creating the Gitaly stable branch'
+
+        o.string '--gitlab-sha',
+                 'The SHA to use for creating the GitLab stable branch'
+
+        o.string '--omnibus-sha',
+                 'The SHA to use for creating the Omnibus stable branch'
+
+        o.string '--cng-sha',
+                 'The SHA to use for creating the CNG stable branch'
+
+        o.string '--helm-sha',
+                 'The SHA to use for creating the Helm stable branch'
 
         o.separator <<~AVAIL.chomp
 
@@ -80,6 +96,10 @@ module Chatops
 
               release tag --security 1.2.3
 
+            Tag 1.2.3 but use a different SHA for the Gitaly stable branch:
+
+              release tag --gitaly-sha 123abc 1.2.3
+
             Sync master and auto-deploy branches after a security release
 
               release sync_remotes --security
@@ -93,6 +113,7 @@ module Chatops
               release tracking_issue --security
         HELP
       end
+      # rubocop: enable Metrics/BlockLength
 
       def self.available_subcommands
         Markdown::List.new(COMMANDS.to_a.sort).to_s
@@ -167,7 +188,7 @@ module Chatops
       def tag(version)
         validate_version!(version)
 
-        trigger_release(version, "#{namespace}:#{__method__}")
+        trigger_release(version, "#{namespace}:#{__method__}", tag_params)
       end
 
       def sync_remotes(version = nil)
@@ -185,6 +206,20 @@ module Chatops
       private
 
       TAG_REGEX = /\Av\d+\.\d+\.\d+(-rc\d+)?\z/
+
+      def tag_params
+        params = {}
+        shas = []
+
+        %w[gitaly gitlab omnibus cng helm].each do |key|
+          if (value = options[:"#{key}-sha"])
+            shas << "#{key}=#{value}"
+          end
+        end
+
+        params[:STABLE_BRANCH_SOURCE_COMMITS] = shas.join(',') if shas.any?
+        params
+      end
 
       def namespace
         if options[:security]

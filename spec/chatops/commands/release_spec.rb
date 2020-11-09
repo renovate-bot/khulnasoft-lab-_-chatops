@@ -202,7 +202,7 @@ describe Chatops::Commands::Release, :release_command do
 
         expect(instance).to receive(:validate_version!).with(version)
         expect(instance).to receive(:trigger_release)
-          .with(version, 'release:tag')
+          .with(version, 'release:tag', {})
 
         instance.perform
       end
@@ -212,7 +212,25 @@ describe Chatops::Commands::Release, :release_command do
 
         expect(instance).to receive(:validate_version!).with(version)
         expect(instance).to receive(:trigger_release)
-          .with(version, 'security:tag')
+          .with(version, 'security:tag', {})
+
+        instance.perform
+      end
+
+      it 'supports overriding the SHAs to use for stable branches' do
+        instance = stubbed_instance(
+          'tag',
+          version,
+          'gitaly-sha': '123abc',
+          'gitlab-sha': '456def'
+        )
+
+        expect(instance).to receive(:validate_version!).with(version)
+        expect(instance).to receive(:trigger_release).with(
+          version,
+          'release:tag',
+          STABLE_BRANCH_SOURCE_COMMITS: 'gitaly=123abc,gitlab=456def'
+        )
 
         instance.perform
       end
