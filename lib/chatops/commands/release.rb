@@ -20,6 +20,7 @@ module Chatops
           sync_remotes
           tag
           close_issues
+          tracking_issue
         ]
       )
 
@@ -86,6 +87,10 @@ module Chatops
             Close security implementation issues associated with the Security Release Tracking Issue
 
               release close_issues --security
+
+            Create a Security Release Tracking Issue
+
+              release tracking_issue --security
         HELP
       end
 
@@ -170,6 +175,10 @@ module Chatops
       end
 
       def close_issues(version = nil)
+        trigger_release(version, "#{namespace}:#{__method__}")
+      end
+
+      def tracking_issue(version = nil)
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 

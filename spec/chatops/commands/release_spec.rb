@@ -239,5 +239,16 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
     end
+
+    describe '#tracking_issue' do
+      it 'triggers tracking_issue in a security release' do
+        instance = stubbed_instance('tracking_issue', nil, security: true)
+
+        expect(instance).to receive(:trigger_release)
+          .with(nil, 'security:tracking_issue')
+
+        instance.perform
+      end
+    end
   end
 end
