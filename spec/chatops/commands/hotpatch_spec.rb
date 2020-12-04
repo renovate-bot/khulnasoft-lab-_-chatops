@@ -58,7 +58,10 @@ describe Chatops::Commands::Hotpatch do
 
         * [ ] Disable auto-deployments by setting `CNY_MANUAL_PROMOTE` as a CI variable in https://ops.gitlab.net/gitlab-com/gl-infra/deployer
         * [ ] Ensure a developer is working on a fix, and the MR has the appropriate labels (e.g. `Pick into auto-deploy`)
-
+        * [ ] Send the following Slack message
+        ```
+        @release-managers we have submitted a post-deployment patch that will be a fixed in master with <MR Link>. As soon as this MR is merged we will need to create a new auto-deploy branch and wait for a build in the new auto-deploy branch before promoting to production.
+        ```
         cc @gitlab-org/release/managers
       DESCRIPTION
     end
