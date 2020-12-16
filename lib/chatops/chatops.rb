@@ -56,6 +56,11 @@ module Chatops
   end
 
   def self.split_input(string)
+    # macOS "smart quotes" can interfere with option parsing, so dumb them down
+    string = string
+      .tr('“”«»', '"')
+      .tr('‘’‹›', "'")
+
     Shellwords.split(string)
   end
 end

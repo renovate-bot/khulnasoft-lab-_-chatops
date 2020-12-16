@@ -81,5 +81,10 @@ describe Chatops do
     it 'supports quoting of words to treat them as a single value' do
       expect(described_class.split_input('"foo bar"')).to eq(['foo bar'])
     end
+
+    it 'corrects smart quotes' do
+      expect(described_class.split_input('foo “bar baz”'))
+        .to eq(['foo', 'bar baz'])
+    end
   end
 end
