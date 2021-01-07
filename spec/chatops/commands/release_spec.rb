@@ -112,6 +112,24 @@ describe Chatops::Commands::Release, :release_command do
 
         instance.perform
       end
+
+      it 'triggers a security release with a `--default-branch` flag' do
+        instance = stubbed_instance(
+          'merge',
+          nil,
+          security: true,
+          default_branch: true
+        )
+
+        expect(instance).not_to receive(:validate_version!)
+        expect(instance).to receive(:trigger_release).with(
+          nil,
+          'security:merge',
+          a_hash_including('MERGE_MASTER_SECURITY_MERGE_REQUESTS' => '1')
+        )
+
+        instance.perform
+      end
     end
 
     describe '#prepare' do

@@ -34,8 +34,12 @@ module Chatops
                'Act as a critical security release',
                default: false
 
+        o.bool '--default-branch',
+               'Merge MRs targeting the default branch',
+               default: false
+
         o.bool '--master',
-               'Merge MRs targeting the master branch',
+               'DEPRECATED: Use `--default-branch`',
                default: false
 
         o.bool '--dry-run',
@@ -100,7 +104,7 @@ module Chatops
 
               release tag --gitaly-sha 123abc 1.2.3
 
-            Sync master and auto-deploy branches after a security release
+            Sync default and auto-deploy branches after a security release
 
               release sync_remotes --security
 
@@ -150,12 +154,20 @@ module Chatops
 
       def merge(version = nil)
         if options[:security]
-          merge_master = options[:master] ? '1' : ''
+          merge_default_branch =
+            # Temporarily support either `--master` or `--default-branch`
+            #
+            # See https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/1440
+            if options[:master] || options[:default_branch]
+              '1'
+            else
+              ''
+            end
 
           trigger_release(
             version,
             "#{namespace}:#{__method__}",
-            'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_master
+            'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_default_branch
           )
         else
           validate_version!(version)
