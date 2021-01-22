@@ -179,6 +179,11 @@ module Chatops
                     title: 'Shared Runners Limit',
                     value: user.shared_runners_minutes_limit,
                     short: true
+                  },
+                  {
+                    title: 'Admin Notes',
+                    value: user.note,
+                    short: false
                   }
                 ]
               }

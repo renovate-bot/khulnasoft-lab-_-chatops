@@ -307,7 +307,8 @@ describe Chatops::Commands::User do
         last_activity_on: Time.now.iso8601,
         current_sign_in_at: Time.now.iso8601,
         projects_limit: 5,
-        shared_runners_minutes_limit: 10
+        shared_runners_minutes_limit: 10,
+        note: 'Example Admin note'
       )
 
       command = described_class
