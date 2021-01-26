@@ -13,10 +13,6 @@ module Chatops
       SOURCE_PROJECT = 'gitlab-org/security/gitlab'
 
       options do |o|
-        o.bool '--security',
-               'Act as a security release',
-               default: false
-
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
@@ -96,9 +92,7 @@ module Chatops
       end
 
       def tag
-        params = { SECURITY: true } if options[:security]
-
-        trigger_release(nil, 'auto_deploy:tag', params || {})
+        trigger_release(nil, 'auto_deploy:tag')
       end
 
       def unpause

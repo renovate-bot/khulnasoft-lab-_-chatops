@@ -110,17 +110,7 @@ describe Chatops::Commands::AutoDeploy do
     it 'triggers `auto_deploy:tag' do
       instance = stubbed_instance('tag')
 
-      expect(instance).to receive(:trigger_release)
-        .with(nil, 'auto_deploy:tag', {})
-
-      instance.perform
-    end
-
-    it 'supports a `--security` flag' do
-      instance = stubbed_instance('tag', security: true)
-
-      expect(instance).to receive(:trigger_release)
-        .with(nil, 'auto_deploy:tag', hash_including(SECURITY: true))
+      expect(instance).to receive(:trigger_release).with(nil, 'auto_deploy:tag')
 
       instance.perform
     end
