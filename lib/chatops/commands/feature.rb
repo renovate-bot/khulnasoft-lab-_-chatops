@@ -159,8 +159,13 @@ module Chatops
         if ongoing_incidents?
           return "This feature flag's state can't be changed as one or more " \
             'production incidents are ongoing. If you absolutely must change ' \
-            'the state of this feature flag, specify the --ignore-incidents ' \
-            'option.'
+            'the state of this feature flag, ' \
+            'please confirm with the current SRE' \
+            'oncall `@sre-oncall`, and use the --ignore-incidents option' \
+            'option. ' \
+            'See the <list of currently active incidents|https://gitlab.com' \
+            '/gitlab-com/gl-infra/production/-/issues?label_name%5B%5D=' \
+            'Incident%3A%3AActive>'
         end
 
         response = Gitlab::Client

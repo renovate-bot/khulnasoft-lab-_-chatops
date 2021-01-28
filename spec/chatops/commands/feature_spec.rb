@@ -817,7 +817,8 @@ describe Chatops::Commands::Feature do
       end
 
       it 'returns true when there is an S3 issue' do
-        issue = instance_double('issue', labels: %w[severity::3 Incident::Active foo])
+        issue = instance_double('issue',
+                                labels: %w[severity::3 Incident::Active foo])
 
         expect(client)
           .to receive(:issues)
@@ -832,7 +833,8 @@ describe Chatops::Commands::Feature do
       end
 
       it 'returns false when there is an S4 issue' do
-        issue = instance_double('issue', labels: %w[severity::4 Incident::Active foo])
+        issue = instance_double('issue',
+                                labels: %w[severity::4 Incident::Active foo])
 
         expect(client)
           .to receive(:issues)
