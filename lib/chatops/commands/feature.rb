@@ -27,7 +27,7 @@ module Chatops
 
       # The severity labels applied to an incident issue before it blocks
       # changing feature flags.
-      SEVERITY_LABELS = %w[S1 S2 S3].freeze
+      SEVERITY_LABELS = %w[severity::1 severity::2 severity::3].freeze
 
       description 'Managing of GitLab feature flags.'
 
