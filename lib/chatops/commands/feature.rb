@@ -29,6 +29,12 @@ module Chatops
       # changing feature flags.
       SEVERITY_LABELS = %w[severity::1 severity::2 severity::3].freeze
 
+      # IDs of QA channels to send message each time a feature flag is set
+      QA_CHANNEL_IDS = {
+        STAGING_HOST => 'CBS3YKMGD', # `#qa-staging`
+        PRODUCTION_HOST => 'CCNNKFP8B' # `#qa-production`
+      }.freeze
+
       description 'Managing of GitLab feature flags.'
 
       options do |o|
@@ -176,13 +182,14 @@ module Chatops
 
         feature = Gitlab::Feature.from_api_response(response)
 
-        log_feature_toggle(name, value)
+        issue = log_feature_toggle(name, value)
         annotate_feature_toggle(name, value)
 
         send_feature_details(
           feature: feature,
           text: 'The feature flag value has been updated!'
         )
+        send_feature_toggling_to_qa_channel(issue)
       end
 
       # Lists all the available feature flags per state.
@@ -260,6 +267,22 @@ module Chatops
           )
       end
 
+      def send_feature_toggling_to_qa_channel(issue)
+        channel_id = QA_CHANNEL_IDS[gitlab_host]
+        return unless channel_id
+
+        blocks = [{
+          type: 'context',
+          elements: [
+            Slack.markdown("[#{issue.title}](#{issue.web_url})")
+          ]
+        }]
+
+        Slack::Message
+          .new(token: slack_token, channel: channel_id)
+          .send(blocks: blocks)
+      end
+
       def attachment_fields_per_state
         Gitlab::FeatureCollection
           .new(token: gitlab_token, match: options[:match], host: gitlab_host)
@@ -317,6 +340,8 @@ module Chatops
         )
 
         client.close_issue(issue.project_id, issue.iid)
+
+        issue
       end
 
       def annotate_feature_toggle(name, value)

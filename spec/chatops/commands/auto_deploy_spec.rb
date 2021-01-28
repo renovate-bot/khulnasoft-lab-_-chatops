@@ -21,18 +21,6 @@ describe Chatops::Commands::AutoDeploy do
     stub_const('Chatops::Gitlab::Client', fake_client)
   end
 
-  def expect_slack_message(args = {})
-    message = instance_double('message')
-
-    expect(Chatops::Slack::Message)
-      .to receive(:new)
-      .and_return(message)
-
-    expect(message)
-      .to receive(:send)
-      .with(**args)
-  end
-
   describe '.perform' do
     it 'includes examples in the --help output' do
       output = described_class.perform(%w[--help])

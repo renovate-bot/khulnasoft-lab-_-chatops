@@ -247,12 +247,11 @@ describe Chatops::Commands::Feature do
           .to receive(:ongoing_incidents?)
           .and_return(false)
 
+        issue = instance_double('GitLab::Issue')
         expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
+          .to receive(:log_feature_toggle)
+          .with('foo', '10')
+          .and_return(issue)
 
         annotate = instance_double('annotate')
         expect(Chatops::Grafana::Annotate)
@@ -267,7 +266,16 @@ describe Chatops::Commands::Feature do
             tags: ['gprd', 'feature-flag', 'foo']
           )
 
-        expect(command).to receive(:log_feature_toggle).with('foo', '10')
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
+
+        expect(command)
+          .to receive(:send_feature_toggling_to_qa_channel)
+          .with(issue)
 
         command.set
       end
@@ -312,14 +320,11 @@ describe Chatops::Commands::Feature do
           .to receive(:ongoing_incidents?)
           .and_return(false)
 
+        issue = instance_double('GitLab::Issue')
         expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
-
-        expect(command).to receive(:log_feature_toggle).with('foo', 'true')
+          .to receive(:log_feature_toggle)
+          .with('foo', 'true')
+          .and_return(issue)
 
         annotate = instance_double('annotate')
 
@@ -334,6 +339,18 @@ describe Chatops::Commands::Feature do
             'alice set feature flag foo to true',
             tags: ['gprd', 'feature-flag', 'foo']
           )
+
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
+
+        expect(command)
+          .to receive(:send_feature_toggling_to_qa_channel)
+          .with(issue)
+
         command.set
       end
       # rubocop: enable RSpec/ExampleLength
@@ -377,12 +394,11 @@ describe Chatops::Commands::Feature do
           .to receive(:ongoing_incidents?)
           .and_return(false)
 
+        issue = instance_double('GitLab::Issue')
         expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
+          .to receive(:log_feature_toggle)
+          .with('foo', 'true')
+          .and_return(issue)
 
         annotate = instance_double('annotate')
 
@@ -398,7 +414,16 @@ describe Chatops::Commands::Feature do
             tags: ['gprd', 'feature-flag', 'foo']
           )
 
-        expect(command).to receive(:log_feature_toggle).with('foo', 'true')
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
+
+        expect(command)
+          .to receive(:send_feature_toggling_to_qa_channel)
+          .with(issue)
 
         command.set
       end
@@ -442,14 +467,11 @@ describe Chatops::Commands::Feature do
           .to receive(:ongoing_incidents?)
           .and_return(false)
 
+        issue = instance_double('GitLab::Issue')
         expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
-
-        expect(command).to receive(:log_feature_toggle).with('foo', 'true')
+          .to receive(:log_feature_toggle)
+          .with('foo', 'true')
+          .and_return(issue)
 
         annotate = instance_double('annotate')
 
@@ -464,6 +486,18 @@ describe Chatops::Commands::Feature do
             'alice set feature flag foo to true',
             tags: ['gprd', 'feature-flag', 'foo']
           )
+
+        expect(command)
+          .to receive(:send_feature_details)
+          .with(
+            feature: an_instance_of(Chatops::Gitlab::Feature),
+            text: 'The feature flag value has been updated!'
+          )
+
+        expect(command)
+          .to receive(:send_feature_toggling_to_qa_channel)
+          .with(issue)
+
         command.set
       end
       # rubocop: enable RSpec/ExampleLength
@@ -565,6 +599,84 @@ describe Chatops::Commands::Feature do
         .with(a_hash_including(text: 'Hello'))
 
       command.send_feature_details(feature: feature, text: 'Hello')
+    end
+  end
+
+  describe '#send_feature_toggling_to_qa_channel' do
+    let(:issue) do
+      instance_double(
+        'GitLab::Issue',
+        title: 'Issue title',
+        web_url: 'http://gitlab.example.org/issues/1'
+      )
+    end
+
+    shared_examples 'message sent to the relevant Slack QA channel' do |channel|
+      it 'sends a message to the relevant Slack QA channel' do
+        message = instance_double('Chatops::Slack::Message', send: nil)
+        expect(Chatops::Slack::Message)
+          .to receive(:new)
+          .with(token: '123', channel: channel)
+          .and_return(message)
+
+        command.send_feature_toggling_to_qa_channel(issue)
+      end
+
+      it 'sends a relevant Slack message' do
+        expect_slack_message(blocks: QaMessageBlockMatcher.new(issue))
+
+        command.send_feature_toggling_to_qa_channel(issue)
+      end
+    end
+
+    context 'when environment is production' do
+      let(:command) do
+        described_class.new(
+          [],
+          {},
+          'SLACK_TOKEN' => '123',
+          'CHAT_CHANNEL' => '456'
+        )
+      end
+
+      include_examples(
+        'message sent to the relevant Slack QA channel',
+        described_class::QA_CHANNEL_IDS[described_class::PRODUCTION_HOST]
+      )
+    end
+
+    context 'when environment is staging' do
+      let(:command) do
+        described_class.new(
+          [],
+          { staging: true },
+          'SLACK_TOKEN' => '123',
+          'CHAT_CHANNEL' => '456'
+        )
+      end
+
+      include_examples(
+        'message sent to the relevant Slack QA channel',
+        described_class::QA_CHANNEL_IDS[described_class::STAGING_HOST]
+      )
+    end
+
+    context 'when environment is dev' do
+      let(:command) do
+        described_class.new(
+          [],
+          { dev: true },
+          'SLACK_TOKEN' => '123',
+          'CHAT_CHANNEL' => '456'
+        )
+      end
+
+      it 'does not send a message' do
+        expect(Chatops::Slack::Message)
+          .not_to receive(:new)
+
+        command.send_feature_toggling_to_qa_channel(issue)
+      end
     end
   end
 
@@ -706,7 +818,7 @@ describe Chatops::Commands::Feature do
 
         expect(client).to receive(:close_issue).with(1, 2)
 
-        command.log_feature_toggle('foo', 'bar')
+        expect(command.log_feature_toggle('foo', 'bar')).to eq(issue)
       end
 
       it 'adds a label when incidents are ignored' do
@@ -737,7 +849,7 @@ describe Chatops::Commands::Feature do
 
         expect(client).to receive(:close_issue).with(1, 2)
 
-        command.log_feature_toggle('foo', 'bar')
+        expect(command.log_feature_toggle('foo', 'bar')).to eq(issue)
       end
     end
   end
@@ -848,5 +960,19 @@ describe Chatops::Commands::Feature do
         expect(command.ongoing_incidents?).to eq(false)
       end
     end
+  end
+end
+
+# RSpec argument matcher for verifying the complex `block` Hash passed to
+# `Slack::Message#send` from the described class
+class QaMessageBlockMatcher
+  def initialize(issue)
+    @issue = issue
+  end
+
+  def ===(other)
+    json = other.to_json
+
+    json.include?("[#{@issue.title}](#{@issue.web_url})")
   end
 end
