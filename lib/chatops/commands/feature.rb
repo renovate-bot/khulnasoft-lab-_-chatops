@@ -30,7 +30,7 @@ module Chatops
       SEVERITY_LABELS = %w[severity::1 severity::2 severity::3].freeze
 
       # IDs of QA channels to send message each time a feature flag is set
-      QA_CHANNEL_IDS = {
+      QA_CHANNELS = {
         STAGING_HOST => 'CBS3YKMGD', # `#qa-staging`
         PRODUCTION_HOST => 'CCNNKFP8B' # `#qa-production`
       }.freeze
@@ -181,24 +181,31 @@ module Chatops
                                     actors: options[:actors])
 
         feature = Gitlab::Feature.from_api_response(response)
+        perform_side_effects(name, value, feature)
+      end
 
-        issue = log_feature_toggle(name, value)
+      def perform_side_effects(name, value, feature)
         annotate_feature_toggle(name, value)
+        issue = log_feature_toggle(name, value)
 
-        send_feature_details(
+        output = []
+        output << send_feature_details(
           feature: feature,
           text: 'The feature flag value has been updated!'
         )
-        send_feature_toggling_to_qa_channel(issue)
+        output << send_feature_toggling_to_qa_channel(issue)
+
+        output.compact.join("\n")
       end
 
       # Lists all the available feature flags per state.
       def list
         enabled, disabled = attachment_fields_per_state
 
-        Slack::Message
-          .new(token: slack_token, channel: channel)
-          .send(
+        send_slack_message_safely(
+          slack_token: slack_token,
+          channel: channel,
+          slack_args: {
             attachments: [
               {
                 title: 'Enabled Features',
@@ -215,7 +222,8 @@ module Chatops
                 footer: "#{disabled.length} disabled features on #{gitlab_host}"
               }
             ]
-          )
+          }
+        )
       end
 
       # Remove a feature flag
@@ -228,11 +236,13 @@ module Chatops
           .new(token: gitlab_token, host: gitlab_host)
           .delete_feature(name)
 
-        Slack::Message
-          .new(token: slack_token, channel: channel)
-          .send(
+        send_slack_message_safely(
+          slack_token: slack_token,
+          channel: channel,
+          slack_args: {
             text: "Feature flag #{name} has been removed from #{gitlab_host}!"
-          )
+          }
+        )
       end
 
       # Sends the details of a single feature back to Slack.
@@ -241,9 +251,10 @@ module Chatops
       #           we want to send back.
       # text - Optional text to include in the message.
       def send_feature_details(feature:, text: nil)
-        Slack::Message
-          .new(token: slack_token, channel: channel)
-          .send(
+        send_slack_message_safely(
+          slack_token: slack_token,
+          channel: channel,
+          slack_args: {
             text: text,
             attachments: [
               {
@@ -264,12 +275,13 @@ module Chatops
                 footer: "Host: #{gitlab_host}"
               }
             ]
-          )
+          }
+        )
       end
 
       def send_feature_toggling_to_qa_channel(issue)
-        channel_id = QA_CHANNEL_IDS[gitlab_host]
-        return unless channel_id
+        channel = QA_CHANNELS[gitlab_host]
+        return unless channel
 
         blocks = [{
           type: 'context',
@@ -278,9 +290,20 @@ module Chatops
           ]
         }]
 
+        send_slack_message_safely(
+          slack_token: slack_token,
+          channel: channel,
+          slack_args: { blocks: blocks }
+        )
+      end
+
+      def send_slack_message_safely(slack_token:, channel:, slack_args:)
         Slack::Message
-          .new(token: slack_token, channel: channel_id)
-          .send(blocks: blocks)
+          .new(token: slack_token, channel: channel)
+          .send(**slack_args)
+      rescue Slack::Message::MessageError => error
+        'The following Slack message could not be posted to channel ' \
+        "'#{channel}': #{slack_args}\n\nError: #{error.message}"
       end
 
       def attachment_fields_per_state
@@ -361,7 +384,7 @@ module Chatops
 
         Gitlab::Client
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
-          .issues(INCIDENTS_PROJECT, labels: 'Incident::Active', state: 'opened') # rubocop:disable Style/LineLength
+          .issues(INCIDENTS_PROJECT, labels: 'Incident::Active', state: 'opened') # rubocop:disable Metrics/LineLength
           .auto_paginate do |issue|
             return true if (issue.labels & SEVERITY_LABELS).any?
           end

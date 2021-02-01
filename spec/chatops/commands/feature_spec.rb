@@ -641,7 +641,7 @@ describe Chatops::Commands::Feature do
 
       include_examples(
         'message sent to the relevant Slack QA channel',
-        described_class::QA_CHANNEL_IDS[described_class::PRODUCTION_HOST]
+        described_class::QA_CHANNELS[described_class::PRODUCTION_HOST]
       )
     end
 
@@ -657,7 +657,7 @@ describe Chatops::Commands::Feature do
 
       include_examples(
         'message sent to the relevant Slack QA channel',
-        described_class::QA_CHANNEL_IDS[described_class::STAGING_HOST]
+        described_class::QA_CHANNELS[described_class::STAGING_HOST]
       )
     end
 
