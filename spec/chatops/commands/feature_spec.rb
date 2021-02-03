@@ -973,6 +973,6 @@ class QaMessageBlockMatcher
   def ===(other)
     json = other.to_json
 
-    json.include?("[#{@issue.title}](#{@issue.web_url})")
+    json.include?("<#{@issue.web_url}|#{@issue.title}>")
   end
 end

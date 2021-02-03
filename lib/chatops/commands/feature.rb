@@ -284,10 +284,8 @@ module Chatops
         return unless channel
 
         blocks = [{
-          type: 'context',
-          elements: [
-            Slack.markdown("[#{issue.title}](#{issue.web_url})")
-          ]
+          type: 'section',
+          text: Slack.markdown("<#{issue.web_url}|#{issue.title}>")
         }]
 
         send_slack_message_safely(
