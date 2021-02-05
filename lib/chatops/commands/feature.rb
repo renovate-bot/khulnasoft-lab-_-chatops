@@ -380,6 +380,8 @@ module Chatops
       def ongoing_incidents?
         return false if options[:ignore_incidents]
 
+        return false if env_name != 'gprd'
+
         Gitlab::Client
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
           .issues(INCIDENTS_PROJECT, labels: 'Incident::Active', state: 'opened') # rubocop:disable Metrics/LineLength

@@ -878,6 +878,31 @@ describe Chatops::Commands::Feature do
       end
     end
 
+    context 'when there are incidents when setting a staging feature flag' do
+      let(:command) do
+        described_class.new(
+          [],
+          { staging: true },
+          'GITLAB_TOKEN' => 'foo'
+        )
+      end
+
+      let(:client) { instance_double(Chatops::Gitlab::Client) }
+
+      before do
+        allow(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'foo', host: 'gitlab.com')
+          .and_return(client)
+      end
+
+      it 'returns false when the environment is staging' do
+        expect(client).not_to receive(:issues)
+
+        expect(command.ongoing_incidents?).to eq(false)
+      end
+    end
+
     context 'when there are incidents' do
       let(:command) { described_class.new([], {}, 'GITLAB_TOKEN' => 'foo') }
       let(:client) { instance_double(Chatops::Gitlab::Client) }
