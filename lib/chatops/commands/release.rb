@@ -224,7 +224,7 @@ module Chatops
         shas = []
 
         %w[gitaly gitlab omnibus cng helm].each do |key|
-          if (value = options[:"#{key}-sha"])
+          if (value = options[:"#{key}_sha"])
             shas << "#{key}=#{value}"
           end
         end

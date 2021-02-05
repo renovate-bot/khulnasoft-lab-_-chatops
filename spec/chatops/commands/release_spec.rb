@@ -239,8 +239,8 @@ describe Chatops::Commands::Release, :release_command do
         instance = stubbed_instance(
           'tag',
           version,
-          'gitaly-sha': '123abc',
-          'gitlab-sha': '456def'
+          'gitaly_sha': '123abc',
+          'gitlab_sha': '456def'
         )
 
         expect(instance).to receive(:validate_version!).with(version)
