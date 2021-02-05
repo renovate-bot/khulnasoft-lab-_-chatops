@@ -6,7 +6,7 @@ gem 'chef'
 gem 'gitlab'
 gem 'http'
 gem 'pg'
-gem 'slack_block_kit', '~> 0.3.0'
+gem 'slack-ruby-block-kit', '~> 0.14.0'
 gem 'slop'
 
 group :development do
