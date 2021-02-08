@@ -11,6 +11,8 @@ module Chatops
       CONNECTION_INDEX = 4 # scur
       BACKEND_INDEX = 0 # pxname
       LB_ADMIN_PORT = 23_646
+      HA_PROXY_RETRIES = 10
+      RETRY_SLEEP = 0.1
       MAINT_STATE = 'MAINT'
       DRAIN_STATE = 'DRAIN'
       UP_STATE = 'UP'
@@ -33,41 +35,60 @@ module Chatops
         end
       end
 
-      # Returns a hash of server information from all lbs
+      # Returns an array hashes of server information from all lbs
       def server_stats
         server_data = []
         @lbs.each do |lb_ip|
-          sock = TCPSocket.new(lb_ip, LB_ADMIN_PORT)
-          haproxy_send(cmd: 'show stat', sock: sock)
+          retries = 0
+          begin
+            single_server_data = fetch_server_data(lb_ip: lb_ip)
+          rescue Errno::ECONNRESET => e
+            if (retries += 1) < HA_PROXY_RETRIES
+              sleep(RETRY_SLEEP)
+              retry
+            end
 
-          haproxy_gets(sock: sock) do |line|
-            line_stats = line.split(',')
-            next if line_stats.empty?
-            # since we only care about server statuses, skip lines when
-            # the server is not a node
-            # lines like these will be skipped:
-            #   api_rate_limit,localhost,0,0,13,30,,208734,178279435,1164 ...
-            #   ssh,BACKEND,0,0,0,3,5000,2079,1537705,2894066,0,0,,0,10,0, ...
-            #   check_ssh,FRONTEND,,,0,1,50000,119259,7155540,17411814,0,0...
-            next if %w[BACKEND FRONTEND localhost]
-              .include?(line_stats[SERVER_INDEX])
-
-            server_data.push(
-              state: line_stats.fetch(STATE_INDEX),
-              conn: line_stats.fetch(CONNECTION_INDEX),
-              server: line_stats.fetch(SERVER_INDEX),
-              backend: line_stats.fetch(BACKEND_INDEX),
-              lb_ip: lb_ip,
-              weight: line_stats.fetch(WEIGHT_INDEX)
-            )
+            puts "Giving up on LB #{lb_ip} after #{retries} retries"
+            raise e
           end
-
-          sock.close
+          server_data += single_server_data
         end
         server_data
       end
 
       private
+
+      def fetch_server_data(lb_ip:)
+        single_server_data = []
+        sock = TCPSocket.new(lb_ip, LB_ADMIN_PORT)
+        haproxy_send(cmd: 'show stat', sock: sock)
+
+        haproxy_gets(sock: sock) do |line|
+          line_stats = line.split(',')
+          next if line_stats.empty?
+          # since we only care about server statuses, skip lines when
+          # the server is not a node
+          # lines like these will be skipped:
+          #   api_rate_limit,localhost,0,0,13,30,,208734,178279435,1164 ...
+          #   ssh,BACKEND,0,0,0,3,5000,2079,1537705,2894066,0,0,,0,10,0, ...
+          #   check_ssh,FRONTEND,,,0,1,50000,119259,7155540,17411814,0,0...
+          next if %w[BACKEND FRONTEND localhost]
+            .include?(line_stats[SERVER_INDEX])
+
+          single_server_data.push(
+            state: line_stats.fetch(STATE_INDEX),
+            conn: line_stats.fetch(CONNECTION_INDEX),
+            server: line_stats.fetch(SERVER_INDEX),
+            backend: line_stats.fetch(BACKEND_INDEX),
+            lb_ip: lb_ip,
+            weight: line_stats.fetch(WEIGHT_INDEX)
+          )
+        end
+
+        sock.close
+
+        single_server_data
+      end
 
       def haproxy_send(cmd:, sock:)
         sock.write("#{cmd}\n")
