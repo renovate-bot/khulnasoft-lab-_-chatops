@@ -85,10 +85,28 @@ describe Chatops::HAProxy::Client do
       allow(sock)
         .to receive(:gets).and_return(*lb_lines)
       expect(client.server_stats).to eq(server_stats)
+
       expect(sock)
         .to have_received(:write).twice.with("show stat\n")
       expect(sock)
         .to have_received(:close).twice
+    end
+  end
+
+  context 'when there is a connection error' do
+    it 'retries lb server stats' do
+      allow(sock)
+        .to receive(:gets).and_raise(Errno::ECONNRESET)
+      allow(client).to receive(:sleep)
+      expect(STDOUT).to receive(:puts)
+        .with('Giving up on LB 1.1.1.1 after 10 retries')
+
+      expect { client.server_stats }.to raise_error(Errno::ECONNRESET)
+
+      expect(sock)
+        .to have_received(:write).exactly(10).times.with("show stat\n")
+      expect(sock)
+        .not_to have_received(:close)
     end
   end
 end
