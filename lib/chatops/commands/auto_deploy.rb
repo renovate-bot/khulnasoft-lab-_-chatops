@@ -205,7 +205,7 @@ module Chatops
             blocks << {
               type: 'context',
               elements: envs.map do |env|
-                Slack.markdown(environment_link(env))
+                Slack.markdown(environment_text(env))
               end
             }
           else
@@ -231,33 +231,30 @@ module Chatops
       end
 
       def post_environment_status(envs)
-        blocks = []
+        blocks = ::Slack::BlockKit.blocks
 
         envs.each_with_index do |env, idx|
-          promotable_from = promotable_env_revision(envs, idx)
-          revision_markdown = md_revision_field(env[:revision], promotable_from)
+          blocks.header(text: environment_text(env), emoji: true)
+          blocks.section do |s|
+            s.mrkdwn(text: "*Revision:* #{commit_link(env[:revision])}")
+          end
+          blocks.section do |s|
+            s.mrkdwn(text: "*Branch:* #{branch_link(env[:branch])}")
+          end
+          blocks.section do |s|
+            s.mrkdwn(text: "*Package:* `#{env[:package]}`")
+          end
 
-          blocks << {
-            type: 'section',
-            text: Slack.markdown(environment_link(env))
-          }
-
-          blocks << {
-            type: 'section',
-            fields: [
-              Slack.markdown("*Version:* `#{env[:version]}`"),
-              Slack.markdown(revision_markdown),
-              Slack.markdown("*Branch:* #{branch_link(env[:branch])}"),
-              Slack.markdown("*Package:* `#{env[:package]}`")
-            ]
-          }
-
-          blocks << { type: 'divider' }
+          # rubocop:disable Style/Next
+          if (comparison = promotable_env_revision(envs, idx))
+            blocks.section do |s|
+              s.mrkdwn(text: "*Compare:* `#{comparison}`")
+            end
+          end
+          # rubocop:enable Style/Next
         end
 
-        blocks.pop # Remove the last divider
-
-        slack_message.send(blocks: blocks)
+        slack_message.send(blocks: blocks.as_json)
       end
 
       def client_from_role(role)
@@ -308,7 +305,7 @@ module Chatops
           .new(token: slack_token, channel: channel)
       end
 
-      def environment_link(env)
+      def environment_text(env)
         icon =
           case env[:role]
           when /gstg/
@@ -319,7 +316,7 @@ module Chatops
             'party-tanuki'
           end
 
-        ":#{icon}: <https://#{env[:host]}/|#{env[:host]}>"
+        ":#{icon}: #{env[:host]}"
       end
 
       def task_icon(task)
@@ -338,10 +335,10 @@ module Chatops
       end
 
       def compare_link(prev_sha, sha)
-        url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/compare/#{prev_sha}...#{sha}"
-        text = "Compare with `#{prev_sha}`"
+        comparison = "#{prev_sha}...#{sha}"
+        url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/compare/#{comparison}"
 
-        "<#{url}|#{text}>"
+        "<#{url}|#{comparison}>"
       end
 
       def branch_link(branch)
@@ -357,20 +354,16 @@ module Chatops
       end
 
       def promotable_env_revision(envs, idx)
-        return if idx.zero?
+        # Can't compare the last environment to anything
+        return if idx >= envs.length - 1
 
-        envs.dig(idx - 1, :revision)
-      end
+        current_rev = envs.dig(idx, :revision)
+        next_rev = envs.dig(idx + 1, :revision)
 
-      def md_revision_field(current_revision, promotable_env_revision)
-        revision_link = "*Revision:* #{commit_link(current_revision)}"
+        # Can't compare identical revisions
+        return if current_rev == next_rev
 
-        return revision_link unless promotable_env_revision
-        return revision_link if promotable_env_revision == current_revision
-
-        whats_new_link = compare_link(promotable_env_revision, current_revision)
-
-        "#{revision_link} - #{whats_new_link}"
+        compare_link(current_rev, next_rev)
       end
     end
   end

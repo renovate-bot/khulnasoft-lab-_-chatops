@@ -239,59 +239,17 @@ describe Chatops::Commands::AutoDeploy do
         subject.send(:promotable_env_revision, envs, index)
       end
 
-      it 'returns nil for the first env' do
-        expect(promotable_env_revision(0)).to be_nil
+      it 'returns nil for the last env' do
+        expect(promotable_env_revision(2)).to be_nil
       end
 
-      it 'returns the revision of the previous env' do
-        expect(promotable_env_revision(1)).to eq(production_rev)
-        expect(promotable_env_revision(2)).to eq(canary_rev)
+      it 'returns the revision of the next env' do
+        expect(promotable_env_revision(0)).to match('abc1234...fff1235')
+        expect(promotable_env_revision(1)).to match('fff1235...ddd1236')
       end
 
       it 'returns nil for index out of bounds' do
         expect(promotable_env_revision(100)).to be_nil
-      end
-    end
-
-    describe '#md_revision_field' do
-      let(:command) { subject }
-
-      def md_revision_field(current, promotable_to)
-        command.send(:md_revision_field, current, promotable_to)
-      end
-
-      it 'shows the commit link and a comparison link' do
-        current_rev = '1234'
-        promotable_env_rev = 'abcf'
-
-        expect(command).to receive(:commit_link)
-          .with(current_rev).and_return('commit_link')
-        expect(command).to receive(:compare_link)
-          .with(promotable_env_rev, current_rev)
-          .and_return('compare_link')
-
-        expect(md_revision_field(current_rev, promotable_env_rev))
-          .to eq('*Revision:* commit_link - compare_link')
-      end
-
-      it 'shows only the commit link when comparing to nil' do
-        current_rev = '1234'
-        expect(command).to receive(:commit_link)
-          .with(current_rev).and_return('commit_link')
-        expect(command).not_to receive(:compare_link)
-
-        expect(md_revision_field(current_rev, nil))
-          .to eq('*Revision:* commit_link')
-      end
-
-      it 'shows only the commit link when revisions are the same' do
-        current_rev = '1234'
-        expect(command).to receive(:commit_link)
-          .with(current_rev).and_return('commit_link')
-        expect(command).not_to receive(:compare_link)
-
-        expect(md_revision_field(current_rev, current_rev))
-          .to eq('*Revision:* commit_link')
       end
     end
   end
@@ -321,8 +279,7 @@ class StatusBlockMatcher
     json = other.to_json
 
     json.include?(':party-tanuki:') &&
-      json.include?("<https://#{@status[:host]}/|#{@status[:host]}>") &&
-      json.include?(@status[:version]) &&
+      json.include?(@status[:host]) &&
       json.include?(@status[:revision]) &&
       json.include?(@status[:branch]) &&
       json.include?(@status[:package])
