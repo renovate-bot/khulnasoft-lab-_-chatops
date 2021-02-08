@@ -116,6 +116,7 @@ module Chatops
 
       def_delegator :internal_client, :version
       def_delegator :internal_client, :commit
+      def_delegator :internal_client, :commit_refs
       def_delegator :internal_client, :tree, :repository_tree
 
       def_delegator :internal_client, :create_issue
@@ -125,17 +126,6 @@ module Chatops
       def_delegator :internal_client, :create_branch
       def_delegator :internal_client, :create_merge_request
       def_delegator :internal_client, :create_file
-
-      def commit_refs(project, sha, options = {})
-        path = internal_client.url_encode(project)
-
-        # NOTE: The GitLab gem doesn't currently support this API
-        # See https://github.com/NARKOZ/gitlab/pull/507
-        internal_client.get(
-          "/projects/#{path}/repository/commits/#{sha}/refs",
-          query: options
-        )
-      end
     end
   end
 end
