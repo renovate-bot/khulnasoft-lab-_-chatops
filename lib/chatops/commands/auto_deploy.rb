@@ -236,22 +236,18 @@ module Chatops
         envs.each_with_index do |env, idx|
           blocks.header(text: environment_text(env), emoji: true)
           blocks.section do |s|
-            s.mrkdwn(text: "*Revision:* #{commit_link(env[:revision])}")
-          end
-          blocks.section do |s|
-            s.mrkdwn(text: "*Branch:* #{branch_link(env[:branch])}")
-          end
-          blocks.section do |s|
-            s.mrkdwn(text: "*Package:* `#{env[:package]}`")
-          end
+            lines = [
+              "*Revision:* #{commit_link(env[:revision])}",
+              "*Branch:* #{branch_link(env[:branch])}",
+              "*Package:* `#{env[:package]}`"
+            ]
 
-          # rubocop:disable Style/Next
-          if (comparison = promotable_env_revision(envs, idx))
-            blocks.section do |s|
-              s.mrkdwn(text: "*Compare:* `#{comparison}`")
+            if (comparison = promotable_env_revision(envs, idx))
+              lines << "*Compare:* `#{comparison}`"
             end
+
+            s.mrkdwn(text: lines.join("\n"))
           end
-          # rubocop:enable Style/Next
         end
 
         slack_message.send(blocks: blocks.as_json)
