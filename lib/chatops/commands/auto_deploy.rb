@@ -249,6 +249,14 @@ module Chatops
           end
         end
 
+        blocks.context do |c|
+          link = 'https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/1537'
+          c.mrkdwn(text: <<~CONTEXT.tr("\n", ' '))
+            :information_source: An ongoing deploy can make this information
+            inaccurate. See <#{link}|gitlab-com/gl-infra/delivery#1537>.
+          CONTEXT
+        end
+
         slack_message.send(blocks: blocks.as_json)
       end
 
