@@ -170,9 +170,8 @@ module Chatops
         {
           role: role,
           host: client.host,
-          version: version.version,
-          revision: version.revision,
-          branch: auto_deploy_branch&.name || nil,
+          revision: revision,
+          branch: auto_deploy_branch&.name,
           package: chef_client.package_version(role)
         }
       end
