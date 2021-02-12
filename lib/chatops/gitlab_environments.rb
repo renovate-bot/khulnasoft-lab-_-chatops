@@ -7,10 +7,20 @@ module Chatops
     OPS_HOST = 'ops.gitlab.net'
     PRODUCTION_HOST = 'gitlab.com'
 
+    ICONS = {
+      'gprd' => 'party-tanuki',
+      'gprd-cny' => 'canary',
+      'gstg' => 'building_construction'
+    }.freeze
+
     def self.define_environment_options(options)
       options.boolean('--dev', "Use #{DEV_HOST}")
       options.boolean('--staging', "Use #{STAGING_HOST}")
       options.boolean('--ops', "Use #{OPS_HOST}")
+    end
+
+    def env_icon(environment)
+      ICONS.fetch(environment, 'question')
     end
 
     def gitlab_host

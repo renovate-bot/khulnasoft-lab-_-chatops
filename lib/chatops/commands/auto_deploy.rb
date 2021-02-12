@@ -5,6 +5,7 @@ module Chatops
     class AutoDeploy
       include Chef::Config
       include Command
+      include GitlabEnvironments
       include ::Chatops::Release::Command
 
       COMMANDS = Set.new(%w[pause prepare status tag unpause blockers])
@@ -309,17 +310,7 @@ module Chatops
       end
 
       def environment_text(env)
-        icon =
-          case env[:role]
-          when /gstg/
-            'building_construction'
-          when /cny/
-            'canary'
-          else
-            'party-tanuki'
-          end
-
-        ":#{icon}: #{env[:host]}"
+        ":#{env_icon(env[:role])}: #{env[:host]}"
       end
 
       def task_icon(task)

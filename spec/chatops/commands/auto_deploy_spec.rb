@@ -140,6 +140,7 @@ describe Chatops::Commands::AutoDeploy do
   describe '#status' do
     let(:production_status) do
       {
+        role: 'gprd',
         host: 'gitlab.com',
         version: '12.2.0-pre',
         revision: '0874a8d346c',
