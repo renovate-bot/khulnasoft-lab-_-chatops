@@ -94,6 +94,18 @@ module Chatops
         internal_client.post('/broadcast_messages', body: body)
       end
 
+      def latest_deployments(project, environment, limit:)
+        options = {
+          environment: environment,
+          order_by: 'id',
+          sort: 'desc'
+        }
+
+        internal_client
+          .deployments(project, options)
+          .paginate_with_limit(limit)
+      end
+
       def_delegator :internal_client, :block_user
       def_delegator :internal_client, :unblock_user
 
@@ -117,6 +129,7 @@ module Chatops
       def_delegator :internal_client, :version
       def_delegator :internal_client, :commit
       def_delegator :internal_client, :commit_refs
+      def_delegator :internal_client, :compare
       def_delegator :internal_client, :tree, :repository_tree
 
       def_delegator :internal_client, :create_issue

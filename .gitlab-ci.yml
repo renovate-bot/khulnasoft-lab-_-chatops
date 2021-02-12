@@ -134,3 +134,6 @@ hotpatch:
 
 database:
   <<: *chatops
+
+rollback:
+  <<: *chatops
