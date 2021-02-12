@@ -76,7 +76,7 @@ module Chatops
 
         client.run_trigger(
           TARGET_PROJECT,
-          env.fetch('RELEASE_TRIGGER_TOKEN'),
+          env.fetch('RELEASE_TRIGGER_TOKEN') { env.fetch('CI_JOB_TOKEN') },
           TARGET_REF,
           params.merge(
             CHAT_CHANNEL: channel,
