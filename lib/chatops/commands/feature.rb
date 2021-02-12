@@ -186,6 +186,7 @@ module Chatops
 
       def perform_side_effects(name, value, feature)
         annotate_feature_toggle(name, value)
+        send_feature_toggle_event(name, value)
         issue = log_feature_toggle(name, value)
 
         output = []
@@ -309,6 +310,21 @@ module Chatops
           .new(token: gitlab_token, match: options[:match], host: gitlab_host)
           .per_state
           .map { |vals| vals.map(&:to_attachment_field) }
+      end
+
+      def send_feature_toggle_event(name, value)
+        env = if gitlab_host == 'staging.gitlab.com'
+                'gstg'
+              elsif gitlab_host == 'gitlab.com'
+                'gprd'
+              end
+
+        return unless env
+
+        message = "#{username} updated feature '#{name}' to '#{value}'"
+        Chatops::Events::Client
+          .new(env)
+          .send_event(message)
       end
 
       def log_feature_toggle(name, value)

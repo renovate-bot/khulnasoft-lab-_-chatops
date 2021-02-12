@@ -11,12 +11,14 @@ gem 'slop'
 
 group :development do
   gem 'byebug'
+  gem 'climate_control'
   gem 'pry'
   gem 'rake'
   gem 'rspec'
   gem 'rubocop'
   gem 'rubocop-rspec'
   gem 'simplecov'
+  gem 'timecop'
   gem 'vcr', '~> 4.0.0'
   gem 'webmock', '~> 3.5.0'
 end

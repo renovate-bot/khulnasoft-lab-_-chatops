@@ -253,6 +253,10 @@ describe Chatops::Commands::Feature do
           .with('foo', '10')
           .and_return(issue)
 
+        expect(command)
+          .to receive(:send_feature_toggle_event)
+          .with('foo', '10')
+
         annotate = instance_double('annotate')
         expect(Chatops::Grafana::Annotate)
           .to receive(:new)
@@ -325,6 +329,10 @@ describe Chatops::Commands::Feature do
           .to receive(:log_feature_toggle)
           .with('foo', 'true')
           .and_return(issue)
+
+        expect(command)
+          .to receive(:send_feature_toggle_event)
+          .with('foo', 'true')
 
         annotate = instance_double('annotate')
 
@@ -400,6 +408,10 @@ describe Chatops::Commands::Feature do
           .with('foo', 'true')
           .and_return(issue)
 
+        expect(command)
+          .to receive(:send_feature_toggle_event)
+          .with('foo', 'true')
+
         annotate = instance_double('annotate')
 
         expect(Chatops::Grafana::Annotate)
@@ -472,6 +484,10 @@ describe Chatops::Commands::Feature do
           .to receive(:log_feature_toggle)
           .with('foo', 'true')
           .and_return(issue)
+
+        expect(command)
+          .to receive(:send_feature_toggle_event)
+          .with('foo', 'true')
 
         annotate = instance_double('annotate')
 
