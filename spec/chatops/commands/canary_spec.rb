@@ -5,6 +5,7 @@ require 'spec_helper'
 describe Chatops::Commands::Canary do
   let(:chef_client) { instance_double('chef client') }
   let(:ha_proxy_client) { instance_double('ha_proxy client') }
+  let(:events_client) { instance_double('events client') }
 
   before do
     allow(Chatops::HAProxy::Client)
@@ -13,6 +14,9 @@ describe Chatops::Commands::Canary do
     allow(Chatops::Chef::Client)
       .to receive(:new)
       .and_return(chef_client)
+    allow(Chatops::Events::Client)
+      .to receive(:new)
+      .and_return(events_client)
     allow(chef_client)
       .to receive(:ips_from_role)
       .and_return(['1.1.1.1'])
@@ -77,6 +81,8 @@ describe Chatops::Commands::Canary do
             ).select { |s| s[:server] == 'some-cny-server' },
             state: 'drain'
           )
+        expect(events_client).to receive(:send_event)
+          .once.with('Canary set to drain')
         allow(ha_proxy_client)
           .to receive(:server_stats)
           .and_return(gen_status('DRAIN'))
@@ -109,6 +115,8 @@ describe Chatops::Commands::Canary do
         allow(ha_proxy_client)
           .to receive(:server_stats)
           .and_return(gen_status('MAINT'))
+        expect(events_client).to receive(:send_event)
+          .once.with('Canary set to maint')
         command = described_class.new(
           [], { maint: true },
           'CHEF_USERNAME' => 'fake-user',
@@ -135,6 +143,8 @@ describe Chatops::Commands::Canary do
             ).select { |s| s[:server] == 'some-cny-server' },
             state: 'ready'
           )
+        expect(events_client).to receive(:send_event)
+          .once.with('Canary set to ready')
         allow(ha_proxy_client)
           .to receive(:server_stats)
           .and_return(gen_status('UP'))
@@ -183,8 +193,12 @@ describe Chatops::Commands::Canary do
         )
       end
 
-      it 'sets state to drain and then ready' do
+      it 'sets state to drain and then maint' do
         expect(command).to receive(:sleep).once.with(60)
+        expect(events_client).to receive(:send_event)
+          .once.with('Canary set to drain')
+        expect(events_client).to receive(:send_event)
+          .once.with('Canary set to maint')
         allow(ha_proxy_client)
           .to receive(:server_stats)
           .and_return(
