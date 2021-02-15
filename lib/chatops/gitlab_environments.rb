@@ -63,5 +63,9 @@ module Chatops
     def ops?
       options[:ops]
     end
+
+    def production?
+      gitlab_host == PRODUCTION_HOST
+    end
   end
 end

@@ -313,18 +313,18 @@ module Chatops
       end
 
       def send_feature_toggle_event(name, value)
-        env = if gitlab_host == 'staging.gitlab.com'
-                'gstg'
-              elsif gitlab_host == 'gitlab.com'
-                'gprd'
-              end
-
-        return unless env
+        return unless staging? || production?
 
         message = "#{username} updated feature '#{name}' to '#{value}'"
         Chatops::Events::Client
-          .new(env)
-          .send_event(message)
+          .new(env_name)
+          .send_event(
+            message,
+            fields: {
+              'feature_name' => name,
+              'feature_value' => value.to_s
+            }
+          )
       end
 
       def log_feature_toggle(name, value)

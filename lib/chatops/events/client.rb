@@ -9,7 +9,8 @@ module Chatops
 
       def initialize(gitlab_env)
         unless VALID_ENVS.include?(gitlab_env)
-          raise "Only #{VALID_ENVS.join(',')} are valid envs for sending events"
+          raise "Only #{VALID_ENVS.join(',')} are valid envs for " \
+            "sending events, got '#{gitlab_env}'."
         end
 
         @gitlab_env = gitlab_env
@@ -18,7 +19,7 @@ module Chatops
       end
 
       def send_event(message, fields: {})
-        return unless check_vars
+        return unless es_pass && es_url
 
         data = {
           'time' => Time.now.utc.iso8601,
@@ -37,27 +38,23 @@ module Chatops
       private
 
       def es_pass
-        @es_pass ||= ENV['ES_NONPROD_EVENT_PASS']
+        ENV['ES_NONPROD_EVENT_PASS']
       end
 
       def es_user
-        @es_user ||= ENV.fetch('ES_NONPROD_EVENT_USER', 'events')
+        ENV.fetch('ES_NONPROD_EVENT_USER', 'events')
       end
 
       def es_url
-        @es_url ||= ENV['ES_NONPROD_URL']
+        ENV['ES_NONPROD_URL']
       end
 
       def ci_job_name
-        @ci_job_name ||= ENV.fetch('CI_JOB_NAME', 'unknown')
+        ENV.fetch('CI_JOB_NAME', 'unknown')
       end
 
       def gitlab_user_login
-        @gitlab_user_login ||= ENV.fetch('GITLAB_USER_LOGIN', 'unknown')
-      end
-
-      def check_vars
-        es_pass && es_url
+        ENV.fetch('GITLAB_USER_LOGIN', 'unknown')
       end
     end
   end

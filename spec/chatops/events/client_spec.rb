@@ -3,9 +3,6 @@
 require 'spec_helper'
 
 describe Chatops::Events::Client do
-  let(:gprd_client) { described_class.new('gprd') }
-  let(:gstg_client) { described_class.new('gstg') }
-  let(:other_client) { described_class.new('some-invalid-env') }
   let(:client_with_auth) { instance_double('client_with_auth') }
   let(:client) do
     instance_double(
@@ -30,7 +27,31 @@ describe Chatops::Events::Client do
       end
     end
 
+    it 'sends a notification with fields set' do
+      client = described_class.new('gprd')
+      expect(client_with_auth).to receive(:post)
+        .with(
+          'http://example.com:9243/events-gprd/_doc',
+          json: {
+            'env' => 'gprd',
+            'message' => 'some event',
+            'source' => 'some_job',
+            'stage' => 'main',
+            'time' => '2020-12-05T00:00:00Z',
+            'some_field' => '100',
+            'username' => 'some_user'
+          }
+        )
+      client.send_event(
+        'some event',
+        fields: {
+          'some_field' => '100'
+        }
+      )
+    end
+
     it 'sends a notification for the gprd environment' do
+      client = described_class.new('gprd')
       expect(client_with_auth).to receive(:post)
         .with(
           'http://example.com:9243/events-gprd/_doc',
@@ -43,10 +64,11 @@ describe Chatops::Events::Client do
             'username' => 'some_user'
           }
         )
-      gprd_client.send_event('some event')
+      client.send_event('some event')
     end
 
     it 'sends a notification for the gstg environment' do
+      client = described_class.new('gstg')
       expect(client_with_auth).to receive(:post)
         .with(
           'http://example.com:9243/events-gstg/_doc',
@@ -59,14 +81,15 @@ describe Chatops::Events::Client do
             'username' => 'some_user'
           }
         )
-      gstg_client.send_event('some event')
+      client.send_event('some event')
     end
 
     it 'fails for an invalid env' do
-      expect { other_client.send_event('some event') }
+      expect { described_class.new('some-invalid-env') }
         .to raise_error(
           RuntimeError,
-          'Only gstg,gprd are valid envs for sending events'
+          'Only gstg,gprd are valid envs for sending events, ' \
+          "got 'some-invalid-env'."
         )
     end
   end
