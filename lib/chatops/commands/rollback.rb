@@ -52,7 +52,7 @@ module Chatops
 
           #{list}
 
-          For more information run `release --help`.
+          For more information run `rollback --help`.
         HELP
       end
 
