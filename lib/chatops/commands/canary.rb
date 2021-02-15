@@ -7,6 +7,7 @@ module Chatops
       include Command
       include HAProxy::Disp
       include Chef::Config
+      include GitlabEnvironments
 
       usage "#{command_name} [OPTIONS]"
       description 'Controls canary traffic'
@@ -36,6 +37,7 @@ module Chatops
              state == Chatops::HAProxy::State::DRAIN
             sleep(DRAIN_INTERVAL)
           end
+          send_event("Canary set to #{state}")
         end
 
         # tweet tweet tweet - helps to identify that the response is canary
@@ -104,11 +106,17 @@ module Chatops
       end
 
       def lb_ips
-        @lb_ips ||= chef_client.ips_from_role("#{chef_env}-base-lb")
+        @lb_ips ||= chef_client.ips_from_role("#{env_name}-base-lb")
       end
 
-      def chef_env
-        options[:production] ? 'gprd' : 'gstg'
+      def send_event(message)
+        return unless staging? || production?
+
+        Chatops::Events::Client
+          .new(env_name)
+          .send_event(
+            message
+          )
       end
     end
   end

@@ -315,7 +315,7 @@ module Chatops
       def send_feature_toggle_event(name, value)
         return unless staging? || production?
 
-        message = "#{username} updated feature '#{name}' to '#{value}'"
+        message = "feature '#{name}' updated to '#{value}'"
         Chatops::Events::Client
           .new(env_name)
           .send_event(
