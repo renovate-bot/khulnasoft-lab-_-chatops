@@ -4,7 +4,6 @@ module Chatops
   module Commands
     class Hotpatch
       include Command
-      include Chef::Config
 
       PATCHER_PATH = 'gitlab-com/engineering/patcher'
       PATCH_ENVS = %w[gprd gprd-cny gstg].freeze
@@ -64,9 +63,7 @@ module Chatops
       end
 
       def chef_client
-        @chef_client ||= Chatops::Chef::Client.new(
-          chef_username, chef_pem_key, chef_url
-        )
+        @chef_client ||= Chatops::Chef::Client.new
       end
 
       def gitlab_client

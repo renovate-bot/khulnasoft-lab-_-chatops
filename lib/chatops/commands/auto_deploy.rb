@@ -3,7 +3,6 @@
 module Chatops
   module Commands
     class AutoDeploy
-      include Chef::Config
       include Command
       include GitlabEnvironments
       include ::Chatops::Release::Command
@@ -300,8 +299,7 @@ module Chatops
       end
 
       def chef_client
-        @chef_client ||= Chatops::Chef::Client
-          .new(chef_username, chef_pem_key, chef_url)
+        @chef_client ||= Chatops::Chef::Client.new
       end
 
       def slack_message

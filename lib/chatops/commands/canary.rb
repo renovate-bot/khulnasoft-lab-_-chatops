@@ -6,7 +6,6 @@ module Chatops
       DRAIN_INTERVAL = 60 # Wait 60 seconds for connections to drain
       include Command
       include HAProxy::Disp
-      include Chef::Config
       include GitlabEnvironments
 
       usage "#{command_name} [OPTIONS]"
@@ -47,9 +46,7 @@ module Chatops
       end
 
       def chef_client
-        @chef_client ||= Chatops::Chef::Client.new(
-          chef_username, chef_pem_key, chef_url
-        )
+        @chef_client ||= Chatops::Chef::Client.new
       end
 
       def usage_disp

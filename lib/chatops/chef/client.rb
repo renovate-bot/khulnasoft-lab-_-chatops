@@ -5,14 +5,16 @@ require 'chef'
 module Chatops
   module Chef
     class Client
-      def initialize(chef_username, chef_key, chef_url)
-        @chef_key = chef_key_file(chef_key)
+      DEFAULT_CHEF_URL = 'https://chef.gitlab.com/organizations/gitlab'
+
+      def initialize
+        key = key_file(pem_key)
         config = {
-          chef_server_url: chef_url,
-          client_key: @chef_key.path,
+          chef_server_url: url,
+          client_key: key.path,
           log_level: 'info',
           log_location: 'STDOUT',
-          node_name: chef_username
+          node_name: username
         }
         ::Chef::Config.from_hash(config)
       end
@@ -41,11 +43,26 @@ module Chatops
 
       private
 
-      def chef_key_file(chef_key)
+      def key_file(key)
         Tempfile.new('chef-pem').tap do |f|
-          f.write(chef_key)
+          f.write(key)
           f.flush
         end
+      end
+
+      # Chef pem for authenticating with the Chef server
+      def pem_key
+        ENV.fetch('CHEF_PEM_KEY')
+      end
+
+      # Chef username for interacting with the chef server
+      def username
+        ENV.fetch('CHEF_USERNAME')
+      end
+
+      # Chef endpoint, defaults to GitLab's chef server
+      def url
+        ENV.fetch('CHEF_URL', DEFAULT_CHEF_URL)
       end
     end
   end

@@ -4,10 +4,14 @@ require 'spec_helper'
 
 describe Chatops::Chef::Client do
   let(:client) do
-    described_class.new('fake_user',
-                        'fake_key',
-                        'https://example.com')
+    ClimateControl.modify(
+      CHEF_PEM_KEY: 'fake_key',
+      CHEF_USERNAME: 'fake_user'
+    ) do
+      described_class.new
+    end
   end
+
   let(:query_result) { instance_double('chef search results') }
   let(:node_with_valid_client) do
     { 'hostname' => 'herp', 'ipaddress' => '1.1.1.1' }
