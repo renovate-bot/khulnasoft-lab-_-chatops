@@ -56,26 +56,20 @@ module Chatops
         HELP
       end
 
-      def check(env)
-        unless ENVIRONMENTS.include?(env)
-          return "Invalid environment `#{env}`, " \
+      def check(env_name)
+        unless ENVIRONMENTS.include?(env_name)
+          return "Invalid environment `#{env_name}`, " \
             "expected `#{ENVIRONMENTS.join(', ')}`"
         end
 
-        current, previous = production_client
-          .latest_deployments(SOURCE_PROJECT, env, limit: 2)
-
-        compare = production_client.compare(
-          SOURCE_PROJECT,
-          previous.sha,
-          current.sha
-        )
+        current, previous = *latest_deployments(env_name)
+        comparison = compare(current, previous)
 
         blocks = ::Slack::BlockKit.blocks
-        blocks.header(text: ":#{env_icon(env)}: #{env}", emoji: true)
+        blocks.header(text: ":#{env_icon(env_name)}: #{env_name}", emoji: true)
 
         Gitlab::RollbackCheck
-          .new(compare)
+          .new(comparison)
           .execute
           .slack_block(blocks)
 
@@ -88,6 +82,8 @@ module Chatops
 
           s.mrkdwn(text: lines.join("\n"))
         end
+
+        blocks.context { |c| c.mrkdwn(text: handbook_link) }
 
         slack_message.send(blocks: blocks.as_json)
       end
@@ -104,6 +100,14 @@ module Chatops
           .new(token: slack_token, channel: channel)
       end
 
+      def latest_deployments(env_name)
+        production_client.latest_deployments(SOURCE_PROJECT, env_name, limit: 2)
+      end
+
+      def compare(current, previous)
+        production_client.compare(SOURCE_PROJECT, previous.sha, current.sha)
+      end
+
       def commit_link(sha)
         text = sha[0...11]
         url = "https://gitlab.com/#{SOURCE_PROJECT}/-/commit/#{sha}"
@@ -116,6 +120,11 @@ module Chatops
         url = "https://gitlab.com/#{SOURCE_PROJECT}/-/compare/#{comparison}"
 
         "<#{url}|`#{from[0...11]}...#{to[0...11]}`>"
+      end
+
+      def handbook_link
+        url = 'https://gitlab.com/gitlab-org/release/docs/-/blob/master/runbooks/rollback-a-deployment.md'
+        ":book: <#{url}|View runbook>"
       end
     end
   end
