@@ -134,4 +134,4 @@ adding new commands:
 # License
 
 All source code in this repository is subject to the terms of the MIT license,
-unless stated otherwise. A copy of this license can be found the file "LICENSE".
+unless stated otherwise. A copy of this license can be found in the file "LICENSE".
