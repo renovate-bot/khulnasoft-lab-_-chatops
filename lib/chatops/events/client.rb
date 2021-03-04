@@ -27,7 +27,8 @@ module Chatops
           'username' => gitlab_user_login,
           'source' => ci_job_name,
           'env' => @gitlab_env,
-          'stage' => 'main'
+          'stage' => 'main',
+          'type' => 'chatops'
         }
 
         data.update(fields)

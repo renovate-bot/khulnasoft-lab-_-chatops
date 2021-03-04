@@ -37,6 +37,7 @@ describe Chatops::Events::Client do
             'message' => 'some event',
             'source' => 'some_job',
             'stage' => 'main',
+            'type' => 'chatops',
             'time' => '2020-12-05T00:00:00Z',
             'some_field' => '100',
             'username' => 'some_user'
@@ -60,6 +61,7 @@ describe Chatops::Events::Client do
             'message' => 'some event',
             'source' => 'some_job',
             'stage' => 'main',
+            'type' => 'chatops',
             'time' => '2020-12-05T00:00:00Z',
             'username' => 'some_user'
           }
@@ -77,6 +79,7 @@ describe Chatops::Events::Client do
             'message' => 'some event',
             'source' => 'some_job',
             'stage' => 'main',
+            'type' => 'chatops',
             'time' => '2020-12-05T00:00:00Z',
             'username' => 'some_user'
           }
