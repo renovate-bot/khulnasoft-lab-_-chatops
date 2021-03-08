@@ -94,11 +94,12 @@ module Chatops
         internal_client.post('/broadcast_messages', body: body)
       end
 
-      def latest_deployments(project, environment, limit:)
+      def latest_deployments(project, environment, limit:, status: 'success')
         options = {
           environment: environment,
           order_by: 'id',
-          sort: 'desc'
+          sort: 'desc',
+          status: status
         }
 
         internal_client
