@@ -56,12 +56,14 @@ module Chatops
         HELP
       end
 
+      # rubocop:disable Metrics/AbcSize,Metrics/LineLength
       def check(env_name)
         unless ENVIRONMENTS.include?(env_name)
           return "Invalid environment `#{env_name}`, " \
             "expected `#{ENVIRONMENTS.join(', ')}`"
         end
 
+        running = running_deployment(env_name)
         current, previous = *latest_deployments(env_name)
         comparison = compare(current, previous)
 
@@ -69,16 +71,23 @@ module Chatops
         blocks.header(text: ":#{env_icon(env_name)}: #{env_name}", emoji: true)
 
         Gitlab::RollbackCheck
-          .new(comparison)
+          .new(comparison, running)
           .execute
           .slack_block(blocks)
 
         blocks.section do |s|
           lines = [
-            "*Current:* #{commit_link(current.sha)}",
-            "*Previous:* #{commit_link(previous.sha)}",
-            "*Compare:* #{compare_link(previous.sha, current.sha)}"
+            "*Current:* #{commit_link(current.sha)} " \
+              "(#{compare_link(previous.sha, current.sha, 'compare to Previous')})",
+            "*Previous:* #{commit_link(previous.sha)} "
           ]
+
+          if running
+            lines.prepend(
+              "*Upcoming:* #{commit_link(running.sha)} " \
+                "(#{compare_link(current.sha, running.sha, 'compare to Current')})"
+            )
+          end
 
           s.mrkdwn(text: lines.join("\n"))
         end
@@ -87,6 +96,7 @@ module Chatops
 
         slack_message.send(blocks: blocks.as_json)
       end
+      # rubocop:enable Metrics/AbcSize,Metrics/LineLength
 
       private
 
@@ -129,11 +139,12 @@ module Chatops
         "<#{url}|`#{text}`>"
       end
 
-      def compare_link(from, to)
+      def compare_link(from, to, text = nil)
         comparison = "#{from}...#{to}"
         url = "https://gitlab.com/#{SOURCE_PROJECT}/-/compare/#{comparison}"
+        text ||= "`#{from[0...11]}...#{to[0...11]}`"
 
-        "<#{url}|`#{from[0...11]}...#{to[0...11]}`>"
+        "<#{url}|#{text}>"
       end
 
       def handbook_link

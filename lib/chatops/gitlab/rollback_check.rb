@@ -15,8 +15,9 @@ module Chatops
 
       # compare - Gitlab::ObjectifiedHash from a compare API call
       #           See https://docs.gitlab.com/ee/api/repositories.html#compare-branches-tags-or-commits
-      def initialize(compare)
+      def initialize(compare, running)
         @compare = compare
+        @running = running
 
         @new_migrations = 0
         @new_post_deploy_migrations = 0
@@ -35,7 +36,11 @@ module Chatops
       end
 
       def safe?
-        new_post_deploy_migrations.zero? && !timeout?
+        new_post_deploy_migrations.zero? && !timeout? && !running?
+      end
+
+      def running?
+        !@running.nil?
       end
 
       def slack_block(blocks)
@@ -46,11 +51,13 @@ module Chatops
             lines << "#{SAFE_ICON} Safe to roll back"
           else
             lines << "#{UNSAFE_ICON} *Potentially unsafe to roll back*"
-            lines << "(#{new_migrations} migrations, " \
-              "#{new_post_deploy_migrations} post-deploy migrations)"
+            lines << ':hourglass: Comparison timed out' if timeout?
+            lines << ":database: #{new_migrations} migrations, " \
+              "#{new_post_deploy_migrations} post-deploy migrations"
+            lines << ':warning: A deployment is in progress' if running?
           end
 
-          block.mrkdwn(text: lines.join(' '))
+          block.mrkdwn(text: lines.join("\n"))
         end
       end
 

@@ -74,15 +74,48 @@ describe Chatops::Commands::Rollback do
       compare = instance_double('compare', diffs: [], compare_timeout: false)
 
       expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::SOURCE_PROJECT, 'gprd', limit: 2)
+        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'success', limit: 2)
         .and_return(deployments)
+      expect(fake_client).to receive(:latest_deployments)
+        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'running', limit: 1)
+        .and_return([])
 
       expect(fake_client).to receive(:compare)
         .with(described_class::SOURCE_PROJECT, '1234567', 'abcdefg')
         .and_return(compare)
 
       expect(Chatops::Gitlab::RollbackCheck).to receive(:new)
-        .with(compare)
+        .with(compare, nil)
+        .and_call_original
+
+      expect_slack_message(blocks: RollbackBlockMatcher.new('gprd'))
+
+      command.perform
+    end
+
+    it 'includes a running deployment' do
+      command = described_class.new(%w[check gprd], *env)
+
+      running = instance_double('deployment', sha: 'a1b2c3d4')
+      deployments = [
+        instance_double('deployment', sha: 'abcdefg'),
+        instance_double('deployment', sha: '1234567')
+      ]
+      compare = instance_double('compare', diffs: [], compare_timeout: false)
+
+      expect(fake_client).to receive(:latest_deployments)
+        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'success', limit: 2)
+        .and_return(deployments)
+      expect(fake_client).to receive(:latest_deployments)
+        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'running', limit: 1)
+        .and_return([running])
+
+      expect(fake_client).to receive(:compare)
+        .with(described_class::SOURCE_PROJECT, '1234567', 'abcdefg')
+        .and_return(compare)
+
+      expect(Chatops::Gitlab::RollbackCheck).to receive(:new)
+        .with(compare, running)
         .and_call_original
 
       expect_slack_message(blocks: RollbackBlockMatcher.new('gprd'))

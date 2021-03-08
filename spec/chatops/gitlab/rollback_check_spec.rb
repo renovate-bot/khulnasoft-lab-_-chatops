@@ -13,7 +13,7 @@ describe Chatops::Gitlab::RollbackCheck do
       compare_timeout: false
     )
 
-    check = described_class.new(compare).execute
+    check = described_class.new(compare, nil).execute
 
     expect(check).to be_safe
     expect(check.new_migrations).to eq(1)
@@ -30,7 +30,7 @@ describe Chatops::Gitlab::RollbackCheck do
       compare_timeout: false
     )
 
-    check = described_class.new(compare).execute
+    check = described_class.new(compare, nil).execute
 
     expect(check).not_to be_safe
     expect(check.new_migrations).to eq(0)
@@ -47,7 +47,7 @@ describe Chatops::Gitlab::RollbackCheck do
       compare_timeout: true
     )
 
-    check = described_class.new(compare).execute
+    check = described_class.new(compare, nil).execute
 
     expect(check).not_to be_safe
     expect(check.new_migrations).to eq(0)
@@ -64,7 +64,7 @@ describe Chatops::Gitlab::RollbackCheck do
       compare_timeout: false
     )
 
-    check = described_class.new(compare).execute
+    check = described_class.new(compare, nil).execute
 
     expect(check).to be_safe
   end
