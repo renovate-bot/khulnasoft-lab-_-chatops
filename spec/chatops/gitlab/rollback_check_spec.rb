@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe Chatops::Gitlab::RollbackCheck do
-  it 'considers a diff with migrations as unsafe' do
+  it 'considers a diff with migrations as safe' do
     compare = instance_double(
       'comparison',
       diffs: [
@@ -15,7 +15,7 @@ describe Chatops::Gitlab::RollbackCheck do
 
     check = described_class.new(compare).execute
 
-    expect(check).not_to be_safe
+    expect(check).to be_safe
     expect(check.new_migrations).to eq(1)
     expect(check.new_post_deploy_migrations).to eq(0)
   end

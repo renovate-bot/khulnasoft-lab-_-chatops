@@ -35,7 +35,7 @@ module Chatops
       end
 
       def safe?
-        new_migrations.zero? && new_post_deploy_migrations.zero? && !timeout?
+        new_post_deploy_migrations.zero? && !timeout?
       end
 
       def slack_block(blocks)
