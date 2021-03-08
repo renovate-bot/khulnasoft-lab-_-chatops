@@ -101,7 +101,21 @@ module Chatops
       end
 
       def latest_deployments(env_name)
-        production_client.latest_deployments(SOURCE_PROJECT, env_name, limit: 2)
+        production_client.latest_deployments(
+          SOURCE_PROJECT,
+          env_name,
+          status: 'success',
+          limit: 2
+        )
+      end
+
+      def running_deployment(env_name)
+        production_client.latest_deployments(
+          SOURCE_PROJECT,
+          env_name,
+          status: 'running',
+          limit: 1
+        ).first
       end
 
       def compare(current, previous)
