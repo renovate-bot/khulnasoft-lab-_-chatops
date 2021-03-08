@@ -21,6 +21,10 @@ Metrics/BlockLength:
 Metrics/AbcSize:
   Max: 30
 
+Metrics/LineLength:
+  Exclude:
+    - spec/**/*
+
 Metrics/ParameterLists:
   Max: 10
 

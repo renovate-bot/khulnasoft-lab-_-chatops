@@ -59,7 +59,7 @@ describe Chatops::Commands::Annotate do
           .to receive(:annotate!)
           .twice
           .with(
-            'my annotation text (<a href="https://gitlab.com/jane_doe">@jane_doe</a>)', # rubocop:disable Metrics/LineLength
+            'my annotation text (<a href="https://gitlab.com/jane_doe">@jane_doe</a>)',
             tags: ['user-annotation', 'gprd'], dashboard_id: 42
           )
           .and_return(success_response)
@@ -83,7 +83,7 @@ describe Chatops::Commands::Annotate do
           .to receive(:annotate!)
           .twice
           .with(
-            'my annotation text (<a href="https://gitlab.com/jane_doe">@jane_doe</a>)', # rubocop:disable Metrics/LineLength
+            'my annotation text (<a href="https://gitlab.com/jane_doe">@jane_doe</a>)',
             tags: ['user-annotation', 'gprd'], dashboard_id: 42
           )
           .and_return(success_response)
