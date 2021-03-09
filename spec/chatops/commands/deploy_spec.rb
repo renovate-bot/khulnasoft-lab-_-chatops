@@ -354,6 +354,15 @@ describe Chatops::Commands::Deploy do
       end
     end
 
+    context 'when checkmode is requested' do
+      it 'includes the CHECKMODE environment variable' do
+        command = described_class.new([], { check: true }, {})
+        vars = command.environment_variables_for('1.0')
+
+        expect(vars[:CHECKMODE]).to eq('true')
+      end
+    end
+
     context 'when skip haproxy is requested' do
       it 'includes the ANSIBLE_SKIP_TAGS environment variable' do
         command = described_class.new([], { skip_haproxy: true }, {})

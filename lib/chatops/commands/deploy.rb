@@ -26,20 +26,18 @@ module Chatops
 
       options do |o| # rubocop:disable Metrics/BlockLength
         o.bool('--production', 'Deploy to production, instead of staging')
-
         o.bool(
           '--canary',
           'Only deploy to a canary, instead of the entire environment'
         )
-
         o.bool(
           '--pre',
           'Deploy to the PreProd environment'
         )
-
         o.bool('--release', 'Deploy to the Release environment')
 
         o.bool('--warmup', 'Only perform a warmup, instead of a full deploy')
+        o.bool('--check', 'Run with CHECKMODE (dry-run)')
 
         o.bool(
           '--allow-precheck-failure',
@@ -151,6 +149,7 @@ module Chatops
         vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]
         vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
         vars[:DEPLOY_ROLLBACK] = 'yes' if options[:rollback]
+        vars[:CHECKMODE] = 'true' if options[:check]
         if options[:allow_precheck_failure]
           vars[:PRECHECK_IGNORE_ERRORS] = 'yes'
         end
