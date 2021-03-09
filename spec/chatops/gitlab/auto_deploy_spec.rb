@@ -55,4 +55,56 @@ describe Chatops::Gitlab::AutoDeploy do
         .to raise_error(RuntimeError, /No auto_deploy tasks found/)
     end
   end
+
+  describe '#unpause_prepare' do
+    it 'resumes the prepare task' do
+      task = instance_double('task', id: 42, description: 'auto_deploy:prepare')
+
+      allow(fake_client)
+        .to receive(:edit_pipeline_schedule)
+        .with(described_class::TASK_PROJECT, 42, active: true)
+
+      allow(fake_client)
+        .to receive(:pipeline_schedules)
+        .and_return([task])
+
+      auto_deploy.unpause_prepare
+
+      expect(fake_client).to have_received(:edit_pipeline_schedule)
+    end
+
+    it 'raises when there is no prepare task' do
+      allow(fake_client)
+        .to receive(:pipeline_schedules)
+        .and_return([])
+
+      expect { auto_deploy.unpause_prepare }.to raise_error(RuntimeError)
+    end
+  end
+
+  describe '#pause_prepare' do
+    it 'pauses the prepare task' do
+      task = instance_double('task', id: 42, description: 'auto_deploy:prepare')
+
+      allow(fake_client)
+        .to receive(:edit_pipeline_schedule)
+        .with(described_class::TASK_PROJECT, 42, active: false)
+
+      allow(fake_client)
+        .to receive(:pipeline_schedules)
+        .and_return([task])
+
+      auto_deploy.pause_prepare
+
+      expect(fake_client).to have_received(:edit_pipeline_schedule)
+    end
+
+    it 'raises when there is no prepare task' do
+      allow(fake_client)
+        .to receive(:pipeline_schedules)
+        .and_return([])
+
+      expect { auto_deploy.pause_prepare }.to raise_error(RuntimeError)
+    end
+  end
 end

@@ -267,6 +267,67 @@ describe Chatops::Commands::AutoDeploy do
         .to eq('Production checks triggered, the results will appear shortly.')
     end
   end
+
+  describe '#lock' do
+    let(:auto_deploy) { instance_double('Chatops::Gitlab::AutoDeploy') }
+
+    before do
+      allow(Chatops::Gitlab::AutoDeploy)
+        .to receive(:new)
+        .with(fake_client)
+        .and_return(auto_deploy)
+    end
+
+    context 'when no custom branch is given' do
+      it 'locks deploys to the deployed auto-deploy branch' do
+        command = described_class.new([], *env)
+
+        allow(command)
+          .to receive(:environment_status)
+          .with('gprd')
+          .and_return(branch: 'foo')
+
+        expect(auto_deploy).to receive(:pause_prepare)
+
+        expect(fake_client)
+          .to receive(:update_variable)
+          .with('gitlab-org/release/tools', 'AUTO_DEPLOY_BRANCH', 'foo')
+
+        command.lock
+      end
+    end
+
+    context 'when a custom branch is given' do
+      it 'locks deploys to the given branch' do
+        command = described_class.new([], *env)
+
+        expect(auto_deploy).to receive(:pause_prepare)
+
+        expect(fake_client)
+          .to receive(:update_variable)
+          .with('gitlab-org/release/tools', 'AUTO_DEPLOY_BRANCH', 'foo')
+
+        expect(command.lock('foo'))
+          .to eq('Auto deploys have been locked to branch foo')
+      end
+    end
+  end
+
+  describe '#unlock' do
+    it 'resumes the preparing of auto-deploy branches' do
+      command = described_class.new([], *env)
+      auto_deploy = instance_double('Chatops::Gitlab::AutoDeploy')
+
+      allow(Chatops::Gitlab::AutoDeploy)
+        .to receive(:new)
+        .with(fake_client)
+        .and_return(auto_deploy)
+
+      expect(auto_deploy).to receive(:unpause_prepare)
+
+      command.unlock
+    end
+  end
 end
 
 # RSpec argument matcher for verifying the complex `block` Hash passed to

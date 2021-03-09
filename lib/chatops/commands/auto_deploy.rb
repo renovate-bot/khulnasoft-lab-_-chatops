@@ -7,7 +7,8 @@ module Chatops
       include GitlabEnvironments
       include ::Chatops::Release::Command
 
-      COMMANDS = Set.new(%w[pause prepare status tag unpause blockers])
+      COMMANDS =
+        Set.new(%w[pause prepare status tag unpause blockers lock unlock])
 
       SOURCE_HOST = 'https://gitlab.com'
       SOURCE_PROJECT = 'gitlab-org/security/gitlab'
@@ -124,6 +125,23 @@ module Chatops
 
       def blockers
         production_checks
+      end
+
+      def lock(branch = nil)
+        branch ||= environment_status('gprd')[:branch]
+
+        return 'No auto-deploy branch to lock to could be found' unless branch
+
+        Gitlab::AutoDeploy.new(ops_client).pause_prepare
+        ops_client.update_variable(TARGET_PROJECT, 'AUTO_DEPLOY_BRANCH', branch)
+
+        "Auto deploys have been locked to branch #{branch}"
+      end
+
+      def unlock
+        Gitlab::AutoDeploy.new(ops_client).unpause_prepare
+
+        'Preparing of auto-deploy branches has been resumed'
       end
 
       private
