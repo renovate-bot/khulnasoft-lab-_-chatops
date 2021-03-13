@@ -137,3 +137,6 @@ database:
 
 rollback:
   <<: *chatops
+
+notify:
+  <<: *chatops
