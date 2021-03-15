@@ -166,7 +166,7 @@ module Chatops
           return "This feature flag's state can't be changed as one or more " \
             'production incidents are ongoing. If you absolutely must change ' \
             'the state of this feature flag, ' \
-            'please confirm with the current SRE' \
+            'please confirm with the current SRE ' \
             'oncall `@sre-oncall`, and use the --ignore-incidents option. ' \
             'See the <https://gitlab.com' \
             '/gitlab-com/gl-infra/production/-/issues?label_name%5B%5D=' \
