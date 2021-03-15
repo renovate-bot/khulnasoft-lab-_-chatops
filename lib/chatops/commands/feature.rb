@@ -167,7 +167,7 @@ module Chatops
             'production incidents are ongoing. If you absolutely must change ' \
             'the state of this feature flag, ' \
             'please confirm with the current SRE' \
-            'oncall `@sre-oncall`, and use the --ignore-incidents option.' \
+            'oncall `@sre-oncall`, and use the --ignore-incidents option. ' \
             'See the <https://gitlab.com' \
             '/gitlab-com/gl-infra/production/-/issues?label_name%5B%5D=' \
             'Incident%3A%3AActive|list of currently active incidents>'
