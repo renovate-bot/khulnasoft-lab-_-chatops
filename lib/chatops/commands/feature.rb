@@ -27,7 +27,7 @@ module Chatops
 
       # The severity labels applied to an incident issue before it blocks
       # changing feature flags.
-      SEVERITY_LABELS = %w[severity::1 severity::2 severity::3].freeze
+      SEVERITY_LABELS = %w[severity::1 severity::2].freeze
 
       # IDs of QA channels to send message each time a feature flag is set
       QA_CHANNELS = {

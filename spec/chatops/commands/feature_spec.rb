@@ -969,7 +969,7 @@ describe Chatops::Commands::Feature do
         expect(command.ongoing_incidents?).to eq(true)
       end
 
-      it 'returns true when there is an S3 issue' do
+      it 'returns false when there is an S3 issue' do
         issue = instance_double('issue',
                                 labels: %w[severity::3 Incident::Active foo])
 
@@ -982,7 +982,7 @@ describe Chatops::Commands::Feature do
           )
           .and_return(Gitlab::PaginatedResponse.new([issue]))
 
-        expect(command.ongoing_incidents?).to eq(true)
+        expect(command.ongoing_incidents?).to eq(false)
       end
 
       it 'returns false when there is an S4 issue' do
