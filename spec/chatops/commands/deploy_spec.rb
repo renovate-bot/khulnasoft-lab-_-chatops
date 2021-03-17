@@ -404,7 +404,7 @@ describe Chatops::Commands::Deploy do
         command = described_class.new([], { rollback: true }, {})
         vars = command.environment_variables_for('1.0')
 
-        expect(vars[:DEPLOY_ROLLBACK]).to eq('yes')
+        expect(vars[:DEPLOY_ROLLBACK]).to eq('true')
       end
     end
 

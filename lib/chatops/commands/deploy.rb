@@ -148,7 +148,7 @@ module Chatops
 
         vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]
         vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
-        vars[:DEPLOY_ROLLBACK] = 'yes' if options[:rollback]
+        vars[:DEPLOY_ROLLBACK] = 'true' if options[:rollback]
         vars[:CHECKMODE] = 'true' if options[:check]
         if options[:allow_precheck_failure]
           vars[:PRECHECK_IGNORE_ERRORS] = 'yes'
