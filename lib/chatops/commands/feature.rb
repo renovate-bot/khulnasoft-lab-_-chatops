@@ -252,6 +252,8 @@ module Chatops
             text: "Feature flag #{name} has been removed from #{gitlab_host}!"
           }
         )
+
+        send_feature_toggle_event(name, 'deleted')
       end
 
       # Sends the details of a single feature back to Slack.
