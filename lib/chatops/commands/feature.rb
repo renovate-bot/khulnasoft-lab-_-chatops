@@ -37,7 +37,7 @@ module Chatops
 
       FEATURE_FLAG_PROPAGATION_WARNING =
         ' (Due to ' \
-        '`https://gitlab.com/gitlab-org/gitlab/-/issues/325452`, ' \
+        'gitlab-org/gitlab#325452, ' \
         'this may not take effect immediately. ' \
         'See the issue for details and a workaround.)'
 
