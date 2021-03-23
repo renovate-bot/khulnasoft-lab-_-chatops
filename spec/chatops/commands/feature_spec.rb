@@ -274,7 +274,8 @@ describe Chatops::Commands::Feature do
           .to receive(:send_feature_details)
           .with(
             feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
+            text: 'The feature flag value has been updated!' +
+                  described_class::FEATURE_FLAG_PROPAGATION_WARNING
           )
 
         expect(command)
@@ -352,7 +353,8 @@ describe Chatops::Commands::Feature do
           .to receive(:send_feature_details)
           .with(
             feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
+            text: 'The feature flag value has been updated!' +
+                  described_class::FEATURE_FLAG_PROPAGATION_WARNING
           )
 
         expect(command)
@@ -430,7 +432,8 @@ describe Chatops::Commands::Feature do
           .to receive(:send_feature_details)
           .with(
             feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
+            text: 'The feature flag value has been updated!' +
+                  described_class::FEATURE_FLAG_PROPAGATION_WARNING
           )
 
         expect(command)
@@ -507,7 +510,8 @@ describe Chatops::Commands::Feature do
           .to receive(:send_feature_details)
           .with(
             feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
+            text: 'The feature flag value has been updated!' +
+                  described_class::FEATURE_FLAG_PROPAGATION_WARNING
           )
 
         expect(command)

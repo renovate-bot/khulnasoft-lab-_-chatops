@@ -35,6 +35,12 @@ module Chatops
         PRODUCTION_HOST => 'CCNNKFP8B' # `#qa-production`
       }.freeze
 
+      FEATURE_FLAG_PROPAGATION_WARNING =
+        ' (Due to ' \
+        '<https://gitlab.com/gitlab-org/gitlab/-/issues/325452|' \
+        'an open issue>, this may not take effect immediately. ' \
+        'See the issue for details and a workaround.)'
+
       description 'Managing of GitLab feature flags.'
 
       options do |o|
@@ -192,8 +198,10 @@ module Chatops
         output = []
         output << send_feature_details(
           feature: feature,
-          text: 'The feature flag value has been updated!'
+          text: 'The feature flag value has been updated!' +
+                FEATURE_FLAG_PROPAGATION_WARNING
         )
+
         output << send_feature_toggling_to_qa_channel(issue)
 
         output.compact.join("\n")
