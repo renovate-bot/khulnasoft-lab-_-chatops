@@ -93,7 +93,7 @@ describe Chatops::Commands::Rollback do
       command.perform
     end
 
-    it 'includes a running deployment' do
+    it 'includes a running deployment and the rollback package' do
       command = described_class.new(%w[check gprd], *env)
 
       running = instance_double('deployment', sha: 'a1b2c3d4')
@@ -101,6 +101,7 @@ describe Chatops::Commands::Rollback do
         instance_double('deployment', sha: 'abcdefg'),
         instance_double('deployment', sha: '1234567')
       ]
+      package = instance_double('deployment', ref: 'omnibus+package')
       compare = instance_double('compare', diffs: [], compare_timeout: false)
 
       expect(fake_client).to receive(:latest_deployments)
@@ -109,6 +110,9 @@ describe Chatops::Commands::Rollback do
       expect(fake_client).to receive(:latest_deployments)
         .with(described_class::SOURCE_PROJECT, 'gprd', status: 'running', limit: 1)
         .and_return([running])
+      expect(fake_client).to receive(:latest_deployments)
+        .with(described_class::PACKAGE_PROJECT, 'gprd', status: 'success', limit: 2)
+        .and_return([nil, package])
 
       expect(fake_client).to receive(:compare)
         .with(described_class::SOURCE_PROJECT, '1234567', 'abcdefg')
@@ -118,7 +122,7 @@ describe Chatops::Commands::Rollback do
         .with(compare, running)
         .and_call_original
 
-      expect_slack_message(blocks: RollbackBlockMatcher.new('gprd'))
+      expect_slack_message(blocks: RollbackBlockMatcher.new('gprd', 'omnibus-package'))
 
       command.perform
     end
@@ -126,11 +130,13 @@ describe Chatops::Commands::Rollback do
 end
 
 class RollbackBlockMatcher
-  def initialize(env)
+  def initialize(env, package = '')
     @env = env
+    @package = package
   end
 
   def ===(other)
-    other.to_json.include?(":party-tanuki: #{@env}")
+    other.to_json.include?(":party-tanuki: #{@env}") &&
+      (@package.empty? || other.to_json.include?("`#{@package}`"))
   end
 end

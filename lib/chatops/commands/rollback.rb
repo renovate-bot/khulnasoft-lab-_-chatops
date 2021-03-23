@@ -10,6 +10,7 @@ module Chatops
       ENVIRONMENTS = %w[gprd gprd-cny gstg].freeze
 
       SOURCE_PROJECT = 'gitlab-org/security/gitlab'
+      PACKAGE_PROJECT = 'gitlab-org/security/omnibus-gitlab'
 
       options do |o|
         o.separator <<~AVAIL.chomp
@@ -79,7 +80,8 @@ module Chatops
           lines = [
             "*Current:* #{commit_link(current.sha)} " \
               "(#{compare_link(previous.sha, current.sha, 'compare to Previous')})",
-            "*Previous:* #{commit_link(previous.sha)} "
+            "*Previous:* #{commit_link(previous.sha)}",
+            "*Previous package:* `#{rollback_package(env_name)}`"
           ]
 
           if running
@@ -126,6 +128,17 @@ module Chatops
           status: 'running',
           limit: 1
         ).first
+      end
+
+      def rollback_package(env_name)
+        package = production_client.latest_deployments(
+          PACKAGE_PROJECT,
+          env_name,
+          status: 'success',
+          limit: 2
+        ).last
+
+        package.ref.sub('+', '-')
       end
 
       def compare(current, previous)
