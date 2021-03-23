@@ -37,8 +37,8 @@ module Chatops
 
       FEATURE_FLAG_PROPAGATION_WARNING =
         ' (Due to ' \
-        '<https://gitlab.com/gitlab-org/gitlab/-/issues/325452|' \
-        'an open issue>, this may not take effect immediately. ' \
+        '`https://gitlab.com/gitlab-org/gitlab/-/issues/325452`, ' \
+        'this may not take effect immediately. ' \
         'See the issue for details and a workaround.)'
 
       description 'Managing of GitLab feature flags.'
