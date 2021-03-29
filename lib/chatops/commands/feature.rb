@@ -245,6 +245,8 @@ module Chatops
           .new(token: gitlab_token, host: gitlab_host)
           .delete_feature(name)
 
+        send_feature_toggle_event(name, 'deleted')
+
         send_slack_message_safely(
           slack_token: slack_token,
           channel: channel,
@@ -252,8 +254,6 @@ module Chatops
             text: "Feature flag #{name} has been removed from #{gitlab_host}!"
           }
         )
-
-        send_feature_toggle_event(name, 'deleted')
       end
 
       # Sends the details of a single feature back to Slack.
