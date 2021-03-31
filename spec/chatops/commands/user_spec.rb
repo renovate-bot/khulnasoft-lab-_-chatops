@@ -289,6 +289,310 @@ describe Chatops::Commands::User do
     end
   end
 
+  describe '#update_email' do
+    let(:user) { instance_double('user', id: 1, email: 'alice@example.com') }
+    let(:new_email) { 'new_email@example.com' }
+    let(:old_email) { 'alice@example.com' }
+    let(:fake_client) { spy }
+    let(:env) do
+      [
+        {},
+        'SLACK_TOKEN' => 'token',
+        'CHAT_CHANNEL' => 'channel',
+        'GITLAB_TOKEN' => 'token'
+      ]
+    end
+
+    before do
+      stub_const('Chatops::Gitlab::Client', fake_client)
+    end
+
+    context 'without a username or email' do
+      it 'returns an error message' do
+        command = described_class.new(%w[update_email])
+
+        expect(command.update_email)
+          .to eq('You must specify a username or email.')
+      end
+    end
+
+    context 'without a new email address' do
+      it 'returns an error message' do
+        command = described_class.new(%w[update_email alice])
+
+        expect(command.update_email('alice'))
+          .to eq('You must specify the new email address.')
+      end
+    end
+
+    context 'with a non-existing username' do
+      it 'returns an error message' do
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[update_email alice new_email@example.com],
+               *env)
+
+        expect(command.update_email('alice', 'new_email@example.com'))
+          .to eq('No user could be found for "alice".')
+      end
+    end
+
+    context 'with a non-existing email' do
+      it 'returns an error message' do
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice@example.com')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[update_email alice@example.com new_email@example.com], *env)
+
+        expect(command
+          .update_email('alice@example.com', 'new_email@example.com'))
+          .to eq('No user could be found for "alice@example.com".')
+      end
+    end
+
+    context 'when an error occurs adding the new email' do
+      let(:command) do
+        described_class
+          .new(%w[update_email alice new_email@example.com], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'returns an error message' do
+        response = instance_double(
+          'response',
+          code: 401,
+          request: instance_double('request', base_uri: 'foo', path: '/foo'),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'foo')
+        )
+
+        expect(command)
+          .to receive(:add_email)
+          .with(user, new_email)
+          .and_raise(Gitlab::Error::ResponseError.new(response))
+
+        expect(command
+          .update_email('alice', 'new_email@example.com'))
+          .to eq('Failed to update user: foo')
+      end
+    end
+
+    context 'when an error occurs removing the old email' do
+      let(:command) do
+        described_class
+          .new(%w[update_email alice new_email@example.com], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'returns an error message' do
+        response = instance_double(
+          'response',
+          code: 401,
+          request: instance_double('request', base_uri: 'foo', path: '/foo'),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'foo')
+        )
+
+        expect(command)
+          .to receive(:remove_old_email)
+          .with(user, old_email)
+          .and_raise(Gitlab::Error::ResponseError.new(response))
+
+        expect(command
+          .update_email('alice', 'new_email@example.com'))
+          .to eq('Failed to update user: foo')
+      end
+    end
+
+    context 'with a valid username' do
+      let(:command) do
+        described_class
+          .new(%w[update_email alice new_email@example.com], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'adds new email to user' do
+        expect(command)
+          .to receive(:validate)
+          .with(new_email)
+          .and_return(true)
+
+        expect(command)
+          .to receive(:add_email)
+          .with(user, new_email)
+          .and_return(true)
+
+        expect(command)
+          .to receive(:remove_old_email)
+          .with(user, old_email)
+          .and_return(true)
+
+        expect(fake_client)
+          .to receive(:find_user)
+          .with(new_email)
+          .and_return(user)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user)
+
+        command.update_email('alice', 'new_email@example.com')
+      end
+    end
+
+    context 'with a valid email' do
+      let(:command) do
+        described_class
+          .new(%w[update_email alice@example.com new_email@example.com], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice@example.com')
+          .and_return(user)
+      end
+
+      it 'adds new email to user' do
+        expect(command)
+          .to receive(:validate)
+          .with(new_email)
+          .and_return(true)
+
+        expect(command)
+          .to receive(:add_email)
+          .with(user, new_email)
+
+        expect(command)
+          .to receive(:remove_old_email)
+          .with(user, old_email)
+
+        expect(fake_client)
+          .to receive(:find_user)
+          .with(new_email)
+          .and_return(user)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user)
+
+        command.update_email('alice@example.com', 'new_email@example.com')
+      end
+    end
+  end
+
+  describe '#validate' do
+    context 'without a valid new email' do
+      it 'returns false' do
+        command = described_class
+          .new(%w[update_email alice new_emailexample.com])
+        email = 'new_emailexample.com'
+
+        expect(command.validate(email)).to be false
+      end
+    end
+
+    context 'with a valid new email' do
+      it 'returns true' do
+        command = described_class
+          .new(%w[update_email alice new_email@example.com])
+        email = 'new_email@example.com'
+
+        expect(command.validate(email)).to be true
+      end
+    end
+  end
+
+  describe '#add_email' do
+    let(:user) { instance_double('user', id: 1, email: 'alice@example.com') }
+    let(:new_email) { 'new_email@example.com' }
+    let(:fake_client) { spy }
+
+    let(:env) do
+      [
+        {},
+        'GITLAB_TOKEN' => 'token'
+      ]
+    end
+
+    before do
+      stub_const('Chatops::Gitlab::Client', fake_client)
+    end
+
+    it 'adds a new email to the user' do
+      command = described_class
+        .new(%w[update_email alice new_email@example.com], *env)
+
+      expect(fake_client)
+        .to receive(:edit_user)
+        .with(user.id, email: new_email, skip_reconfirmation: true)
+
+      command.add_email(user, new_email)
+    end
+  end
+
+  describe '#remove_old_email' do
+    let(:user) { instance_double('user', id: 1, email: 'alice@example.com') }
+    let(:old_email) { 'alice@example.com' }
+    let(:fake_client) { spy }
+
+    let(:env) do
+      [
+        {},
+        'GITLAB_TOKEN' => 'token'
+      ]
+    end
+
+    before do
+      stub_const('Chatops::Gitlab::Client', fake_client)
+    end
+
+    secondary_emails = [
+      Gitlab::ObjectifiedHash.new(
+        'id' => 1, 'email' => 'alice@example.com'
+      )
+    ]
+
+    it 'removes the users old primary email' do
+      command = described_class
+        .new(%w[update_email alice new_email@example.com], *env)
+
+      expect(fake_client)
+        .to receive(:emails)
+        .with(user.id)
+        .and_return(secondary_emails)
+
+      expect(fake_client)
+        .to receive(:delete_email)
+        .with(secondary_emails[0].id, user.id)
+
+      command.remove_old_email(user, old_email)
+    end
+  end
+
   describe '#submit_user_details' do
     it 'submits the user details to Slack' do
       user = instance_double(

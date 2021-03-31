@@ -15,7 +15,7 @@ module Chatops
       COLOR_BLOCKED = '#F55B5B'
 
       # All the available subcommands.
-      COMMANDS = Set.new(%w[find block unblock])
+      COMMANDS = Set.new(%w[find block unblock update_email])
 
       options do |o|
         o.separator <<~AVAIL.chomp
@@ -42,6 +42,10 @@ module Chatops
             Unblocking a user:
 
               user unblock alice
+
+            Updating a user's primary email address:
+
+              user update_email alice new_email@example.com
         HELP
       end
 
@@ -109,6 +113,56 @@ module Chatops
           'The user has been unblocked.'
         else
           'The user could not be unblocked.'
+        end
+      end
+
+      # Updates a user's email.
+      #
+      # name - The username or email address of the user
+      # new_email - The new email address for the user
+      def update_email(name = nil, new_email = nil)
+        return 'You must specify a username or email.' unless name
+        return 'You must specify the new email address.' unless new_email
+
+        user = production_client.find_user(name)
+
+        return user_not_found_error(name) unless user
+
+        old_email = user.email
+
+        return 'You must specify a valid new email.' unless validate(new_email)
+
+        begin
+          add_email(user, new_email)
+          remove_old_email(user, old_email)
+        rescue ::Gitlab::Error::Error => e
+          return "Failed to update user: #{e.response_message}"
+        end
+
+        submit_user_details(production_client.find_user(new_email))
+      end
+
+      def production_client
+        @production_client ||= Gitlab::Client
+          .new(token: gitlab_token)
+      end
+
+      def validate(email)
+        email.include?('@')
+      end
+
+      def add_email(user, new_email)
+        production_client
+          .edit_user(user.id, email: new_email, skip_reconfirmation: true)
+      end
+
+      def remove_old_email(user, old_email)
+        secondary_emails = production_client.emails(user.id)
+        secondary_emails.each do |email|
+          if email.email == old_email
+            production_client
+              .delete_email(email.id, user.id)
+          end
         end
       end
 

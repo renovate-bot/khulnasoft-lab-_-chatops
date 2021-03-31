@@ -109,6 +109,9 @@ module Chatops
 
       def_delegator :internal_client, :block_user
       def_delegator :internal_client, :unblock_user
+      def_delegator :internal_client, :edit_user
+      def_delegator :internal_client, :emails
+      def_delegator :internal_client, :delete_email
 
       def_delegator :internal_client, :run_trigger
       def_delegator :internal_client, :pipeline_jobs
