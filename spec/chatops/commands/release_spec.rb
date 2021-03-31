@@ -214,6 +214,73 @@ describe Chatops::Commands::Release, :release_command do
       end
     end
 
+    describe '#build_status' do
+      it 'returns a default message when no versions are given' do
+        instance = stubbed_instance('build_status')
+
+        expect(instance.perform)
+          .to eq('You must specify at least a single version')
+      end
+
+      # rubocop: disable RSpec/ExampleLength
+      it 'sends a message containing the build status for a given version' do
+        instance = stubbed_instance('build_status', '1.0.0')
+        ce_pipeline = instance_double(
+          'ce pipeline',
+          web_url: 'http://example.com'
+        )
+
+        allow(instance).to receive(:slack_token).and_return('123')
+        allow(instance).to receive(:channel).and_return('foo')
+        allow(instance).to receive(:dev_token).and_return('bar')
+
+        allow(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'bar', host: 'dev.gitlab.org')
+          .and_return(stubbed_client)
+
+        allow(stubbed_client)
+          .to receive(:pipelines)
+          .with('gitlab/omnibus-gitlab', ref: '1.0.0+ce.0')
+          .and_return([ce_pipeline])
+
+        allow(stubbed_client)
+          .to receive(:pipelines)
+          .with('gitlab/omnibus-gitlab', ref: '1.0.0+ee.0')
+          .and_return([])
+
+        allow(instance)
+          .to receive(:pipeline_status_per_stage)
+          .with(stubbed_client, ce_pipeline)
+          .and_return(
+            'package-and-image' => 'success',
+            'package-and-image-release' => 'running'
+          )
+
+        blocks = [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: "<http://example.com|*1.0.0+ce.0*>\n:status_success: packaging :status_running: publishing"
+            }
+          },
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: "*1.0.0+ee.0*\nNo pipeline has been created yet"
+            }
+          }
+        ]
+
+        expect_slack_message(blocks: blocks)
+
+        expect(instance.perform).to eq('')
+      end
+      # rubocop: enable RSpec/ExampleLength
+    end
+
     describe '#tag' do
       it 'triggers a normal release' do
         instance = stubbed_instance('tag', version)
@@ -286,5 +353,50 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
     end
+  end
+
+  describe '#pipeline_status_per_stage' do
+    # rubocop: disable RSpec/ExampleLength
+    it 'returns the status per stage' do
+      instance = stubbed_instance
+      gitlab = instance_spy(Chatops::Gitlab::Client)
+      pipeline = instance_double('pipeline', project_id: 1, id: 2)
+      job1 = instance_double(
+        'job1',
+        stage: 'foo',
+        status: 'running',
+        allow_failure: false
+      )
+
+      job2 = instance_double(
+        'job2',
+        stage: 'foo',
+        status: 'failed',
+        allow_failure: false
+      )
+
+      job3 = instance_double(
+        'job3',
+        stage: 'bar',
+        status: 'pending',
+        allow_failure: false
+      )
+
+      job4 = instance_double(
+        'job3',
+        stage: 'baz',
+        status: 'failed',
+        allow_failure: true
+      )
+
+      allow(gitlab)
+        .to receive(:pipeline_jobs)
+        .with(1, 2)
+        .and_return(Gitlab::PaginatedResponse.new([job1, job2, job3, job4]))
+
+      expect(instance.send(:pipeline_status_per_stage, gitlab, pipeline))
+        .to eq('foo' => 'failed', 'bar' => 'pending', 'baz' => 'success')
+    end
+    # rubocop: enable RSpec/ExampleLength
   end
 end

@@ -7,6 +7,8 @@ module Chatops
       include Command
       include ::Chatops::Release::Command
 
+      OMNIBUS_DEV_PROJECT = 'gitlab/omnibus-gitlab'
+
       usage "#{command_name} SUBCOMMAND [OPTIONS]"
       description 'Perform release-related tasks.'
 
@@ -21,6 +23,7 @@ module Chatops
           tag
           close_issues
           tracking_issue
+          build_status
         ]
       )
 
@@ -197,6 +200,42 @@ module Chatops
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 
+      def build_status(*versions)
+        return 'You must specify at least a single version' if versions.empty?
+
+        blocks = ::Slack::BlockKit.blocks
+        gitlab = Gitlab::Client
+          .new(token: dev_token, host: GitlabEnvironments::DEV_HOST)
+
+        versions.each do |version|
+          ["#{version}+ce.0", "#{version}+ee.0"].each do |tag_name|
+            blocks.section do |section|
+              pipeline =
+                gitlab.pipelines(OMNIBUS_DEV_PROJECT, ref: tag_name).first
+
+              if pipeline
+                statuses = pipeline_status_per_stage(gitlab, pipeline)
+                output = "<#{pipeline.web_url}|*#{tag_name}*>\n" \
+                  ":status_#{statuses['package-and-image']}: packaging " \
+                  ":status_#{statuses['package-and-image-release']}: publishing"
+
+                section.mrkdwn(text: output)
+              else
+                section.mrkdwn(
+                  text: "*#{tag_name}*\nNo pipeline has been created yet"
+                )
+              end
+            end
+          end
+        end
+
+        Slack::Message
+          .new(token: slack_token, channel: channel)
+          .send(blocks: blocks.as_json)
+
+        ''
+      end
+
       def tag(version)
         validate_version!(version)
 
@@ -252,6 +291,32 @@ module Chatops
             raise ArgumentError, "Invalid tag provided: #{tag}"
           end
         end
+      end
+
+      def dev_token
+        env.fetch('GITLAB_DEV_TOKEN')
+      end
+
+      def pipeline_status_per_stage(gitlab, pipeline)
+        gitlab
+          .pipeline_jobs(pipeline.project_id, pipeline.id)
+          .auto_paginate
+          .group_by(&:stage)
+          .each_with_object({}) do |(stage, jobs), memo|
+            memo[stage] = status_for_jobs(jobs)
+          end
+      end
+
+      def status_for_jobs(jobs)
+        statuses = jobs.map do |j|
+          j.status == 'failed' && j.allow_failure ? 'success' : j.status
+        end.uniq
+
+        %w[failed running created manual pending].each do |status|
+          return status if statuses.include?(status)
+        end
+
+        'success'
       end
     end
   end

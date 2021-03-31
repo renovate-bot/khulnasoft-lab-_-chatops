@@ -118,6 +118,7 @@ module Chatops
       def_delegator :internal_client, :pipeline_jobs
       def_delegator :internal_client, :pipeline_schedules
       def_delegator :internal_client, :edit_pipeline_schedule
+      def_delegator :internal_client, :pipelines
 
       def_delegator :internal_client, :add_group_member
       def_delegator :internal_client, :remove_group_member
@@ -136,6 +137,7 @@ module Chatops
       def_delegator :internal_client, :commit_refs
       def_delegator :internal_client, :compare
       def_delegator :internal_client, :tree, :repository_tree
+      def_delegator :internal_client, :tag
 
       def_delegator :internal_client, :create_issue
       def_delegator :internal_client, :close_issue
