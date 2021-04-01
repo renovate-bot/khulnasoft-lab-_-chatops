@@ -504,6 +504,170 @@ describe Chatops::Commands::User do
     end
   end
 
+  describe '#note' do
+    let(:email) { 'alice@example.com' }
+    let(:user) { instance_double('user', id: 1, email: email, note: '') }
+    let(:date) { Time.now.strftime('%F') }
+    let(:new_note) { user.note + "\n#{date}: " + 'example note' }
+    let(:fake_client) { spy }
+    let(:env) do
+      [
+        {},
+        'SLACK_TOKEN' => 'token',
+        'CHAT_CHANNEL' => 'channel',
+        'GITLAB_TOKEN' => 'token'
+      ]
+    end
+
+    before do
+      stub_const('Chatops::Gitlab::Client', fake_client)
+    end
+
+    context 'without a username or email' do
+      it 'returns an error message' do
+        command = described_class.new(%w[note])
+
+        expect(command.note)
+          .to eq('You must specify a username or email.')
+      end
+    end
+
+    context 'without a note to add' do
+      it 'returns an error message' do
+        command = described_class.new(%w[note alice])
+
+        expect(command.note('alice'))
+          .to eq('You must specify an admin note to add.')
+      end
+    end
+
+    context 'with a non-existing username' do
+      it 'returns an error message' do
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[note alice 'example note'],
+               *env)
+
+        expect(command.note('alice', 'example note'))
+          .to eq('No user could be found for "alice".')
+      end
+    end
+
+    context 'with a non-existing email' do
+      it 'returns an error message' do
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice@example.com')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[note alice@example.com 'example note'], *env)
+
+        expect(command
+          .note('alice@example.com', 'example note'))
+          .to eq('No user could be found for "alice@example.com".')
+      end
+    end
+
+    context 'when an error occurs adding the admin note' do
+      let(:command) do
+        described_class
+          .new(%w[note alice 'example note'], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'returns an error message' do
+        response = instance_double(
+          'response',
+          code: 401,
+          request: instance_double('request', base_uri: 'foo', path: '/foo'),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'foo')
+        )
+
+        expect(fake_client)
+          .to receive(:edit_user)
+          .with(user.id, note: new_note)
+          .and_raise(Gitlab::Error::ResponseError.new(response))
+
+        expect(command
+          .note('alice', 'example note'))
+          .to eq('Failed to update user: foo')
+      end
+    end
+
+    context 'with a valid username' do
+      let(:command) do
+        described_class
+          .new(%w[note alice 'example note'], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'adds a new note to the user' do
+        expect(fake_client)
+          .to receive(:edit_user)
+          .with(user.id, note: new_note)
+
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user)
+
+        command.note('alice', 'example note')
+      end
+    end
+
+    context 'with a valid email' do
+      let(:command) do
+        described_class
+          .new(%w[note alice@example.com 'example note'], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice@example.com')
+          .and_return(user)
+      end
+
+      it 'adds a new note to the user' do
+        expect(fake_client)
+          .to receive(:edit_user)
+          .with(user.id, note: new_note)
+
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice@example.com')
+          .and_return(user)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user)
+
+        command.note('alice@example.com', 'example note')
+      end
+    end
+  end
+
   describe '#validate' do
     context 'without a valid new email' do
       it 'returns false' do

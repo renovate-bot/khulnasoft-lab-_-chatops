@@ -15,7 +15,7 @@ module Chatops
       COLOR_BLOCKED = '#F55B5B'
 
       # All the available subcommands.
-      COMMANDS = Set.new(%w[find block unblock update_email])
+      COMMANDS = Set.new(%w[find block unblock update_email note])
 
       options do |o|
         o.separator <<~AVAIL.chomp
@@ -46,6 +46,10 @@ module Chatops
             Updating a user's primary email address:
 
               user update_email alice new_email@example.com
+
+            Adding an admin note to a user:
+
+              user note alice 'example note'
         HELP
       end
 
@@ -140,6 +144,29 @@ module Chatops
         end
 
         submit_user_details(production_client.find_user(new_email))
+      end
+
+      # Adds an admin note to the specified user..
+      #
+      # name - The username or email address of the user
+      # note - The admin note to be added to the account
+      def note(name = nil, message = nil)
+        return 'You must specify a username or email.' unless name
+        return 'You must specify an admin note to add.' unless message
+
+        user = production_client.find_user(name)
+        return user_not_found_error(name) unless user
+
+        date = Time.now.strftime('%F')
+        new_note = user.note + "\n#{date}: " + message
+
+        begin
+          production_client.edit_user(user.id, note: new_note)
+        rescue ::Gitlab::Error::ResponseError => e
+          return "Failed to update user: #{e.response_message}"
+        end
+
+        submit_user_details(production_client.find_user(name))
       end
 
       def production_client
