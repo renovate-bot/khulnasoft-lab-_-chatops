@@ -160,6 +160,14 @@ module Chatops
 
       # Updates the value of a single feature flag.
       def set
+        check_failure_resp =
+          'Unable to proceed due to production check failure. ' \
+          'If you absolutely must change ' \
+          'the state of this feature flag, ' \
+          'please confirm with the current SRE ' \
+          'oncall `@sre-oncall`, and use the ' \
+          '--ignore-production-check option.'
+
         name = arguments[1]
         value = arguments[2]
 
@@ -173,14 +181,7 @@ module Chatops
             'Valid values are: `true`, `false`, or an integer from 0 to 100.'
         end
 
-        unless production_check?
-          return 'Unable to proceed due to production check failure. ' \
-            'If you absolutely must change ' \
-            'the state of this feature flag, ' \
-            'please confirm with the current SRE ' \
-            'oncall `@sre-oncall`, and use the ' \
-            '--ignore-production-check option.'
-        end
+        return check_failure_resp unless production_check?
 
         response = Gitlab::Client
           .new(token: gitlab_token, host: gitlab_host)
@@ -192,7 +193,7 @@ module Chatops
         feature = Gitlab::Feature.from_api_response(response)
         perform_side_effects(name, value, feature)
       rescue ProductionCheckTimeout => e
-        e.message
+        e.message + ' ' + check_failure_resp
       end
 
       def production_check?
@@ -225,7 +226,8 @@ module Chatops
           if Time.now.to_i > (start + PRODUCTION_CHECK_DURATION)
             raise(
               ProductionCheckTimeout,
-              "Timed out waiting for a response from #{resp.web_url}"
+              'Timed out waiting for a response for ' \
+              "<#{resp.web_url}|production check>."
             )
           end
 
