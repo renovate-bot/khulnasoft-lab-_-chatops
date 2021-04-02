@@ -76,14 +76,14 @@ describe Chatops::Commands::Feature do
       described_class.perform(%w[feature list --ops])
     end
 
-    it 'supports a --ignore-incidents option' do
+    it 'supports a --ignore-production-check option' do
       instance = instance_double('instance')
 
       expect(described_class)
         .to receive(:new)
         .with(
           %w[feature set foo true],
-          a_hash_including(ignore_incidents: true),
+          a_hash_including(ignore_production_check: true),
           {}
         )
         .and_return(instance)
@@ -91,7 +91,7 @@ describe Chatops::Commands::Feature do
       expect(instance)
         .to receive(:perform)
 
-      described_class.perform(%w[feature set foo true --ignore-incidents])
+      described_class.perform(%w[feature set foo true --ignore-production-check])
     end
   end
 
@@ -244,8 +244,8 @@ describe Chatops::Commands::Feature do
           .and_return(feature)
 
         expect(command)
-          .to receive(:ongoing_incidents?)
-          .and_return(false)
+          .to receive(:production_check?)
+          .and_return(true)
 
         issue = instance_double('GitLab::Issue')
         expect(command)
@@ -322,8 +322,8 @@ describe Chatops::Commands::Feature do
           .and_return(feature)
 
         expect(command)
-          .to receive(:ongoing_incidents?)
-          .and_return(false)
+          .to receive(:production_check?)
+          .and_return(true)
 
         issue = instance_double('GitLab::Issue')
         expect(command)
@@ -401,8 +401,8 @@ describe Chatops::Commands::Feature do
           .and_return(feature)
 
         expect(command)
-          .to receive(:ongoing_incidents?)
-          .and_return(false)
+          .to receive(:production_check?)
+          .and_return(true)
 
         issue = instance_double('GitLab::Issue')
         expect(command)
@@ -479,8 +479,8 @@ describe Chatops::Commands::Feature do
           .and_return(feature)
 
         expect(command)
-          .to receive(:ongoing_incidents?)
-          .and_return(false)
+          .to receive(:production_check?)
+          .and_return(true)
 
         issue = instance_double('GitLab::Issue')
         expect(command)
@@ -529,9 +529,9 @@ describe Chatops::Commands::Feature do
         command =
           described_class.new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123')
 
-        expect(command).to receive(:ongoing_incidents?).and_return(true)
+        expect(command).to receive(:production_check?).and_return(false)
 
-        expect(command.set).to match(/as one or more production incidents/)
+        expect(command.set).to match(/production check failure/)
       end
     end
   end
@@ -848,7 +848,7 @@ describe Chatops::Commands::Feature do
       it 'adds a label when incidents are ignored' do
         command = described_class.new(
           [],
-          { ignore_incidents: true },
+          { ignore_production_check: true },
           'GITLAB_USER_LOGIN' => 'alice',
           'GITLAB_TOKEN' => 'foo'
         )
@@ -866,7 +866,7 @@ describe Chatops::Commands::Feature do
           .with(
             described_class::LOG_PROJECT,
             an_instance_of(String),
-            labels: 'host::gitlab.com, change, Incidents ignored',
+            labels: 'host::gitlab.com, change, Production check ignored',
             description: an_instance_of(String)
           )
           .and_return(issue)
@@ -878,28 +878,51 @@ describe Chatops::Commands::Feature do
     end
   end
 
-  describe '#ongoing_incidents?' do
-    context 'when there are no incidents' do
-      it 'returns false' do
-        command = described_class.new([], {}, 'GITLAB_TOKEN' => 'foo')
-        client = instance_double(Chatops::Gitlab::Client)
+  describe '#production_check?' do
+    let(:command) do
+      described_class.new(
+        [],
+        {},
+        'GITLAB_TOKEN' => 'foo',
+        'SLACK_TOKEN' => '123',
+        'CHAT_CHANNEL' => '456',
+        'GITLAB_OPS_TOKEN' => '789',
+        'CI_JOB_TOKEN' => 'abc'
+      )
+    end
+    let(:message) { instance_double('Chatops::Slack::Message', send: nil) }
+    # Simulate a `Gitlab::ObjectifiedHash` for a `update_or_create_deployment` response
+    let(:trigger_resp) { instance_double('trigger response', id: '123') }
+    let(:slack_msg) { instance_spy(Chatops::Slack::Message) }
 
-        allow(Chatops::Gitlab::Client)
+    shared_examples 'triggers a production check' do |pipeline_status:, result:|
+      it 'sends a Slack notification and triggers a pipline' do
+        expect(Chatops::Slack::Message)
           .to receive(:new)
-          .with(token: 'foo', host: 'gitlab.com')
-          .and_return(client)
+          .with(token: '123', channel: '456')
+          .and_return(slack_msg)
+        expect(slack_msg).to receive(:send).with(text: 'Production check initiated, this may take up to 120 seconds ...')
+        expect(command).to receive(:run_trigger).with(
+          CHECK_PRODUCTION: 'true',
+          FAIL_IF_NOT_SAFE: 'true'
+        ).and_return(trigger_resp)
+        expect(command).to receive(:pipeline_status).with('123')
+          .and_return(pipeline_status)
 
-        expect(client)
-          .to receive(:issues)
-          .with(
-            described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Active',
-            state: 'opened'
-          )
-          .and_return(Gitlab::PaginatedResponse.new([]))
-
-        expect(command.ongoing_incidents?).to eq(false)
+        expect(command.production_check?).to eq(result)
       end
+    end
+
+    context 'when there are no failing checks' do
+      it_behaves_like 'triggers a production check',
+                      pipeline_status: 'success',
+                      result: true
+    end
+
+    context 'when there is a failing checks' do
+      it_behaves_like 'triggers a production check',
+                      pipeline_status: 'failed',
+                      result: false
     end
 
     context 'when there are incidents when setting a staging feature flag' do
@@ -911,102 +934,10 @@ describe Chatops::Commands::Feature do
         )
       end
 
-      let(:client) { instance_double(Chatops::Gitlab::Client) }
+      it 'returns true when the environment is staging' do
+        expect(command).not_to receive(:run_trigger)
 
-      before do
-        allow(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: 'foo', host: 'gitlab.com')
-          .and_return(client)
-      end
-
-      it 'returns false when the environment is staging' do
-        expect(client).not_to receive(:issues)
-
-        expect(command.ongoing_incidents?).to eq(false)
-      end
-    end
-
-    context 'when there are incidents' do
-      let(:command) { described_class.new([], {}, 'GITLAB_TOKEN' => 'foo') }
-      let(:client) { instance_double(Chatops::Gitlab::Client) }
-
-      before do
-        allow(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: 'foo', host: 'gitlab.com')
-          .and_return(client)
-      end
-
-      it 'returns false when the --ignore-incidents option is specified' do
-        command = described_class
-          .new([], { ignore_incidents: true }, 'GITLAB_TOKEN' => 'foo')
-
-        expect(client).not_to receive(:issues)
-
-        expect(command.ongoing_incidents?).to eq(false)
-      end
-
-      it 'returns true when there is an S1 issue' do
-        issue = instance_double('issue', labels: %w[severity::1 incident foo])
-
-        expect(client)
-          .to receive(:issues)
-          .with(
-            described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Active',
-            state: 'opened'
-          )
-          .and_return(Gitlab::PaginatedResponse.new([issue]))
-
-        expect(command.ongoing_incidents?).to eq(true)
-      end
-
-      it 'returns true when there is an S2 issue' do
-        issue = instance_double('issue', labels: %w[severity::2 incident foo])
-
-        expect(client)
-          .to receive(:issues)
-          .with(
-            described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Active',
-            state: 'opened'
-          )
-          .and_return(Gitlab::PaginatedResponse.new([issue]))
-
-        expect(command.ongoing_incidents?).to eq(true)
-      end
-
-      it 'returns false when there is an S3 issue' do
-        issue = instance_double('issue',
-                                labels: %w[severity::3 Incident::Active foo])
-
-        expect(client)
-          .to receive(:issues)
-          .with(
-            described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Active',
-            state: 'opened'
-          )
-          .and_return(Gitlab::PaginatedResponse.new([issue]))
-
-        expect(command.ongoing_incidents?).to eq(false)
-      end
-
-      it 'returns false when there is an S4 issue' do
-        issue = instance_double('issue',
-                                labels: %w[severity::4 Incident::Active foo])
-
-        expect(client)
-          .to receive(:issues)
-          .with(
-            described_class::INCIDENTS_PROJECT,
-            labels: 'Incident::Active',
-            state: 'opened'
-          )
-          .and_return(Gitlab::PaginatedResponse.new([issue]))
-
-        expect(command.ongoing_incidents?).to eq(false)
+        expect(command.production_check?).to eq(true)
       end
     end
   end

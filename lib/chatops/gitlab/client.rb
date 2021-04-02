@@ -114,6 +114,7 @@ module Chatops
       def_delegator :internal_client, :delete_email
 
       def_delegator :internal_client, :run_trigger
+      def_delegator :internal_client, :pipeline
       def_delegator :internal_client, :pipeline_jobs
       def_delegator :internal_client, :pipeline_schedules
       def_delegator :internal_client, :edit_pipeline_schedule

@@ -231,4 +231,14 @@ describe Chatops::Gitlab::Client do
       client.remove_project_member(project, user)
     end
   end
+
+  describe '#pipeline' do
+    it 'gets a pipeline' do
+      expect(client.internal_client)
+        .to receive(:pipeline)
+        .with('foo/bar', 123)
+
+      client.pipeline('foo/bar', 123)
+    end
+  end
 end

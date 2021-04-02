@@ -5,6 +5,11 @@ module Chatops
     class Feature
       include Command
       include GitlabEnvironments
+      include ::Chatops::Release::Command
+
+      ProductionCheckTimeout = Class.new(StandardError)
+      PRODUCTION_CHECK_DURATION = 120
+      PRODUCTION_CHECK_INTERVAL = 2
 
       # The color to use for the attachment containing enabled features.
       ENABLED_COLOR = '#B3ED8E'
@@ -65,8 +70,8 @@ module Chatops
                'Modifier to roll out a feature flag to a percentage of actors')
 
         o.boolean(
-          '--ignore-incidents',
-          "Ignore any ongoing incidents when changing a feature flag's state"
+          '--ignore-production-check',
+          "Ignore the production check when changing a feature flag's state"
         )
 
         GitlabEnvironments.define_environment_options(o)
@@ -168,15 +173,9 @@ module Chatops
             'Valid values are: `true`, `false`, or an integer from 0 to 100.'
         end
 
-        if ongoing_incidents?
-          return "This feature flag's state can't be changed as one or more " \
-            'production incidents are ongoing. If you absolutely must change ' \
-            'the state of this feature flag, ' \
-            'please confirm with the current SRE ' \
-            'oncall `@sre-oncall`, and use the --ignore-incidents option. ' \
-            'See the <https://gitlab.com' \
-            '/gitlab-com/gl-infra/production/-/issues?label_name%5B%5D=' \
-            'Incident%3A%3AActive|list of currently active incidents>'
+        unless production_check?
+          return 'Unable to proceed due to production check failure ' \
+            'use the --ignore-production-check option to override'
         end
 
         response = Gitlab::Client
@@ -188,6 +187,44 @@ module Chatops
 
         feature = Gitlab::Feature.from_api_response(response)
         perform_side_effects(name, value, feature)
+      rescue ProductionCheckTimeout => e
+        e.message
+      end
+
+      def production_check?
+        return true unless production? && !options[:ignore_production_check]
+
+        send_slack_message_safely(
+          slack_token: slack_token,
+          channel: channel,
+          slack_args: {
+            text: 'Production check initiated, this may take up to ' \
+              "#{PRODUCTION_CHECK_DURATION} seconds ..."
+          }
+        )
+
+        start = Time.now.to_i
+        resp = run_trigger(
+          CHECK_PRODUCTION: 'true',
+          FAIL_IF_NOT_SAFE: 'true'
+        )
+
+        loop do
+          if Time.now.to_i > (start + PRODUCTION_CHECK_DURATION)
+            raise(
+              ProductionCheckTimeout,
+              "Timed out waiting for a response from #{resp.web_url}"
+            )
+          end
+
+          case pipeline_status(resp.id)
+          when PIPELINE_SUCCESS
+            return true
+          when PIPELINE_FAILED
+            return false
+          end
+          sleep(PRODUCTION_CHECK_INTERVAL)
+        end
       end
 
       def perform_side_effects(name, value, feature)
@@ -371,11 +408,11 @@ module Chatops
           Chatops](https://gitlab.com/gitlab-com/chatops/).
         DESC
 
-        if options[:ignore_incidents]
-          labels += ', Incidents ignored'
+        if options[:ignore_production_check]
+          labels += ', Production check ignored'
 
           description = ':warning: **This feature flag was changed despite ' \
-            'there being one or more ongoing production incidents.**' \
+            'the production checks failing**' \
             "\n\n#{description}"
         end
 
@@ -401,21 +438,6 @@ module Chatops
 
       def username
         env.fetch('GITLAB_USER_LOGIN')
-      end
-
-      def ongoing_incidents?
-        return false if options[:ignore_incidents]
-
-        return false if env_name != 'gprd'
-
-        Gitlab::Client
-          .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
-          .issues(INCIDENTS_PROJECT, labels: 'Incident::Active', state: 'opened') # rubocop:disable Metrics/LineLength
-          .auto_paginate do |issue|
-            return true if (issue.labels & SEVERITY_LABELS).any?
-          end
-
-        false
       end
     end
   end

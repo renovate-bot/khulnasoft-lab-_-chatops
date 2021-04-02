@@ -18,6 +18,9 @@ module Chatops
       TARGET_PROJECT = 'gitlab-org/release/tools'
       TARGET_REF = 'master'
 
+      PIPELINE_SUCCESS = 'success'
+      PIPELINE_FAILED = 'failed'
+
       TriggerResult = Struct.new(:status, :url) do
         def success?
           status == :success
@@ -94,6 +97,10 @@ module Chatops
 
       def pipeline_jobs(pipeline_id)
         client.pipeline_jobs(TARGET_PROJECT, pipeline_id)
+      end
+
+      def pipeline_status(pipeline_id)
+        client.pipeline(TARGET_PROJECT, pipeline_id).status
       end
 
       def chatops_job?(jobs)
