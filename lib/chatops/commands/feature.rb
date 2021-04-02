@@ -174,8 +174,12 @@ module Chatops
         end
 
         unless production_check?
-          return 'Unable to proceed due to production check failure ' \
-            'use the --ignore-production-check option to override'
+          return 'Unable to proceed due to production check failure. ' \
+            'If you absolutely must change ' \
+            'the state of this feature flag, ' \
+            'please confirm with the current SRE ' \
+            'oncall `@sre-oncall`, and use the ' \
+            '--ignore-production-check option.'
         end
 
         response = Gitlab::Client
@@ -192,7 +196,8 @@ module Chatops
       end
 
       def production_check?
-        return true unless production? && !options[:ignore_production_check]
+        return true unless production?
+        return true if options[:ignore_production_check]
 
         send_slack_message_safely(
           slack_token: slack_token,
@@ -210,6 +215,13 @@ module Chatops
         )
 
         loop do
+          case pipeline_status(resp.id)
+          when PIPELINE_SUCCESS
+            return true
+          when PIPELINE_FAILED
+            return false
+          end
+
           if Time.now.to_i > (start + PRODUCTION_CHECK_DURATION)
             raise(
               ProductionCheckTimeout,
@@ -217,12 +229,6 @@ module Chatops
             )
           end
 
-          case pipeline_status(resp.id)
-          when PIPELINE_SUCCESS
-            return true
-          when PIPELINE_FAILED
-            return false
-          end
           sleep(PRODUCTION_CHECK_INTERVAL)
         end
       end
