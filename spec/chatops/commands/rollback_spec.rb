@@ -77,7 +77,7 @@ describe Chatops::Commands::Rollback do
         .with(described_class::SOURCE_PROJECT, 'gprd', status: 'success', limit: 2)
         .and_return(deployments)
       expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'running', limit: 1)
+        .with(described_class::SOURCE_PROJECT, 'gprd', limit: 1)
         .and_return([])
 
       expect(fake_client).to receive(:compare)
@@ -96,7 +96,7 @@ describe Chatops::Commands::Rollback do
     it 'includes a running deployment and the rollback package' do
       command = described_class.new(%w[check gprd], *env)
 
-      running = instance_double('deployment', sha: 'a1b2c3d4')
+      running = instance_double('deployment', sha: 'a1b2c3d4', status: 'running')
       deployments = [
         instance_double('deployment', sha: 'abcdefg'),
         instance_double('deployment', sha: '1234567')
@@ -108,7 +108,7 @@ describe Chatops::Commands::Rollback do
         .with(described_class::SOURCE_PROJECT, 'gprd', status: 'success', limit: 2)
         .and_return(deployments)
       expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'running', limit: 1)
+        .with(described_class::SOURCE_PROJECT, 'gprd', limit: 1)
         .and_return([running])
       expect(fake_client).to receive(:latest_deployments)
         .with(described_class::PACKAGE_PROJECT, 'gprd', status: 'success', limit: 2)

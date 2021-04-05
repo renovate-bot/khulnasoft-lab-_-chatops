@@ -122,12 +122,14 @@ module Chatops
       end
 
       def running_deployment(env_name)
+        # We only consider a deployment as running if it's the first deployment
+        # regardless of status. This prevents a case where a deployment never
+        # gets marked as failed and stays in the `running` state.
         production_client.latest_deployments(
           SOURCE_PROJECT,
           env_name,
-          status: 'running',
           limit: 1
-        ).first
+        ).detect { |dep| dep.status == 'running' }
       end
 
       def rollback_package(env_name)
