@@ -8,7 +8,7 @@ module Chatops
       include ::Chatops::Release::Command
 
       ProductionCheckTimeout = Class.new(StandardError)
-      PRODUCTION_CHECK_DURATION = 120
+      PRODUCTION_CHECK_DURATION = 300
       PRODUCTION_CHECK_INTERVAL = 2
 
       # The color to use for the attachment containing enabled features.
@@ -227,7 +227,9 @@ module Chatops
             raise(
               ProductionCheckTimeout,
               'Timed out waiting for a response for ' \
-              "<#{resp.web_url}|production check>."
+              "<#{resp.web_url}|production check>. " \
+              'If the check passes past the timeout, ' \
+              'you can retry and use the override option.'
             )
           end
 

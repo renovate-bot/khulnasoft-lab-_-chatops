@@ -901,7 +901,7 @@ describe Chatops::Commands::Feature do
           .to receive(:new)
           .with(token: '123', channel: '456')
           .and_return(slack_msg)
-        expect(slack_msg).to receive(:send).with(text: 'Production check initiated, this may take up to 120 seconds ...')
+        expect(slack_msg).to receive(:send).with(text: 'Production check initiated, this may take up to 300 seconds ...')
         expect(command).to receive(:run_trigger).with(
           CHECK_PRODUCTION: 'true',
           FAIL_IF_NOT_SAFE: 'true'
