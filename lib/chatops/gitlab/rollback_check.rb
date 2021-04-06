@@ -49,12 +49,13 @@ module Chatops
         blocks.section do |block|
           if safe?
             lines << "#{SAFE_ICON} Safe to roll back"
+            lines << ":database: #{new_migrations} migrations"
           else
             lines << "#{UNSAFE_ICON} *Potentially unsafe to roll back*"
             lines << ':hourglass: Comparison timed out' if timeout?
+            lines << ':warning: A deployment is in progress' if running?
             lines << ":database: #{new_migrations} migrations, " \
               "#{new_post_deploy_migrations} post-deploy migrations"
-            lines << ':warning: A deployment is in progress' if running?
           end
 
           block.mrkdwn(text: lines.join("\n"))
