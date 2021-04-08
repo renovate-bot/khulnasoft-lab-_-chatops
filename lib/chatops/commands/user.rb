@@ -50,6 +50,10 @@ module Chatops
             Adding an admin note to a user:
 
               user note alice 'example note'
+
+            Appending _idle to a username:
+
+              user idle alice
         HELP
       end
 
@@ -167,6 +171,26 @@ module Chatops
         end
 
         submit_user_details(production_client.find_user(name))
+      end
+
+      # Appends _idle to the specified username.
+      #
+      # name - The username or email address of the user
+      def idle(name = nil)
+        return 'You must specify a username or email.' unless name
+
+        user = production_client.find_user(name)
+        return user_not_found_error(name) unless user
+
+        new_username = user.username + '_idle'
+
+        begin
+          production_client.edit_user(user.id, username: new_username)
+        rescue ::Gitlab::Error::ResponseError => e
+          return "Failed to update username: #{e.response_message}"
+        end
+
+        submit_user_details(production_client.find_user(new_username))
       end
 
       def production_client

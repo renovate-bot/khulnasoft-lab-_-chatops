@@ -668,6 +668,160 @@ describe Chatops::Commands::User do
     end
   end
 
+  describe '#idle' do
+    let(:email) { 'alice@example.com' }
+    let(:user) { instance_double('user', id: 1, username: 'alice') }
+    let(:new_username) { user.username + '_idle' }
+    let(:fake_client) { spy }
+    let(:env) do
+      [
+        {},
+        'SLACK_TOKEN' => 'token',
+        'CHAT_CHANNEL' => 'channel',
+        'GITLAB_TOKEN' => 'token'
+      ]
+    end
+
+    before do
+      stub_const('Chatops::Gitlab::Client', fake_client)
+    end
+
+    context 'without a username or email' do
+      it 'returns an error message' do
+        command = described_class.new(%w[idle])
+
+        expect(command.idle)
+          .to eq('You must specify a username or email.')
+      end
+    end
+
+    context 'with a non-existing username' do
+      it 'returns an error message' do
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[idle alice],
+               *env)
+
+        expect(command.idle('alice'))
+          .to eq('No user could be found for "alice".')
+      end
+    end
+
+    context 'with a non-existing email' do
+      it 'returns an error message' do
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice@example.com')
+          .and_return(nil)
+
+        command = described_class
+          .new(%w[idle alice@example.com], *env)
+
+        expect(command
+          .idle('alice@example.com'))
+          .to eq('No user could be found for "alice@example.com".')
+      end
+    end
+
+    context 'when an error occurs changing the username' do
+      let(:command) do
+        described_class
+          .new(%w[idle alice], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'returns an error message' do
+        response = instance_double(
+          'response',
+          code: 401,
+          request: instance_double('request', base_uri: 'foo', path: '/foo'),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'foo')
+        )
+
+        expect(fake_client)
+          .to receive(:edit_user)
+          .with(user.id, username: new_username)
+          .and_raise(Gitlab::Error::ResponseError.new(response))
+
+        expect(command
+          .idle('alice'))
+          .to eq('Failed to update username: foo')
+      end
+    end
+
+    context 'with a valid username' do
+      let(:command) do
+        described_class
+          .new(%w[idle alice], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
+      end
+
+      it 'appends _idle to the username' do
+        expect(fake_client)
+          .to receive(:edit_user)
+          .with(user.id, username: new_username)
+
+        expect(fake_client)
+          .to receive(:find_user)
+          .with(new_username)
+          .and_return(user)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user)
+
+        command.idle('alice')
+      end
+    end
+
+    context 'with a valid email' do
+      let(:command) do
+        described_class
+          .new(%w[idle alice@example.com], *env)
+      end
+
+      before do
+        allow(fake_client)
+          .to receive(:find_user)
+          .with('alice@example.com')
+          .and_return(user)
+      end
+
+      it 'appends _idle to the username' do
+        expect(fake_client)
+          .to receive(:edit_user)
+          .with(user.id, username: new_username)
+
+        expect(fake_client)
+          .to receive(:find_user)
+          .with(new_username)
+          .and_return(user)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user)
+
+        command.idle('alice@example.com')
+      end
+    end
+  end
+
   describe '#validate' do
     context 'without a valid new email' do
       it 'returns false' do
