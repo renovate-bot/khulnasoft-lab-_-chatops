@@ -29,7 +29,7 @@ module Chatops
 
       # Error String for the Canonical -> Security mirror, if any
       def security_error
-        security_status.last_error
+        security_status.last_error&.sub('on the remote', 'on Security')
       end
 
       def security_mirrored?
@@ -38,7 +38,7 @@ module Chatops
 
       # Error String for the Security -> Build mirror, if any
       def build_error
-        build_status.last_error
+        build_status.last_error&.sub('on the remote', 'on Build')
       end
 
       def build_mirrored?
