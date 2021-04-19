@@ -76,13 +76,26 @@ module Chatops
           .execute
           .slack_block(blocks)
 
+        rollback_flag =
+          case env_name
+          when 'gstg'
+            ''
+          when 'gprd'
+            '--production'
+          end
+
         blocks.section do |s|
+          pkg_name = rollback_package(env_name)
           lines = [
             "*Current:* #{commit_link(current.sha)} " \
               "(#{compare_link(previous.sha, current.sha, 'compare to Previous')})",
             "*Previous:* #{commit_link(previous.sha)}",
-            "*Previous package:* `#{rollback_package(env_name)}`"
+            "*Previous package:* `#{pkg_name}`"
           ]
+
+          if rollback_flag
+            lines.push("*Rollback command:* `/chatops run deploy --rollback #{rollback_flag} #{pkg_name}`")
+          end
 
           if running
             lines.prepend(

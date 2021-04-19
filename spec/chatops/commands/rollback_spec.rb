@@ -93,6 +93,7 @@ describe Chatops::Commands::Rollback do
       command.perform
     end
 
+    # rubocop: disable RSpec/ExampleLength
     it 'includes a running deployment and the rollback package' do
       command = described_class.new(%w[check gprd], *env)
 
@@ -122,21 +123,30 @@ describe Chatops::Commands::Rollback do
         .with(compare, running)
         .and_call_original
 
-      expect_slack_message(blocks: RollbackBlockMatcher.new('gprd', 'omnibus-package'))
+      expect_slack_message(
+        blocks: RollbackBlockMatcher.new(
+          'gprd',
+          package: 'omnibus-package',
+          rollback: '/chatops run deploy --rollback --production omnibus-package'
+        )
+      )
 
       command.perform
     end
+    # rubocop: enable RSpec/ExampleLength
   end
 end
 
 class RollbackBlockMatcher
-  def initialize(env, package = '')
+  def initialize(env, package: '', rollback: '')
     @env = env
     @package = package
+    @rollback = rollback
   end
 
   def ===(other)
     other.to_json.include?(":party-tanuki: #{@env}") &&
-      (@package.empty? || other.to_json.include?("`#{@package}`"))
+      (@package.empty? || other.to_json.include?("`#{@package}`")) &&
+      (@rollback.empty? || other.to_json.include?("*Rollback command:* `#{@rollback}`"))
   end
 end
