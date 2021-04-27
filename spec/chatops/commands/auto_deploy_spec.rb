@@ -141,7 +141,6 @@ describe Chatops::Commands::AutoDeploy do
     let(:production_status) do
       {
         role: 'gprd',
-        host: 'gitlab.com',
         version: '12.2.0-pre',
         revision: '0874a8d346c',
         branch: '12-2-auto-deploy-20190804',
@@ -341,7 +340,6 @@ class StatusBlockMatcher
     json = other.to_json
 
     json.include?(':party-tanuki:') &&
-      json.include?(@status[:host]) &&
       json.include?(@status[:revision]) &&
       json.include?(@status[:branch]) &&
       json.include?(@status[:package])
@@ -358,8 +356,7 @@ class DeployedCommitBlockMatcher
     json = other.to_json
 
     json.include?("`#{@commit.short_id}`") &&
-      json.include?(@commit.title) &&
-      json.include?(@status[:host])
+      json.include?(@commit.title)
   end
 end
 

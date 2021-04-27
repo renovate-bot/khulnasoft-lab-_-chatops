@@ -187,7 +187,6 @@ module Chatops
 
         {
           role: role,
-          host: client.host,
           revision: revision,
           branch: auto_deploy_branch&.name,
           package: chef_client.package_version(role)
@@ -312,7 +311,16 @@ module Chatops
       end
 
       def environment_text(env)
-        ":#{env_icon(env[:role])}: #{env[:host]}"
+        ":#{env_icon(env[:role])}: #{env_host(env[:role])}"
+      end
+
+      def env_host(env)
+        case env
+        when 'gprd', 'gprd-cny'
+          PRODUCTION_HOST
+        when 'gstg'
+          STAGING_HOST
+        end
       end
 
       def task_icon(task)
