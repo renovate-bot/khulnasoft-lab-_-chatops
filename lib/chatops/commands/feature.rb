@@ -206,7 +206,8 @@ module Chatops
         start = Time.now.to_i
         resp = run_trigger(
           CHECK_PRODUCTION: 'true',
-          FAIL_IF_NOT_SAFE: 'true'
+          FAIL_IF_NOT_SAFE: 'true',
+          SKIP_DEPLOYMENT_CHECK: 'true'
         )
 
         loop do

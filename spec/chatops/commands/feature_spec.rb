@@ -900,7 +900,8 @@ describe Chatops::Commands::Feature do
         expect(slack_msg).to receive(:send).with(text: 'Production check initiated, this may take up to 300 seconds ...')
         expect(command).to receive(:run_trigger).with(
           CHECK_PRODUCTION: 'true',
-          FAIL_IF_NOT_SAFE: 'true'
+          FAIL_IF_NOT_SAFE: 'true',
+          SKIP_DEPLOYMENT_CHECK: 'true'
         ).and_return(trigger_resp)
         expect(command).to receive(:pipeline_status).with('123')
           .and_return(pipeline_status)
