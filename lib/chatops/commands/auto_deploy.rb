@@ -206,45 +206,31 @@ module Chatops
       end
 
       def post_commit_status(commit_sha, envs)
-        blocks = []
+        blocks = ::Slack::BlockKit.blocks
 
         begin
           commit = production_client.commit(SOURCE_PROJECT, commit_sha)
 
-          blocks << {
-            type: 'section',
-            text: Slack.markdown(
-              "#{commit_link(commit.short_id)} #{commit.title}"
-            )
-          }
+          blocks.section do |s|
+            s.mrkdwn(text: "#{commit_link(commit.short_id)} #{commit.title}")
+          end
 
-          if envs.any?
-            blocks << {
-              type: 'context',
-              elements: envs.map do |env|
-                Slack.markdown(environment_text(env))
+          blocks.context do |c|
+            if envs.any?
+              envs.each do |env|
+                c.mrkdwn(text: environment_text(env))
               end
-            }
-          else
-            blocks << {
-              type: 'context',
-              elements: [
-                Slack.markdown(
-                  ':warning: Unable to find a deployed branch for this commit.'
-                )
-              ]
-            }
+            else
+              c.mrkdwn(text: ':warning: Unable to find a deployed branch for this commit.')
+            end
           end
         rescue ::Gitlab::Error::NotFound
-          blocks << {
-            type: 'section',
-            text: Slack.markdown(
-              ":exclamation: `#{commit_sha}` not found in `#{SOURCE_PROJECT}`."
-            )
-          }
+          blocks.section do |s|
+            s.mrkdwn(text: ":exclamation: `#{commit_sha}` not found in `#{SOURCE_PROJECT}`.")
+          end
         end
 
-        slack_message.send(blocks: blocks)
+        slack_message.send(blocks: blocks.as_json)
       end
 
       def post_environment_status(envs)
