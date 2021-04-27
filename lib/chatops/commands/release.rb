@@ -287,9 +287,7 @@ module Chatops
         end
 
         tags.each do |tag|
-          unless TAG_REGEX.match?(tag)
-            raise ArgumentError, "Invalid tag provided: #{tag}"
-          end
+          raise ArgumentError, "Invalid tag provided: #{tag}" unless TAG_REGEX.match?(tag)
         end
       end
 

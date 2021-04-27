@@ -57,7 +57,7 @@ module Chatops
         HELP
       end
 
-      # rubocop:disable Metrics/AbcSize,Metrics/LineLength
+      # rubocop:disable Metrics/AbcSize
       def check(env_name)
         unless ENVIRONMENTS.include?(env_name)
           return "Invalid environment `#{env_name}`, " \
@@ -111,7 +111,7 @@ module Chatops
 
         slack_message.send(blocks: blocks.as_json)
       end
-      # rubocop:enable Metrics/AbcSize,Metrics/LineLength
+      # rubocop:enable Metrics/AbcSize
 
       private
 

@@ -16,9 +16,7 @@ module Chatops
       def server_disp(servers:, hide_healthy: true)
         servers_not_up = Hash.new { |h, k| h[k] = Set.new }
         servers.each do |s|
-          unless s[:state] == 'UP' && hide_healthy
-            servers_not_up[s[:state]].add(s[:server])
-          end
+          servers_not_up[s[:state]].add(s[:server]) unless s[:state] == 'UP' && hide_healthy
         end
         servers_not_up.sort.map do |(state, srvs)|
           "*#{state}*: #{srvs.to_a.join(', ')}"

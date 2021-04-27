@@ -98,9 +98,7 @@ module Chatops
       def configuration_for(category, name)
         entry = self.class.configuration.dig(category, name)
 
-        unless entry
-          raise ArgumentError, "The graph #{category}:#{name} does not exist"
-        end
+        raise ArgumentError, "The graph #{category}:#{name} does not exist" unless entry
 
         entry
       end

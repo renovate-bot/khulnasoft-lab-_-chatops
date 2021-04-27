@@ -113,10 +113,7 @@ module Chatops
       # plan - The query plan to upload as a String.
       # url - An optional URL to explain.depesz.com.
       def upload_plan(plan, url = nil)
-        comment =
-          if url
-            "A visual representation of the plan can be found <#{url}|here>."
-          end
+        comment = "A visual representation of the plan can be found <#{url}|here>." if url
 
         Slack::FileUpload
           .new(

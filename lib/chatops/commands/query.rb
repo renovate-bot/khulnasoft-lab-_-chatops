@@ -49,9 +49,7 @@ module Chatops
 
         return 'You must specify a query ID.' unless id
 
-        unless valid_query_id?(id)
-          return 'You must specify a numerical value as the query ID.'
-        end
+        return 'You must specify a numerical value as the query ID.' unless valid_query_id?(id)
 
         row = database_connection
           .execute(format(QUERY, query_id: id))

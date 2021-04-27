@@ -62,9 +62,7 @@ module Chatops
       end
 
       def perform
-        unless version?
-          return 'The first argument must be the version to deploy'
-        end
+        return 'The first argument must be the version to deploy' unless version?
 
         prepared_version = prepare_version(version)
 
@@ -150,9 +148,7 @@ module Chatops
         vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
         vars[:DEPLOY_ROLLBACK] = 'true' if options[:rollback]
         vars[:CHECKMODE] = 'true' if options[:check]
-        if options[:allow_precheck_failure]
-          vars[:PRECHECK_IGNORE_ERRORS] = 'yes'
-        end
+        vars[:PRECHECK_IGNORE_ERRORS] = 'yes' if options[:allow_precheck_failure]
 
         vars
       end

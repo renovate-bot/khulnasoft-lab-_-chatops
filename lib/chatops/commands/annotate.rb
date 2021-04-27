@@ -25,13 +25,11 @@ module Chatops
       def perform
         user_text = arguments.join(' ').strip
 
-        unless user_text && !user_text.empty?
-          return 'You need to provide text to create an annotation'
-        end
+        return 'You need to provide text to create an annotation' unless user_text && !user_text.empty?
 
         dashboard_ids = resolve_dashboard_ids
 
-        user_link = "<a href=\"https://gitlab.com/#{username}\">@#{username}</a>" # rubocop:disable Metrics/LineLength
+        user_link = "<a href=\"https://gitlab.com/#{username}\">@#{username}</a>"
         annotation_text = "#{user_text} (#{user_link})"
         annotate = Grafana::Annotate.new(token: grafana_token)
 

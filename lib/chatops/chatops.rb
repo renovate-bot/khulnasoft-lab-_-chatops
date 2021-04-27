@@ -34,9 +34,7 @@ module Chatops
 
     command_class = commands[name]
 
-    unless command_class
-      raise CommandError, "The command #{name.inspect} does not exist"
-    end
+    raise CommandError, "The command #{name.inspect} does not exist" unless command_class
 
     command_class.perform(split_input(chat_input), env)
   end

@@ -45,9 +45,7 @@ module Chatops
           .auth("Bearer #{@token}")
           .get(url)
 
-        unless image_response.status == 200
-          raise DownloadError, 'Failed to download the image from Grafana'
-        end
+        raise DownloadError, 'Failed to download the image from Grafana' unless image_response.status == 200
 
         file = Tempfile.new(['graph', '.png'])
 
