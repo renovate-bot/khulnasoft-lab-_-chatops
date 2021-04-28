@@ -11,7 +11,9 @@ module Chatops
         Set.new(%w[pause prepare status tag unpause blockers lock unlock])
 
       SOURCE_HOST = 'https://gitlab.com'
-      SOURCE_PROJECT = 'gitlab-org/security/gitlab'
+
+      RAILS_PROJECT = 'gitlab-org/security/gitlab'
+      OMNIBUS_PROJECT = 'gitlab-org/security/omnibus-gitlab'
 
       options do |o|
         o.separator <<~AVAIL.chomp
@@ -104,9 +106,9 @@ module Chatops
 
       def status(sha = nil)
         envs = [
-          environment_status('gprd'),
-          environment_status('gprd-cny'),
-          environment_status('gstg')
+          *environment_status('gprd'),
+          *environment_status('gprd-cny'),
+          *environment_status('gstg')
         ]
 
         if sha
@@ -178,26 +180,28 @@ module Chatops
       end
 
       def environment_status(role)
-        client = client_from_role(role)
-        version = client.version
-        revision = version.revision
+        rails = Gitlab::Deployments
+          .new(production_client, RAILS_PROJECT)
+          .upcoming_and_current(role)
 
-        # Get the auto-deploy ref for the deployed revision
-        auto_deploy_branch = auto_deploy_branches(revision).first
+        omnibus = Gitlab::Deployments
+          .new(production_client, OMNIBUS_PROJECT)
+          .upcoming_and_current(role)
 
-        {
-          role: role,
-          revision: revision,
-          branch: auto_deploy_branch&.name,
-          package: chef_client.package_version(role)
-        }
+        rails.zip(omnibus).map do |ee, ob|
+          {
+            role: role,
+            revision: ee.short_sha,
+            branch: ee.ref,
+            package: ob.package,
+            status: ee.status
+          }
+        end
       end
 
       def auto_deploy_branches(ref)
-        # NOTE: We always use the production client, because staging is always
-        # behind for the specified repository.
         production_client
-          .commit_refs(SOURCE_PROJECT, ref, type: 'branch', per_page: 100)
+          .commit_refs(RAILS_PROJECT, ref, type: 'branch', per_page: 100)
           .auto_paginate
           .select { |b| b.name.match?(/^\d+-\d+-auto-deploy-\d+$/) }
       rescue ::Gitlab::Error::NotFound
@@ -208,7 +212,7 @@ module Chatops
         blocks = ::Slack::BlockKit.blocks
 
         begin
-          commit = production_client.commit(SOURCE_PROJECT, commit_sha)
+          commit = production_client.commit(RAILS_PROJECT, commit_sha)
 
           blocks.section do |s|
             s.mrkdwn(text: "#{commit_link(commit.short_id)} #{commit.title}")
@@ -225,7 +229,7 @@ module Chatops
           end
         rescue ::Gitlab::Error::NotFound
           blocks.section do |s|
-            s.mrkdwn(text: ":exclamation: `#{commit_sha}` not found in `#{SOURCE_PROJECT}`.")
+            s.mrkdwn(text: ":exclamation: `#{commit_sha}` not found in `#{RAILS_PROJECT}`.")
           end
         end
 
@@ -237,6 +241,9 @@ module Chatops
 
         envs.each_with_index do |env, idx|
           blocks.header(text: environment_text(env), emoji: true)
+
+          blocks.section { |s| s.mrkdwn(text: ':ci_running: *New deployment*') } if env[:status] == 'running'
+
           blocks.section do |s|
             lines = [
               "*Revision:* #{commit_link(env[:revision])}",
@@ -263,37 +270,9 @@ module Chatops
         slack_message.send(blocks: blocks.as_json)
       end
 
-      def client_from_role(role)
-        case role
-        when 'gprd'
-          production_client
-        when 'gprd-cny'
-          canary_client
-        when 'gstg'
-          staging_client
-        end
-      end
-
       def production_client
         @production_client ||= Gitlab::Client
           .new(token: gitlab_token)
-      end
-
-      def canary_client
-        @canary_client ||= Gitlab::Client.new(
-          token: gitlab_token,
-          host: 'gitlab.com',
-          httparty: {
-            headers: { 'Cookie' => 'gitlab_canary=true' }
-          }
-        )
-      end
-
-      def staging_client
-        token = ENV.fetch('GITLAB_STAGING_TOKEN', gitlab_token)
-
-        @staging_client ||= Gitlab::Client
-          .new(token: token, host: 'staging.gitlab.com')
       end
 
       def ops_client
@@ -332,7 +311,7 @@ module Chatops
       end
 
       def commit_link(sha)
-        url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/commit/#{sha}"
+        url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/commit/#{sha}"
         text = "`#{sha}`"
 
         "<#{url}|#{text}>"
@@ -340,14 +319,14 @@ module Chatops
 
       def compare_link(prev_sha, sha)
         comparison = "#{prev_sha}...#{sha}"
-        url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/compare/#{comparison}"
+        url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/compare/#{comparison}"
 
         "<#{url}|#{comparison}>"
       end
 
       def branch_link(branch)
         if branch
-          url = "#{SOURCE_HOST}/#{SOURCE_PROJECT}/commits/#{branch}"
+          url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/commits/#{branch}"
           text = "`#{branch}`"
 
           "<#{url}|#{text}>"

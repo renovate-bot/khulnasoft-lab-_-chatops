@@ -144,7 +144,8 @@ describe Chatops::Commands::AutoDeploy do
         version: '12.2.0-pre',
         revision: '0874a8d346c',
         branch: '12-2-auto-deploy-20190804',
-        package: '12.2.201908042020+0874a8d346c.2ee9f1d280d'
+        package: '12.2.201908042020-0874a8d346c.2ee9f1d280d',
+        status: 'success'
       }
     end
 
@@ -157,7 +158,7 @@ describe Chatops::Commands::AutoDeploy do
         allow(command).to receive(:trigger_production_checks?).and_return(true)
 
         allow(command).to receive(:environment_status)
-          .and_return(production_status)
+          .and_return([production_status])
         expect_slack_message(blocks: StatusBlockMatcher.new(production_status))
         expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true')
 
@@ -172,7 +173,7 @@ describe Chatops::Commands::AutoDeploy do
 
       it 'posts a message with deployed environments' do
         allow(command).to receive(:environment_status)
-          .and_return(production_status)
+          .and_return([production_status])
         allow(command).to receive(:auto_deploy_branches).with('abcdefg')
           .and_return([instance_double(
             'Branch', name: production_status[:branch]
