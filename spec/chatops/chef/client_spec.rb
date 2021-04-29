@@ -17,6 +17,37 @@ describe Chatops::Chef::Client do
     { 'hostname' => 'herp', 'ipaddress' => '1.1.1.1' }
   end
 
+  let(:omnibus_role_enabled) do
+    instance_double(
+      'enabled role result',
+      default_attributes: {
+        'omnibus-gitlab' => {
+          'package' => {
+            'version' => 'some-version',
+            'enable' => true,
+            '__CI_PIPELINE_URL' => 'https://example.com/some/pipeline/url'
+          }
+        }
+      }
+    )
+  end
+
+  let(:omnibus_role_disabled) do
+    instance_double(
+      'disabled role result',
+      default_attributes: {
+        'omnibus-gitlab' => {
+          'package' => {
+            'version' => 'some-version',
+            'enable' => false
+          }
+        }
+      }
+    )
+  end
+
+  let(:omnibus_role_empty) { instance_double('role result', default_attributes: {}) }
+
   before do
     allow(query_result)
       .to receive(:search)
@@ -42,33 +73,60 @@ describe Chatops::Chef::Client do
 
   describe '#package_version' do
     it 'returns the package version for a Chef role' do
-      role_result = instance_double(
-        'role result',
-        default_attributes: {
-          'omnibus-gitlab' => {
-            'package' => {
-              'version' => 'some-version'
-            }
-          }
-        }
-      )
-
       allow(Chef::Role)
         .to receive(:load)
         .with('some-env-omnibus-version')
-        .and_return(role_result)
+        .and_return(omnibus_role_enabled)
 
       expect(client.package_version('some-env')).to eq('some-version')
     end
 
     it 'returns `unknown` for a Chef role that does not have a package key' do
-      role_result = instance_double('role result', default_attributes: {})
-
       allow(Chef::Role)
         .to receive(:load)
-        .and_return(role_result)
+        .and_return(omnibus_role_empty)
 
       expect(client.package_version('some-env')).to eq('unknown')
+    end
+  end
+
+  describe '#canary_active_deployment?' do
+    it 'true for an enabled role' do
+      allow(Chef::Role)
+        .to receive(:load)
+        .with('gprd-cny-omnibus-version')
+        .and_return(omnibus_role_enabled)
+
+      expect(client.canary_active_deployment?).to eq(true)
+    end
+
+    it 'false for a disabled role' do
+      allow(Chef::Role)
+        .to receive(:load)
+        .with('gprd-cny-omnibus-version')
+        .and_return(omnibus_role_disabled)
+
+      expect(client.canary_active_deployment?).to eq(false)
+    end
+
+    it 'true for an empty role' do
+      allow(Chef::Role)
+        .to receive(:load)
+        .with('gprd-cny-omnibus-version')
+        .and_return(omnibus_role_empty)
+
+      expect(client.canary_active_deployment?).to eq(true)
+    end
+  end
+
+  describe '#canary_pipeline_url' do
+    it 'returns the pipeline URL' do
+      allow(Chef::Role)
+        .to receive(:load)
+        .with('gprd-cny-omnibus-version')
+        .and_return(omnibus_role_enabled)
+
+      expect(client.canary_pipeline_url).to eq('https://example.com/some/pipeline/url')
     end
   end
 end

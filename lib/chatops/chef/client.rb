@@ -6,6 +6,7 @@ module Chatops
   module Chef
     class Client
       DEFAULT_CHEF_URL = 'https://chef.gitlab.com/organizations/gitlab'
+      CANARY_OMNIBUS_ROLE = 'gprd-cny-omnibus-version'
 
       def initialize
         key = key_file(pem_key)
@@ -41,6 +42,22 @@ module Chatops
           .dig('omnibus-gitlab', 'package', 'version') || 'unknown'
       end
 
+      def canary_active_deployment?
+        enabled = canary_omnibus_role
+          .default_attributes
+          .dig('omnibus-gitlab', 'package', 'enable')
+
+        return true if enabled.nil?
+
+        enabled
+      end
+
+      def canary_pipeline_url
+        canary_omnibus_role
+          .default_attributes
+          .dig('omnibus-gitlab', 'package', '__CI_PIPELINE_URL') || 'unknown'
+      end
+
       private
 
       def key_file(key)
@@ -63,6 +80,10 @@ module Chatops
       # Chef endpoint, defaults to GitLab's chef server
       def url
         ENV.fetch('CHEF_URL', DEFAULT_CHEF_URL)
+      end
+
+      def canary_omnibus_role
+        @canary_omnibus_role ||= ::Chef::Role.load(CANARY_OMNIBUS_ROLE)
       end
     end
   end

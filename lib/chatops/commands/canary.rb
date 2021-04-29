@@ -23,12 +23,29 @@ module Chatops
                'Set canary to be in maint state')
         o.bool('--disable',
                'Set canary to be disabled, drains and then sets maint state')
+        o.bool('--ignore-deployment-check',
+               'Ignores the deployment check, ' \
+                'do not use this option unless you know what you are doing!')
       end
 
       def perform
         # If there is a new state transition, make it here. Otherwise
         # we just print the status and a note about usage
         server_state_commands.each do |state|
+          if !options[:ignore_deployment_check] &&
+             reduce_canary_traffic?(state) &&
+             canary_active_deployment?
+            return [
+              'Unable to set canary state because there is a ' \
+                "<#{chef_client.canary_pipeline_url}|" \
+                'canary deploy in progress>.',
+              'Draining canary while there is a deploy will cause errors for ' \
+                'users connecting to canary hosts.',
+              'If you are sure you want to proceed anyway, use the ' \
+                '`--ignore-deployment-check` option.'
+            ].join("\n")
+          end
+
           canary_server_state!(
             state: state
           )
@@ -36,6 +53,7 @@ module Chatops
              state == Chatops::HAProxy::State::DRAIN
             sleep(DRAIN_INTERVAL)
           end
+
           send_event("Canary set to #{state}")
         end
 
@@ -70,6 +88,13 @@ module Chatops
         else
           []
         end
+      end
+
+      def reduce_canary_traffic?(state)
+        # Any state that will reduce canary traffic
+        # these state transitions are dangerous if a deploy is in progress
+        [Chatops::HAProxy::State::DRAIN,
+         Chatops::HAProxy::State::MAINT].include?(state)
       end
 
       def canary_server_state!(state:)
@@ -114,6 +139,10 @@ module Chatops
           .send_event(
             message
           )
+      end
+
+      def canary_active_deployment?
+        @canary_active_deployment ||= chef_client.canary_active_deployment?
       end
     end
   end

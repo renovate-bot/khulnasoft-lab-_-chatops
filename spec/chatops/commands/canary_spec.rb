@@ -20,6 +20,9 @@ describe Chatops::Commands::Canary do
     allow(chef_client)
       .to receive(:ips_from_role)
       .and_return(['1.1.1.1'])
+    allow(chef_client)
+      .to receive(:canary_pipeline_url)
+      .and_return('https://example.com/some/pipeline/url')
   end
 
   describe '#perform' do
@@ -91,6 +94,9 @@ describe Chatops::Commands::Canary do
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
+        expect(command).to receive(:canary_active_deployment?)
+          .and_return(false)
+
         expect(command.perform).to eq(
           <<~CNY_RESULT.chomp
             :canary: :canary: :canary:
@@ -122,6 +128,8 @@ describe Chatops::Commands::Canary do
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
+        expect(command).to receive(:canary_active_deployment?)
+          .and_return(false)
         expect(command.perform).to eq(
           <<~CNY_RESULT.chomp
             :canary: :canary: :canary:
@@ -157,6 +165,7 @@ describe Chatops::Commands::Canary do
             *UP*: some-cny-server
           CNY_RESULT
         )
+        expect(command).not_to receive(:canary_active_deployment?)
       end
     end
 
@@ -172,6 +181,31 @@ describe Chatops::Commands::Canary do
       it_behaves_like 'enabling the canary'
     end
 
+    context 'when there is an active deployment' do
+      let(:command) do
+        described_class.new(
+          [], { disable: true },
+          'CHEF_USERNAME' => 'fake-user',
+          'CHEF_PEM_KEY' => 'fake-pem'
+        )
+      end
+
+      before do
+        allow(command).to receive(:canary_active_deployment?).twice
+          .and_return(true)
+      end
+
+      it 'returns an error' do
+        expect(command.perform).to eq(
+          <<~CNY_RESULT.chomp
+            Unable to set canary state because there is a <https://example.com/some/pipeline/url|canary deploy in progress>.
+            Draining canary while there is a deploy will cause errors for users connecting to canary hosts.
+            If you are sure you want to proceed anyway, use the `--ignore-deployment-check` option.
+          CNY_RESULT
+        )
+      end
+    end
+
     context 'when state is set to enable' do
       let(:command) do
         described_class.new(
@@ -184,27 +218,13 @@ describe Chatops::Commands::Canary do
       it_behaves_like 'enabling the canary'
     end
 
-    context 'when state is set to disable' do
-      let(:command) do
-        described_class.new(
-          [], { disable: true },
-          'CHEF_USERNAME' => 'fake-user',
-          'CHEF_PEM_KEY' => 'fake-pem'
-        )
-      end
-
+    shared_examples 'disabling canary' do
       it 'sets state to drain and then maint' do
         expect(command).to receive(:sleep).once.with(60)
         expect(events_client).to receive(:send_event)
           .once.with('Canary set to drain')
         expect(events_client).to receive(:send_event)
           .once.with('Canary set to maint')
-        allow(ha_proxy_client)
-          .to receive(:server_stats)
-          .and_return(
-            gen_status('DRAIN'),
-            gen_status('MAINT')
-          )
 
         %w[drain maint].each do |state|
           expect(ha_proxy_client).to receive(:set_server_state)
@@ -226,6 +246,52 @@ describe Chatops::Commands::Canary do
           CNY_RESULT
         )
       end
+    end
+
+    context 'when state is set to disable' do
+      let(:command) do
+        described_class.new(
+          [], { disable: true },
+          'CHEF_USERNAME' => 'fake-user',
+          'CHEF_PEM_KEY' => 'fake-pem'
+        )
+      end
+
+      before do
+        allow(command).to receive(:canary_active_deployment?).twice
+          .and_return(false)
+        allow(ha_proxy_client)
+          .to receive(:server_stats)
+          .and_return(
+            gen_status('DRAIN'),
+            gen_status('MAINT')
+          )
+      end
+
+      it_behaves_like 'disabling canary'
+    end
+
+    context 'when state is set to disable during an active deployment with override' do
+      let(:command) do
+        described_class.new(
+          [], { disable: true, ignore_deployment_check: true },
+          'CHEF_USERNAME' => 'fake-user',
+          'CHEF_PEM_KEY' => 'fake-pem'
+        )
+      end
+
+      before do
+        allow(command).to receive(:canary_active_deployment?).twice
+          .and_return(true)
+        allow(ha_proxy_client)
+          .to receive(:server_stats)
+          .and_return(
+            gen_status('DRAIN'),
+            gen_status('MAINT')
+          )
+      end
+
+      it_behaves_like 'disabling canary'
     end
   end
 end
