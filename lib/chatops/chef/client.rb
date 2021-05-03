@@ -47,9 +47,13 @@ module Chatops
           .default_attributes
           .dig('omnibus-gitlab', 'package', 'enable')
 
-        return true if enabled.nil?
+        # By default, if the role doesn't have a package
+        # key default to not having an active deployment.
+        return false if enabled.nil?
 
-        enabled
+        # If omnibus-gitlab is not enabled, it means there
+        # is an active deployment
+        !enabled
       end
 
       def canary_pipeline_url

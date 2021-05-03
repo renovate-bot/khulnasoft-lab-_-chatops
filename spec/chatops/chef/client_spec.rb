@@ -91,31 +91,31 @@ describe Chatops::Chef::Client do
   end
 
   describe '#canary_active_deployment?' do
-    it 'true for an enabled role' do
+    it 'true for an disabled role' do
       allow(Chef::Role)
         .to receive(:load)
         .with('gprd-cny-omnibus-version')
         .and_return(omnibus_role_enabled)
 
-      expect(client.canary_active_deployment?).to eq(true)
+      expect(client.canary_active_deployment?).to eq(false)
     end
 
-    it 'false for a disabled role' do
+    it 'false for a enabled role' do
       allow(Chef::Role)
         .to receive(:load)
         .with('gprd-cny-omnibus-version')
         .and_return(omnibus_role_disabled)
 
-      expect(client.canary_active_deployment?).to eq(false)
+      expect(client.canary_active_deployment?).to eq(true)
     end
 
-    it 'true for an empty role' do
+    it 'false for an empty role' do
       allow(Chef::Role)
         .to receive(:load)
         .with('gprd-cny-omnibus-version')
         .and_return(omnibus_role_empty)
 
-      expect(client.canary_active_deployment?).to eq(true)
+      expect(client.canary_active_deployment?).to eq(false)
     end
   end
 
