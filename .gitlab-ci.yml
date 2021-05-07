@@ -140,3 +140,6 @@ rollback:
 
 notify:
   <<: *chatops
+
+production_checks:
+  <<: *chatops
