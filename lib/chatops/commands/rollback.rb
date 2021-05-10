@@ -99,7 +99,7 @@ module Chatops
 
           if running
             lines.prepend(
-              "*Upcoming:* #{commit_link(running.sha)} " \
+              "*New:* #{commit_link(running.sha)} " \
                 "(#{compare_link(current.sha, running.sha, 'compare to Current')})"
             )
           end
