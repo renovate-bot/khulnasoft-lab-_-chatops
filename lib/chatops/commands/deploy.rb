@@ -146,9 +146,13 @@ module Chatops
 
         vars[:TAKEOFF_WARMUP] = '1' if options[:warmup]
         vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
-        vars[:DEPLOY_ROLLBACK] = 'true' if options[:rollback]
         vars[:CHECKMODE] = 'true' if options[:check]
         vars[:PRECHECK_IGNORE_ERRORS] = 'yes' if options[:allow_precheck_failure]
+
+        if options[:rollback]
+          vars[:DEPLOY_ROLLBACK] = 'true'
+          vars[:IGNORE_PRODUCTION_CHECKS] = sanitize_reason('This is a rollback')
+        end
 
         vars
       end

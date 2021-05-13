@@ -406,6 +406,15 @@ describe Chatops::Commands::Deploy do
 
         expect(vars[:DEPLOY_ROLLBACK]).to eq('true')
       end
+
+      it 'includes the IGNORE_PRODUCTION_CHECKS environment variable' do
+        command = described_class.new([], { rollback: true }, {})
+        vars = command.environment_variables_for('1.0')
+
+        puts vars.inspect
+
+        expect(vars[:IGNORE_PRODUCTION_CHECKS]).to include('rollback')
+      end
     end
 
     context 'when DEPLOY_ROLLBACK is not requested' do
