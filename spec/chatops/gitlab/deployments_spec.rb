@@ -12,15 +12,17 @@ describe Chatops::Gitlab::Deployments do
       .and_return(results)
   end
 
-  def deployment_stub(messages)
-    instance_double('Chatops::Gitlab::Deployment', messages)
+  def deployment(messages)
+    stub = double('Gitlab::ObjectifiedHash', messages) # rubocop:disable RSpec/VerifiedDoubles
+
+    Chatops::Gitlab::Deployment.new(stub)
   end
 
   describe '#upcoming_and_current' do
     it 'returns a running and a successful deployment' do
       deployments = [
-        deployment_stub(ref: 'main', sha: 'abcdef', status: 'running'),
-        deployment_stub(ref: 'main', sha: 'aabbcc', status: 'success')
+        deployment(ref: 'main', sha: 'abcdef', status: 'running'),
+        deployment(ref: 'main', sha: 'aabbcc', status: 'success')
       ]
 
       mock_latest_deployments('gprd', deployments)
@@ -34,8 +36,8 @@ describe Chatops::Gitlab::Deployments do
 
     it 'returns a single deployment with no running deploys' do
       deployments = [
-        deployment_stub(ref: 'main', sha: 'abcdef', status: 'success'),
-        deployment_stub(ref: 'main', sha: 'aabbcc', status: 'success')
+        deployment(ref: 'main', sha: 'abcdef', status: 'success'),
+        deployment(ref: 'main', sha: 'aabbcc', status: 'success')
       ]
 
       mock_latest_deployments('gprd', deployments)
@@ -44,14 +46,14 @@ describe Chatops::Gitlab::Deployments do
       latest = instance.upcoming_and_current('gprd')
 
       expect(latest.size).to eq(1)
-      expect(latest.first).to be_deployed
+      expect(latest.first).to be_success
       expect(latest.first.sha).to eq('abcdef')
     end
 
     it 'removes failed deployments' do
       deployments = [
-        deployment_stub(ref: 'main', sha: 'abcdef', status: 'failed'),
-        deployment_stub(ref: 'main', sha: 'aabbcc', status: 'success')
+        deployment(ref: 'main', sha: 'abcdef', status: 'failed'),
+        deployment(ref: 'main', sha: 'aabbcc', status: 'success')
       ]
 
       mock_latest_deployments('gprd', deployments)
@@ -60,7 +62,7 @@ describe Chatops::Gitlab::Deployments do
       latest = instance.upcoming_and_current('gprd')
 
       expect(latest.size).to eq(1)
-      expect(latest.first).to be_deployed
+      expect(latest.first).to be_success
       expect(latest.first.sha).to eq('aabbcc')
     end
   end

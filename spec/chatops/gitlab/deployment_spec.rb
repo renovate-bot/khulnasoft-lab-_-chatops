@@ -44,13 +44,13 @@ describe Chatops::Gitlab::Deployment do
     it 'checks for a running deployment' do
       response = api_response(status: 'running')
 
-      expect(described_class.new(response)).to be_in_progress
+      expect(described_class.new(response)).to be_running
     end
 
     it 'checks for a successful deployment' do
       response = api_response(status: 'success')
 
-      expect(described_class.new(response)).to be_deployed
+      expect(described_class.new(response)).to be_success
     end
 
     it 'checks for a failed deployment' do

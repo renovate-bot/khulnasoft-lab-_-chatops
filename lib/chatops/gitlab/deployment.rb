@@ -19,11 +19,11 @@ module Chatops
         sha[0...11]
       end
 
-      def in_progress?
+      def running?
         status == 'running'
       end
 
-      def deployed?
+      def success?
         status == 'success'
       end
 
