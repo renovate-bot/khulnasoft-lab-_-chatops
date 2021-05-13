@@ -411,8 +411,6 @@ describe Chatops::Commands::Deploy do
         command = described_class.new([], { rollback: true }, {})
         vars = command.environment_variables_for('1.0')
 
-        puts vars.inspect
-
         expect(vars[:IGNORE_PRODUCTION_CHECKS]).to include('rollback')
       end
     end
