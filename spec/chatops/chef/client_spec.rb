@@ -129,4 +129,34 @@ describe Chatops::Chef::Client do
       expect(client.canary_pipeline_url).to eq('https://example.com/some/pipeline/url')
     end
   end
+
+  describe '#lock_environment' do
+    it 'locks the role for the given environment' do
+      expect(Chef::Role)
+        .to receive(:load)
+        .with('some-env-omnibus-version')
+        .and_return(omnibus_role_enabled)
+
+      expect(omnibus_role_enabled).to receive(:save)
+
+      expect { client.lock_environment('some-env') }
+        .to change { omnibus_role_enabled.default_attributes.dig('omnibus-gitlab', 'package', 'enable') }
+        .from(true).to(false)
+    end
+  end
+
+  describe '#unlock_environment' do
+    it 'unlocks the role for the given environment' do
+      expect(Chef::Role)
+        .to receive(:load)
+        .with('some-env-omnibus-version')
+        .and_return(omnibus_role_disabled)
+
+      expect(omnibus_role_disabled).to receive(:save)
+
+      expect { client.unlock_environment('some-env') }
+        .to change { omnibus_role_disabled.default_attributes.dig('omnibus-gitlab', 'package', 'enable') }
+        .from(false).to(true)
+    end
+  end
 end

@@ -6,7 +6,6 @@ module Chatops
   module Chef
     class Client
       DEFAULT_CHEF_URL = 'https://chef.gitlab.com/organizations/gitlab'
-      CANARY_OMNIBUS_ROLE = 'gprd-cny-omnibus-version'
 
       def initialize
         key = key_file(pem_key)
@@ -37,7 +36,7 @@ module Chatops
       end
 
       def package_version(role)
-        ::Chef::Role.load("#{role}-omnibus-version")
+        omnibus_version_role(role)
           .default_attributes
           .dig('omnibus-gitlab', 'package', 'version') || 'unknown'
       end
@@ -62,7 +61,27 @@ module Chatops
           .dig('omnibus-gitlab', 'package', '__CI_PIPELINE_URL') || 'unknown'
       end
 
+      def lock_environment(name)
+        role = omnibus_version_role(name)
+
+        role.default_attributes['omnibus-gitlab']['package']['enable'] = false
+
+        role.save
+      end
+
+      def unlock_environment(name)
+        role = omnibus_version_role(name)
+
+        role.default_attributes['omnibus-gitlab']['package']['enable'] = true
+
+        role.save
+      end
+
       private
+
+      def omnibus_version_role(environment)
+        ::Chef::Role.load("#{environment}-omnibus-version")
+      end
 
       def key_file(key)
         Tempfile.new('chef-pem').tap do |f|
@@ -87,7 +106,7 @@ module Chatops
       end
 
       def canary_omnibus_role
-        @canary_omnibus_role ||= ::Chef::Role.load(CANARY_OMNIBUS_ROLE)
+        @canary_omnibus_role ||= omnibus_version_role('gprd-cny')
       end
     end
   end

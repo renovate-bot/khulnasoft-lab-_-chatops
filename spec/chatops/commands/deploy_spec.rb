@@ -135,6 +135,24 @@ describe Chatops::Commands::Deploy do
   end
 
   describe '#perform' do
+    it 'falls back to default behavior without a subcommand' do
+      instance = described_class.new
+
+      expect(instance).to receive(:deploy)
+
+      instance.perform
+    end
+
+    it 'runs a subcommand' do
+      instance = described_class.new(%w[lock foo-environment])
+
+      expect(instance).to receive(:lock).with('foo-environment')
+
+      instance.perform
+    end
+  end
+
+  describe '#deploy' do
     context 'without a version' do
       it 'returns an error message' do
         expect(described_class.new.perform)
@@ -219,6 +237,40 @@ describe Chatops::Commands::Deploy do
 
         expect(result).to include('Unprocessed arguments')
       end
+    end
+  end
+
+  describe '#lock' do
+    it 'validates the environment' do
+      instance = described_class.new(%w[lock foo-environment])
+
+      expect { instance.perform }.to raise_error(/Invalid environment/)
+    end
+
+    it 'locks the given environment' do
+      instance = described_class.new(%w[lock gprd])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      instance.perform
+
+      expect(client).to have_received(:lock_environment).with('gprd')
+    end
+  end
+
+  describe '#unlock' do
+    it 'validates the environment' do
+      instance = described_class.new(%w[unlock foo-environment])
+
+      expect { instance.perform }.to raise_error(/Invalid environment/)
+    end
+
+    it 'unlocks the given environment' do
+      instance = described_class.new(%w[unlock gprd])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      instance.perform
+
+      expect(client).to have_received(:unlock_environment).with('gprd')
     end
   end
 

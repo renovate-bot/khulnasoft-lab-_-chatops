@@ -9,6 +9,11 @@ module Chatops
       usage "#{command_name} [VERSION] [OPTIONS]"
       description 'Schedules a deployment using takeoff'
 
+      SUBCOMMANDS = Set.new(%w[lock unlock]).freeze
+
+      # Valid environments for lock/unlock
+      ENVIRONMENTS = %w[gprd gprd-cny gstg pre release-gitlab].freeze
+
       # The regular expression to use for verifying release candidate versions.
       RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/
 
@@ -59,9 +64,40 @@ module Chatops
           'Reason for bypassing production checks',
           default: 'false'
         )
+
+        o.separator <<~HELP.chomp
+
+          Available subcommands:
+
+          #{available_subcommands}
+
+          Examples:
+
+            Lock the gprd environment, preventing new deploys
+
+              lock gprd
+
+            Unlock the gstg environment, allowing new deploys
+
+              unlock gstg
+        HELP
+      end
+
+      def self.available_subcommands
+        Markdown::List.new(SUBCOMMANDS.to_a.sort).to_s
       end
 
       def perform
+        if SUBCOMMANDS.include?(arguments.first)
+          command = arguments.shift
+
+          public_send(command, *arguments)
+        else
+          deploy
+        end
+      end
+
+      def deploy
         return 'The first argument must be the version to deploy' unless version?
 
         prepared_version = prepare_version(version)
@@ -84,6 +120,24 @@ module Chatops
         end
 
         schedule_deploy(prepared_version)
+      end
+
+      # Lock an environment and prevent it from being deployed
+      def lock(env)
+        assert_environment!(env)
+
+        Chef::Client.new.lock_environment(env)
+
+        "#{env} has been locked, preventing new deploys"
+      end
+
+      # Unlock an environment and allow it to be deployed
+      def unlock(env)
+        assert_environment!(env)
+
+        Chef::Client.new.unlock_environment(env)
+
+        "#{env} has been unlocked, allowing new deploys"
       end
 
       def prepare_version(version)
@@ -212,6 +266,12 @@ module Chatops
         else
           false
         end
+      end
+
+      def assert_environment!(env)
+        return if ENVIRONMENTS.include?(env)
+
+        raise "Invalid environment `#{env}`, must be one of #{ENVIRONMENTS.join(', ')}"
       end
     end
   end
