@@ -20,7 +20,8 @@ module Chatops
       # message - The message to send.
       # attachments - Any attachments to include in the message.
       # blocks - Any blocks to include in the message.
-      def send(text: nil, attachments: [], blocks: [])
+      # unfurl - Pass true to enable link and media unfurling.
+      def send(text: nil, attachments: [], blocks: [], unfurl: false)
         response = HTTP.post(
           API_URL,
           headers: {
@@ -34,7 +35,9 @@ module Chatops
             as_user: true,
             text: text,
             attachments: attachments,
-            blocks: blocks
+            blocks: blocks,
+            unfurl_links: unfurl,
+            unfurl_media: unfurl
           }.to_json
         )
 

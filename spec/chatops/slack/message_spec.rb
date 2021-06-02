@@ -23,7 +23,9 @@ describe Chatops::Slack::Message do
               as_user: true,
               text: 'hello',
               attachments: %w[foo],
-              blocks: %w[bar]
+              blocks: %w[bar],
+              unfurl_links: false,
+              unfurl_media: false
             }.to_json
           )
           .and_return(response)
