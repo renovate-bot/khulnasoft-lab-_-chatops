@@ -191,10 +191,10 @@ module Chatops
         rails.zip(omnibus).map do |ee, ob|
           {
             role: role,
-            revision: ee.short_sha,
-            branch: ee.ref,
-            package: ob.package,
-            status: ee.status
+            revision: (ee&.short_sha || 'unknown'),
+            branch: (ee&.ref || 'unknown'),
+            package: (ob&.package || 'unknown'),
+            status: (ee&.status || 'unknown')
           }
         end
       end
