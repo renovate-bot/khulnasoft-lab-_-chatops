@@ -49,8 +49,7 @@ describe Chatops::Commands::Hotpatch do
       <<~DESCRIPTION.chomp
         @fake-user has initiated a hot patch for incident https://gitlab.com/gitlab-com/gl-infra/production/-/issues/1234
 
-        **NOTE: Hot patch should only proceed if GitLab.com is down or if there's evidence of an S1 security vulnerability being actively exploited,
-        for all other scenarios please rely on the auto-deploy process.**
+        **NOTE: Hot patch should only proceed if GitLab.com is down or if there's evidence of an S1 security vulnerability being actively exploited. Patching is _extremely_ disruptive to our continuous delivery pipeline and should only be done in extreme circumstances.  For all changes that are not critical, please use the auto-deploy process.**
 
         Please see the [release-docs](https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md) for instructions
 
