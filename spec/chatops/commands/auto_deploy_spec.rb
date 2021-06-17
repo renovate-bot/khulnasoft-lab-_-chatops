@@ -138,6 +138,7 @@ describe Chatops::Commands::AutoDeploy do
   end
 
   describe '#status' do
+    let(:production_deployment_status) { 'success' }
     let(:production_status) do
       {
         role: 'gprd',
@@ -145,7 +146,7 @@ describe Chatops::Commands::AutoDeploy do
         revision: '0874a8d346c',
         branch: '12-2-auto-deploy-20190804',
         package: '12.2.201908042020-0874a8d346c.2ee9f1d280d',
-        status: 'success'
+        status: production_deployment_status
       }
     end
 
@@ -197,6 +198,33 @@ describe Chatops::Commands::AutoDeploy do
         allow(command).to receive(:environment_status).and_return({})
         allow(command).to receive(:auto_deploy_branches).with('abcdefg')
           .and_return([])
+        expect_slack_message(blocks: NoDeployedBlockMatcher.new)
+
+        command.perform
+      end
+    end
+
+    context 'with a running deployment' do
+      let(:production_deployment_status) { 'running' }
+      let(:command) do
+        described_class.new(%w[status abcdefg], *env)
+      end
+
+      it 'ignores running deployments' do
+        allow(command).to receive(:environment_status)
+          .and_return([production_status])
+        allow(command).to receive(:auto_deploy_branches).with('abcdefg')
+          .and_return([instance_double(
+            'Branch', name: production_status[:branch]
+          )])
+
+        fake_commit = instance_double(
+          'Commit',
+          short_id: 'abcd',
+          title: 'Commit title'
+        )
+        expect(fake_client).to receive(:commit).and_return(fake_commit)
+
         expect_slack_message(blocks: NoDeployedBlockMatcher.new)
 
         command.perform

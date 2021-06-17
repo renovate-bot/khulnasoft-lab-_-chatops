@@ -115,7 +115,7 @@ module Chatops
           auto_deploy_branches = auto_deploy_branches(sha)
 
           deployed = envs.select do |env|
-            auto_deploy_branches.any? { |b| env[:branch] == b.name }
+            auto_deploy_branches.any? { |b| env[:branch] == b.name && env[:status] == 'success' }
           end
 
           post_commit_status(sha, deployed)
