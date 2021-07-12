@@ -248,7 +248,7 @@ module Chatops
             lines = [
               "*Revision:* #{commit_link(env[:revision])}",
               "*Branch:* #{branch_link(env[:branch])}",
-              "*Package:* `#{env[:package]}`"
+              "*Package:* `#{package_link(env[:package])}`"
             ]
 
             if (comparison = promotable_env_revision(envs, idx))
@@ -324,6 +324,18 @@ module Chatops
           "<#{url}|#{text}>"
         else
           # Something other than an auto-deploy branch is deployed
+          'Unknown'
+        end
+      end
+
+      def package_link(package)
+        if package
+          ref = package.sub('-', '+')
+          url = "#{SOURCE_HOST}/#{OMNIBUS_PROJECT}/commits/#{ref}"
+          text = "`#{package}`"
+
+          "<#{url}|#{text}>"
+        else
           'Unknown'
         end
       end

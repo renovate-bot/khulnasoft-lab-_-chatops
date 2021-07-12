@@ -356,6 +356,40 @@ describe Chatops::Commands::AutoDeploy do
       command.unlock
     end
   end
+
+  # rubocop:disable RSpec/NestedGroups
+  describe '#package_link' do
+    context 'with valid package' do
+      context 'with auto-deploy package' do
+        it 'returns URL to omnibus-gitlab security mirror for correct tag' do
+          command = AutoDeployTestForPackageLink.new([], *env)
+          expect(command.package_link('14.1.202107120320-592cabc6d0d.a261be1cc84')).to eq('<https://gitlab.com/gitlab-org/security/omnibus-gitlab/commits/14.1.202107120320+592cabc6d0d.a261be1cc84|`14.1.202107120320-592cabc6d0d.a261be1cc84`>')
+        end
+      end
+
+      context 'with RC package' do
+        it 'returns URL to omnibus-gitlab security mirror for correct tag' do
+          command = AutoDeployTestForPackageLink.new([], *env)
+          expect(command.package_link('13.7.0-rc3.ee.0')).to eq('<https://gitlab.com/gitlab-org/security/omnibus-gitlab/commits/13.7.0+rc3.ee.0|`13.7.0-rc3.ee.0`>')
+        end
+      end
+
+      context 'with regular release package' do
+        it 'returns URL to omnibus-gitlab security mirror for correct tag' do
+          command = AutoDeployTestForPackageLink.new([], *env)
+          expect(command.package_link('14.0.0-ee.0')).to eq('<https://gitlab.com/gitlab-org/security/omnibus-gitlab/commits/14.0.0+ee.0|`14.0.0-ee.0`>')
+        end
+      end
+    end
+
+    context 'with empty package' do
+      it 'returns Unknown' do
+        command = AutoDeployTestForPackageLink.new([], *env)
+        expect(command.package_link(nil)).to eq('Unknown')
+      end
+    end
+  end
+  # rubocop:enable RSpec/NestedGroups
 end
 
 # RSpec argument matcher for verifying the complex `block` Hash passed to
@@ -429,5 +463,11 @@ class TaskBlockMatcher
     else
       'Scheduled auto-deploy tasks have been temporarily disabled.'
     end
+  end
+end
+
+class AutoDeployTestForPackageLink < Chatops::Commands::AutoDeploy
+  def package_link(package)
+    super package
   end
 end
