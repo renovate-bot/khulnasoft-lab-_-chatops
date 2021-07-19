@@ -15,7 +15,7 @@ module Chatops
       COLOR_BLOCKED = '#F55B5B'
 
       # All the available subcommands.
-      COMMANDS = Set.new(%w[find block unblock update_email note])
+      COMMANDS = Set.new(%w[find block unblock update_email note idle])
 
       options do |o|
         o.separator <<~AVAIL.chomp
