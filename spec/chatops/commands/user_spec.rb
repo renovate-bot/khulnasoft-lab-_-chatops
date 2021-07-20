@@ -43,6 +43,20 @@ describe Chatops::Commands::User do
   end
 
   describe '#find' do
+    let(:fake_client) { spy }
+    let(:env) do
+      [
+        {},
+        'SLACK_TOKEN' => 'token',
+        'CHAT_CHANNEL' => 'channel',
+        'GITLAB_TOKEN' => 'token'
+      ]
+    end
+
+    before do
+      stub_const('Chatops::Gitlab::Client', fake_client)
+    end
+
     context 'without a username' do
       it 'returns an error message' do
         command = described_class.new(%w[find])
@@ -51,23 +65,49 @@ describe Chatops::Commands::User do
       end
     end
 
-    context 'with a valid username' do
+    context 'with a valid username and a secondary email' do
+      secondary_emails = [
+        Gitlab::ObjectifiedHash.new(
+          'id' => 1, 'email' => 'alice@example.com'
+        )
+      ]
+      emails = 'alice@example.com'
+
       it 'submits the details of the user to Slack' do
-        client = instance_double('client')
-        user = instance_double('user')
+        user = instance_double('user', id: 1)
 
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123')
-          .and_return(client)
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice')
+          .and_return(user)
 
-        expect(client)
+        expect(fake_client)
+          .to receive(:emails)
+          .with(user.id)
+          .and_return(secondary_emails)
+
+        command = described_class
+          .new(%w[find alice], *env)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user, emails)
+
+        command.find('alice')
+      end
+    end
+
+    context 'with a username and no secondary email' do
+      it 'submits the details of the user to Slack' do
+        user = instance_double('user', id: 1)
+
+        expect(fake_client)
           .to receive(:find_user)
           .with('alice')
           .and_return(user)
 
         command = described_class
-          .new(%w[find alice], {}, 'GITLAB_TOKEN' => '123')
+          .new(%w[find alice], *env)
 
         expect(command)
           .to receive(:submit_user_details)
@@ -77,23 +117,49 @@ describe Chatops::Commands::User do
       end
     end
 
-    context 'with a valid email' do
+    context 'with a valid email and a secondary email' do
+      secondary_emails = [
+        Gitlab::ObjectifiedHash.new(
+          'id' => 1, 'email' => 'alice@example.com'
+        )
+      ]
+      emails = 'alice@example.com'
+
       it 'submits the details of the user to Slack' do
-        client = instance_double('client')
-        user = instance_double('user')
+        user = instance_double('user', id: 1)
 
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123')
-          .and_return(client)
+        expect(fake_client)
+          .to receive(:find_user)
+          .with('alice@gitlab.com')
+          .and_return(user)
 
-        expect(client)
+        expect(fake_client)
+          .to receive(:emails)
+          .with(user.id)
+          .and_return(secondary_emails)
+
+        command = described_class
+          .new(%w[find alice], *env)
+
+        expect(command)
+          .to receive(:submit_user_details)
+          .with(user, emails)
+
+        command.find('alice@gitlab.com')
+      end
+    end
+
+    context 'with a valid email and no secondary email' do
+      it 'submits the details of the user to Slack' do
+        user = instance_double('user', id: 1)
+
+        expect(fake_client)
           .to receive(:find_user)
           .with('alice@gitlab.com')
           .and_return(user)
 
         command = described_class
-          .new(%w[find alice], {}, 'GITLAB_TOKEN' => '123')
+          .new(%w[find alice], *env)
 
         expect(command)
           .to receive(:submit_user_details)
@@ -450,14 +516,9 @@ describe Chatops::Commands::User do
           .with(user, old_email)
           .and_return(true)
 
-        expect(fake_client)
-          .to receive(:find_user)
-          .with(new_email)
-          .and_return(user)
-
         expect(command)
-          .to receive(:submit_user_details)
-          .with(user)
+          .to receive(:find)
+          .with(new_email)
 
         command.update_email('alice', 'new_email@example.com')
       end
@@ -490,14 +551,9 @@ describe Chatops::Commands::User do
           .to receive(:remove_old_email)
           .with(user, old_email)
 
-        expect(fake_client)
-          .to receive(:find_user)
-          .with(new_email)
-          .and_return(user)
-
         expect(command)
-          .to receive(:submit_user_details)
-          .with(user)
+          .to receive(:find)
+          .with(new_email)
 
         command.update_email('alice@example.com', 'new_email@example.com')
       end
@@ -623,14 +679,9 @@ describe Chatops::Commands::User do
           .to receive(:edit_user)
           .with(user.id, note: new_note)
 
-        expect(fake_client)
-          .to receive(:find_user)
-          .with('alice')
-          .and_return(user)
-
         expect(command)
-          .to receive(:submit_user_details)
-          .with(user)
+          .to receive(:find)
+          .with('alice')
 
         command.note('alice', 'example note')
       end
@@ -654,14 +705,9 @@ describe Chatops::Commands::User do
           .to receive(:edit_user)
           .with(user.id, note: new_note)
 
-        expect(fake_client)
-          .to receive(:find_user)
-          .with('alice@example.com')
-          .and_return(user)
-
         expect(command)
-          .to receive(:submit_user_details)
-          .with(user)
+          .to receive(:find)
+          .with('alice@example.com')
 
         command.note('alice@example.com', 'example note')
       end
@@ -777,14 +823,9 @@ describe Chatops::Commands::User do
           .to receive(:edit_user)
           .with(user.id, username: new_username)
 
-        expect(fake_client)
-          .to receive(:find_user)
-          .with(new_username)
-          .and_return(user)
-
         expect(command)
-          .to receive(:submit_user_details)
-          .with(user)
+          .to receive(:find)
+          .with(new_username)
 
         command.idle('alice')
       end
@@ -808,14 +849,9 @@ describe Chatops::Commands::User do
           .to receive(:edit_user)
           .with(user.id, username: new_username)
 
-        expect(fake_client)
-          .to receive(:find_user)
-          .with(new_username)
-          .and_return(user)
-
         expect(command)
-          .to receive(:submit_user_details)
-          .with(user)
+          .to receive(:find)
+          .with(new_username)
 
         command.idle('alice@example.com')
       end
@@ -911,6 +947,7 @@ describe Chatops::Commands::User do
     end
   end
 
+  # rubocop: disable RSpec/ExampleLength
   describe '#submit_user_details' do
     it 'submits the user details to Slack' do
       user = instance_double(
@@ -923,6 +960,7 @@ describe Chatops::Commands::User do
         bio: 'This is the bio of alice',
         state: 'active',
         email: 'alice@example.com',
+        secondary_emails: 'alice@foo.com',
         two_factor_enabled: true,
         created_at: Time.now.iso8601,
         confirmed_at: Time.now.iso8601,
@@ -950,6 +988,7 @@ describe Chatops::Commands::User do
       command.submit_user_details(user)
     end
   end
+  # rubocop: enable RSpec/ExampleLength
 
   describe '#unsupported_command' do
     it 'returns an error message' do

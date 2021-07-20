@@ -77,12 +77,19 @@ module Chatops
       def find(name = nil)
         return 'You must specify a username or email.' unless name
 
-        user = Gitlab::Client
-          .new(token: gitlab_token)
-          .find_user(name)
+        user = production_client.find_user(name)
 
         if user
-          submit_user_details(user)
+          secondary_emails = production_client.emails(user.id)
+          if secondary_emails.empty? == false
+            emails = []
+            secondary_emails.each do |email|
+              emails << email.email
+            end
+            submit_user_details(user, emails.join("\n"))
+          else
+            submit_user_details(user)
+          end
         else
           user_not_found_error(name)
         end
@@ -147,7 +154,7 @@ module Chatops
           return "Failed to update user: #{e.response_message}"
         end
 
-        submit_user_details(production_client.find_user(new_email))
+        find(new_email)
       end
 
       # Adds an admin note to the specified user..
@@ -170,7 +177,7 @@ module Chatops
           return "Failed to update user: #{e.response_message}"
         end
 
-        submit_user_details(production_client.find_user(name))
+        find(name)
       end
 
       # Appends _idle to the specified username.
@@ -190,7 +197,7 @@ module Chatops
           return "Failed to update username: #{e.response_message}"
         end
 
-        submit_user_details(production_client.find_user(new_username))
+        find(new_username)
       end
 
       def production_client
@@ -218,7 +225,7 @@ module Chatops
       end
 
       # rubocop: disable Metrics/MethodLength
-      def submit_user_details(user)
+      def submit_user_details(user, user_secondary_emails = nil)
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(
@@ -243,6 +250,11 @@ module Chatops
                   {
                     title: 'Email',
                     value: user.email,
+                    short: true
+                  },
+                  {
+                    title: 'Secondary Emails',
+                    value: user_secondary_emails,
                     short: true
                   },
                   {
