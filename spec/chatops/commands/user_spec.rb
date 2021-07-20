@@ -65,13 +65,15 @@ describe Chatops::Commands::User do
       end
     end
 
-    context 'with a valid username and a secondary email' do
-      secondary_emails = [
-        Gitlab::ObjectifiedHash.new(
-          'id' => 1, 'email' => 'alice@example.com'
-        )
-      ]
-      emails = 'alice@example.com'
+    context 'with a valid username' do
+      # rubocop: disable Style/BlockDelimiters
+      let(:emails) {
+        [
+          Gitlab::ObjectifiedHash.new('id' => 1, 'email' => 'alice@example.com'),
+          Gitlab::ObjectifiedHash.new('id' => 2, 'email' => 'alice@foo.com')
+        ]
+      }
+      # rubocop: enable Style/BlockDelimiters
 
       it 'submits the details of the user to Slack' do
         user = instance_double('user', id: 1)
@@ -84,20 +86,22 @@ describe Chatops::Commands::User do
         expect(fake_client)
           .to receive(:emails)
           .with(user.id)
-          .and_return(secondary_emails)
+          .and_return(emails)
 
         command = described_class
           .new(%w[find alice], *env)
 
         expect(command)
           .to receive(:submit_user_details)
-          .with(user, emails)
+          .with(user, emails.collect(&:email))
 
         command.find('alice')
       end
     end
 
     context 'with a username and no secondary email' do
+      let(:emails) { [] }
+
       it 'submits the details of the user to Slack' do
         user = instance_double('user', id: 1)
 
@@ -106,24 +110,31 @@ describe Chatops::Commands::User do
           .with('alice')
           .and_return(user)
 
+        expect(fake_client)
+          .to receive(:emails)
+          .with(user.id)
+          .and_return(emails)
+
         command = described_class
           .new(%w[find alice], *env)
 
         expect(command)
           .to receive(:submit_user_details)
-          .with(user)
+          .with(user, emails.collect(&:email))
 
         command.find('alice')
       end
     end
 
     context 'with a valid email and a secondary email' do
-      secondary_emails = [
-        Gitlab::ObjectifiedHash.new(
-          'id' => 1, 'email' => 'alice@example.com'
-        )
-      ]
-      emails = 'alice@example.com'
+      # rubocop: disable Style/BlockDelimiters
+      let(:emails) {
+        [
+          Gitlab::ObjectifiedHash.new('id' => 1, 'email' => 'alice@example.com'),
+          Gitlab::ObjectifiedHash.new('id' => 2, 'email' => 'alice@foo.com')
+        ]
+      }
+      # rubocop: enable Style/BlockDelimiters
 
       it 'submits the details of the user to Slack' do
         user = instance_double('user', id: 1)
@@ -136,20 +147,22 @@ describe Chatops::Commands::User do
         expect(fake_client)
           .to receive(:emails)
           .with(user.id)
-          .and_return(secondary_emails)
+          .and_return(emails)
 
         command = described_class
           .new(%w[find alice], *env)
 
         expect(command)
           .to receive(:submit_user_details)
-          .with(user, emails)
+          .with(user, emails.collect(&:email))
 
         command.find('alice@gitlab.com')
       end
     end
 
     context 'with a valid email and no secondary email' do
+      let(:emails) { [] }
+
       it 'submits the details of the user to Slack' do
         user = instance_double('user', id: 1)
 
@@ -158,12 +171,17 @@ describe Chatops::Commands::User do
           .with('alice@gitlab.com')
           .and_return(user)
 
+        expect(fake_client)
+          .to receive(:emails)
+          .with(user.id)
+          .and_return(emails)
+
         command = described_class
           .new(%w[find alice], *env)
 
         expect(command)
           .to receive(:submit_user_details)
-          .with(user)
+          .with(user, emails.collect(&:email))
 
         command.find('alice@gitlab.com')
       end
@@ -947,8 +965,9 @@ describe Chatops::Commands::User do
     end
   end
 
-  # rubocop: disable RSpec/ExampleLength
   describe '#submit_user_details' do
+    let(:user_secondary_emails) { [] }
+
     it 'submits the user details to Slack' do
       user = instance_double(
         'user',
@@ -960,7 +979,6 @@ describe Chatops::Commands::User do
         bio: 'This is the bio of alice',
         state: 'active',
         email: 'alice@example.com',
-        secondary_emails: 'alice@foo.com',
         two_factor_enabled: true,
         created_at: Time.now.iso8601,
         confirmed_at: Time.now.iso8601,
@@ -985,10 +1003,9 @@ describe Chatops::Commands::User do
         .to receive(:send)
         .with(a_hash_including(attachments: an_instance_of(Array)))
 
-      command.submit_user_details(user)
+      command.submit_user_details(user, user_secondary_emails)
     end
   end
-  # rubocop: enable RSpec/ExampleLength
 
   describe '#unsupported_command' do
     it 'returns an error message' do

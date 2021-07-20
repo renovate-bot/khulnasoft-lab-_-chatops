@@ -80,16 +80,8 @@ module Chatops
         user = production_client.find_user(name)
 
         if user
-          secondary_emails = production_client.emails(user.id)
-          if secondary_emails.empty? == false
-            emails = []
-            secondary_emails.each do |email|
-              emails << email.email
-            end
-            submit_user_details(user, emails.join("\n"))
-          else
-            submit_user_details(user)
-          end
+          emails = production_client.emails(user.id)
+          submit_user_details(user, emails.collect(&:email))
         else
           user_not_found_error(name)
         end
@@ -254,7 +246,7 @@ module Chatops
                   },
                   {
                     title: 'Secondary Emails',
-                    value: user_secondary_emails,
+                    value: user_secondary_emails.join(', '),
                     short: true
                   },
                   {
