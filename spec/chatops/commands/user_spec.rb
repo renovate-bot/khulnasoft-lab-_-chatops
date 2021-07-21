@@ -66,14 +66,12 @@ describe Chatops::Commands::User do
     end
 
     context 'with a valid username' do
-      # rubocop: disable Style/BlockDelimiters
-      let(:emails) {
+      let(:emails) do
         [
           Gitlab::ObjectifiedHash.new('id' => 1, 'email' => 'alice@example.com'),
           Gitlab::ObjectifiedHash.new('id' => 2, 'email' => 'alice@foo.com')
         ]
-      }
-      # rubocop: enable Style/BlockDelimiters
+      end
 
       it 'submits the details of the user to Slack' do
         user = instance_double('user', id: 1)
@@ -127,14 +125,12 @@ describe Chatops::Commands::User do
     end
 
     context 'with a valid email and a secondary email' do
-      # rubocop: disable Style/BlockDelimiters
-      let(:emails) {
+      let(:emails) do
         [
           Gitlab::ObjectifiedHash.new('id' => 1, 'email' => 'alice@example.com'),
           Gitlab::ObjectifiedHash.new('id' => 2, 'email' => 'alice@foo.com')
         ]
-      }
-      # rubocop: enable Style/BlockDelimiters
+      end
 
       it 'submits the details of the user to Slack' do
         user = instance_double('user', id: 1)
