@@ -217,7 +217,7 @@ module Chatops
       end
 
       # rubocop: disable Metrics/MethodLength
-      def submit_user_details(user, user_secondary_emails = nil)
+      def submit_user_details(user, user_secondary_emails = [])
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(
