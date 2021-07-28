@@ -37,8 +37,16 @@ describe Chatops::Commands::Deploycmd do
   end
 
   describe '#environment' do
-    it 'returns gstg by default' do
-      expect(described_class.new.environment).to eq('gstg')
+    it 'returns an error when no environment is specified' do
+      expect { described_class.new.environment }.to raise_error(
+        StandardError, /You must pass an environment name/
+      )
+    end
+
+    it 'returns gstg when the --staging option is set' do
+      command = described_class.new([], staging: true)
+
+      expect(command.environment).to eq('gstg')
     end
 
     it 'returns gprd when the --production option is set' do
@@ -53,12 +61,6 @@ describe Chatops::Commands::Deploycmd do
       expect(command.environment).to eq('pre')
     end
 
-    it 'returns dr when the --dr option is set' do
-      command = described_class.new([], dr: true)
-
-      expect(command.environment).to eq('dr')
-    end
-
     it 'returns gprd-cny when the --production and --canary options are set' do
       command = described_class.new([], production: true, canary: true)
 
@@ -66,7 +68,7 @@ describe Chatops::Commands::Deploycmd do
     end
 
     it 'returns gstg-cny when the --canary option is set' do
-      command = described_class.new([], production: false, canary: true)
+      command = described_class.new([], staging: true, canary: true)
 
       expect(command.environment).to eq('gstg-cny')
     end
@@ -101,18 +103,18 @@ describe Chatops::Commands::Deploycmd do
       described_class.perform(%w[--canary])
     end
 
-    it 'supports a --dr option' do
+    it 'supports a --staging option' do
       instance = instance_double('instance')
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[], a_hash_including(dr: true), {})
+        .with(%w[], a_hash_including(staging: true), {})
         .and_return(instance)
 
       expect(instance)
         .to receive(:perform)
 
-      described_class.perform(%w[--dr])
+      described_class.perform(%w[--staging])
     end
 
     it 'supports a --pre option' do
@@ -235,7 +237,7 @@ describe Chatops::Commands::Deploycmd do
       it 'returns an error message' do
         command = described_class.new(
           %w[foo bar],
-          {},
+          { staging: true },
           'GITLAB_OPS_TOKEN' => '12345',
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net'
         )
@@ -277,7 +279,7 @@ describe Chatops::Commands::Deploycmd do
       it 'returns success' do
         command = described_class.new(
           %w[foo bar],
-          {},
+          { staging: true },
           'GITLAB_OPS_TOKEN' => '12345',
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net',
           'COMMAND_TRIGGER_PROJECT' => '777',
@@ -311,7 +313,7 @@ describe Chatops::Commands::Deploycmd do
       it 'returns an error message' do
         command = described_class.new(
           %w[foo bar],
-          {},
+          { staging: true },
           'GITLAB_OPS_TOKEN' => '12345',
           'COMMAND_TRIGGER_HOST' => 'ops.gitlab.net',
           'COMMAND_TRIGGER_PROJECT' => '777',

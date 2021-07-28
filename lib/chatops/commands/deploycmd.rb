@@ -16,8 +16,8 @@ module Chatops
       description 'Runs ansible commands across roles in our fleet.'
 
       options do |o|
-        o.bool('--production', 'Run command in production instead of staging.')
-        o.bool('--dr', 'Run command in DR instead of staging.')
+        o.bool('--production', 'Run command in the production environment.')
+        o.bool('--staging', 'Run command in the staging environment.')
         o.bool('--canary', 'Run command in canary.')
         o.bool('--pre', 'Run command in PRE instead of staging.')
         o.bool('--list', 'List available commands.')
@@ -89,10 +89,10 @@ module Chatops
             'gprd'
           elsif options[:pre]
             'pre'
-          elsif options[:dr]
-            'dr'
-          else
+          elsif options[:staging]
             'gstg'
+          else
+            raise 'You must pass an environment name to use this command'
           end
 
         if options[:canary]
