@@ -12,7 +12,7 @@ module Chatops
       'gprd' => 'party-tanuki',
       'gprd-cny' => 'canary',
       'gstg' => 'building_construction',
-      'pre' => 'brezel'
+      'pre' => 'pretzel'
     }.freeze
 
     def self.define_environment_options(options)
