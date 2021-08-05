@@ -29,7 +29,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          a_hash_including(staging: true, dev: false, ops: false),
+          a_hash_including(staging: true, dev: false, ops: false, pre: false),
           {}
         )
         .and_return(instance)
@@ -47,7 +47,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          a_hash_including(staging: false, dev: true, ops: false),
+          a_hash_including(staging: false, dev: true, ops: false, pre: false),
           {}
         )
         .and_return(instance)
@@ -65,7 +65,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          a_hash_including(staging: false, dev: false, ops: true),
+          a_hash_including(staging: false, dev: false, ops: true, pre: false),
           {}
         )
         .and_return(instance)
@@ -74,6 +74,24 @@ describe Chatops::Commands::Feature do
         .to receive(:perform)
 
       described_class.perform(%w[feature list --ops])
+    end
+
+    it 'supports a --pre option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(
+          %w[feature list],
+          a_hash_including(staging: false, dev: false, ops: false, pre: true),
+          {}
+        )
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[feature list --pre])
     end
 
     it 'supports a --ignore-production-check option' do
@@ -681,6 +699,22 @@ describe Chatops::Commands::Feature do
       )
     end
 
+    context 'when environment is pre' do
+      let(:command) do
+        described_class.new(
+          [],
+          { pre: true },
+          'SLACK_TOKEN' => '123',
+          'CHAT_CHANNEL' => '456'
+        )
+      end
+
+      include_examples(
+        'message sent to the relevant Slack QA channel',
+        described_class::QA_CHANNELS[described_class::PRE_HOST]
+      )
+    end
+
     context 'when environment is dev' do
       let(:command) do
         described_class.new(
@@ -737,6 +771,19 @@ describe Chatops::Commands::Feature do
       end
     end
 
+    context 'when using pre' do
+      it 'returns the value of GITLAB_PRE_TOKEN' do
+        command = described_class.new(
+          [],
+          { pre: true },
+          'GITLAB_PRE_TOKEN' => '123',
+          'GITLAB_TOKEN' => '456'
+        )
+
+        expect(command.gitlab_token).to eq('123')
+      end
+    end
+
     context 'when using staging' do
       it 'returns the value of GITLAB_STAGING_TOKEN' do
         command = described_class.new(
@@ -770,6 +817,14 @@ describe Chatops::Commands::Feature do
         command = described_class.new([], dev: true)
 
         expect(command.gitlab_host).to eq('dev.gitlab.org')
+      end
+    end
+
+    context 'when using pre' do
+      it 'returns pre.gitlab.com' do
+        command = described_class.new([], pre: true)
+
+        expect(command.gitlab_host).to eq('pre.gitlab.com')
       end
     end
 
