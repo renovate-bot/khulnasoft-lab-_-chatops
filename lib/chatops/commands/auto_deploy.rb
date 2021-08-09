@@ -248,7 +248,7 @@ module Chatops
             lines = [
               "*Revision:* #{commit_link(env[:revision])}",
               "*Branch:* #{branch_link(env[:branch])}",
-              "*Package:* `#{package_link(env[:package])}`"
+              "*Package:* #{package_link(env[:package])}"
             ]
 
             if (comparison = promotable_env_revision(envs, idx))
