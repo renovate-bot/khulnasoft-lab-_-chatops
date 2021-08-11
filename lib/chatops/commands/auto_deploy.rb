@@ -16,6 +16,10 @@ module Chatops
       OMNIBUS_PROJECT = 'gitlab-org/security/omnibus-gitlab'
 
       options do |o|
+        o.bool '--checks',
+               'Include production checks in `status` output',
+               default: false
+
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
@@ -121,7 +125,7 @@ module Chatops
           post_commit_status(sha, deployed)
         else
           post_environment_status(envs)
-          production_checks
+          production_checks if options[:checks]
         end
       end
 

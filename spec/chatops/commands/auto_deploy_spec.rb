@@ -151,15 +151,23 @@ describe Chatops::Commands::AutoDeploy do
     end
 
     context 'with no argument' do
-      let(:command) do
-        described_class.new(%w[status], *env)
+      it 'send a formatted Slack message' do
+        command = described_class.new(%w[status], *env)
+
+        allow(command).to receive(:environment_status).and_return([production_status])
+        expect_slack_message(blocks: StatusBlockMatcher.new(production_status))
+        expect(command).not_to receive(:run_trigger).with(CHECK_PRODUCTION: 'true')
+
+        command.perform
       end
 
-      it 'send a formatted Slack message' do
-        allow(command).to receive(:trigger_production_checks?).and_return(true)
+      it 'includes production checks optionally' do
+        local_env = env.dup
+        local_env[0][:checks] = true
 
-        allow(command).to receive(:environment_status)
-          .and_return([production_status])
+        command = described_class.new(%w[status], *local_env)
+
+        allow(command).to receive(:environment_status).and_return([production_status])
         expect_slack_message(blocks: StatusBlockMatcher.new(production_status))
         expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true')
 
@@ -287,8 +295,6 @@ describe Chatops::Commands::AutoDeploy do
     let(:command) { described_class.new([], *env) }
 
     it 'triggers a release-tools production check' do
-      allow(command).to receive(:trigger_production_checks?).and_return(true)
-
       expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true')
 
       expect(command.blockers)
