@@ -14,7 +14,7 @@ module ReleaseCommandHelpers
       'GITLAB_OPS_TOKEN' => 'gitlab_ops_token',
       'GITLAB_USER_LOGIN' => ENV['USER'],
       'RELEASE_TRIGGER_TOKEN' => 'release_trigger_token'
-    }
+    }.merge(arguments.fetch(:env, {}))
 
     described_class.new(input, arguments, env).tap do |instance|
       # Default to the happy path

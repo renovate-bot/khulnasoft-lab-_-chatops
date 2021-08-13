@@ -353,6 +353,39 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
     end
+
+    describe '#check' do
+      it 'checks if MR IID is provided' do
+        instance = stubbed_instance('check', nil, '14.2')
+
+        expect(Chatops::Gitlab::MergeRequestReleaseChecker).not_to receive(:new)
+
+        expect(instance.perform).to eq('You must specify a merge request IID (ex: 12345) and a self-managed release version (ex: 14.2). Ex: `release check 12345 14.2`')
+      end
+
+      it 'checks if version is provided' do
+        instance = stubbed_instance('check', '12345', nil)
+
+        expect(Chatops::Gitlab::MergeRequestReleaseChecker).not_to receive(:new)
+
+        expect(instance.perform).to eq('You must specify a merge request IID (ex: 12345) and a self-managed release version (ex: 14.2). Ex: `release check 12345 14.2`')
+      end
+
+      it 'calls MergeRequestReleaseChecker' do
+        env = { 'GITLAB_TOKEN' => 'token' }
+        instance = stubbed_instance('check', '12345', '14.1', env: env)
+        service = instance_spy(Chatops::Gitlab::MergeRequestReleaseChecker)
+
+        allow(Chatops::Gitlab::MergeRequestReleaseChecker)
+          .to receive(:new)
+          .with('12345', '14.1', 'token')
+          .and_return(service)
+
+        instance.perform
+
+        expect(service).to have_received(:execute)
+      end
+    end
   end
 
   describe '#pipeline_status_per_stage' do
