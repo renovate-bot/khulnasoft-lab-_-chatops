@@ -18,7 +18,7 @@ module Chatops
           .map { |d| Deployment.new(d) }
 
         # Two successful deploys means nothing is running; return only latest
-        latest.pop if latest.all?(&:success?)
+        latest.pop if latest.length == 2 && latest.all?(&:success?)
 
         # Remove the latest deploy if it failed
         latest.reject!(&:failed?)

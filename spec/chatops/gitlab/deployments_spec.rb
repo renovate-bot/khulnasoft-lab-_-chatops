@@ -65,5 +65,17 @@ describe Chatops::Gitlab::Deployments do
       expect(latest.first).to be_success
       expect(latest.first.sha).to eq('aabbcc')
     end
+
+    it 'returns a single deployment when only 1 exists' do
+      deployments = [deployment(ref: 'main', sha: 'abcdef', status: 'success')]
+
+      mock_latest_deployments('gprd', deployments)
+
+      instance = described_class.new(client, project)
+      latest = instance.upcoming_and_current('gprd')
+
+      expect(latest.size).to eq(1)
+      expect(latest.first).to be_success
+    end
   end
 end
