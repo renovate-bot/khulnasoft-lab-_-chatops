@@ -76,10 +76,13 @@ module Chatops
 
           Examples:
 
-            Check if a merge request is included in a specific self-managed release.
-            12345 is the merge request IID, 14.2 is the release version to check against:
+            Check if merge request 12345 will be included in 14.2.
 
               release check 12345 14.2
+
+            Check in which version merge request 12345 was introduced.
+
+              release check 12345
 
             Create a task issue for 1.2.3
 
@@ -207,9 +210,10 @@ module Chatops
       end
 
       def check(mr_iid = nil, version = nil)
-        if mr_iid.nil? || version.nil?
+        if mr_iid.nil?
           return 'You must specify a merge request IID (ex: 12345) ' \
-            'and a self-managed release version (ex: 14.2). Ex: `release check 12345 14.2`'
+            'and an optional self-managed release version (ex: 14.2). Ex: `release check 12345`' \
+            'or `release check 12345 14.3`'
         end
 
         ::Chatops::Gitlab::MergeRequestReleaseChecker

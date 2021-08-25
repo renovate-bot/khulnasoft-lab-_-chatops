@@ -22,7 +22,7 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         expect(Chatops::Gitlab::Client).not_to receive(:new)
 
         expect(execute).to eq(
-          "'14' is not a valid monthly release version. Monthly release versions look like 10.0 or 14.2"
+          "'14' is not a valid monthly release version. Monthly release versions look like 10.0 or 14.2."
         )
       end
     end
@@ -50,7 +50,56 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
       )
     end
 
-    context 'when stable branch exists' do
+    context 'when commit is present in tags' do
+      let(:release_version) { nil }
+      let(:merge_request) { instance_double('merge_request', state: 'merged', merge_commit_sha: 'sha') }
+
+      before do
+        allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
+        allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
+      end
+
+      it 'returns the lowest tag ignoring RCs' do
+        tags_with_commit = [
+          instance_double('tag', type: 'tag', name: 'v13.2.0-rc2-ee'),
+          instance_double('tag', type: 'tag', name: 'v13.2.0-rc10-ee'),
+          instance_double('tag', type: 'tag', name: 'v13.2.0-ee'),
+          instance_double('tag', type: 'tag', name: 'v13.10.1-ee'),
+          instance_double('tag', type: 'tag', name: 'v13.10.0-ee')
+        ]
+
+        allow(gitlab)
+          .to receive(:commit_refs)
+          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
+          .and_return(instance_double('commit_refs', auto_paginate: tags_with_commit))
+
+        message =
+          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|Merge request 12345> was ' \
+          'first released in <https://gitlab.com/gitlab-org/security/gitlab/-/tree/v13.2.0-ee|v13.2.0-ee>.'
+
+        expect(execute).to eq(message)
+      end
+
+      it 'does not fail with a tag that does not follow naming convention' do
+        tags_with_commit = [
+          instance_double('tag', type: 'tag', name: '11-10-0cfa69752d8-0d9531c80-ee'),
+          instance_double('tag', type: 'tag', name: 'v14.3.0-ee')
+        ]
+
+        allow(gitlab)
+          .to receive(:commit_refs)
+          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
+          .and_return(instance_double('commit_refs', auto_paginate: tags_with_commit))
+
+        message =
+          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|Merge request 12345> ' \
+          'was first released in <https://gitlab.com/gitlab-org/security/gitlab/-/tree/v14.3.0-ee|v14.3.0-ee>.'
+
+        expect(execute).to eq(message)
+      end
+    end
+
+    context 'when no tag contains commit' do
       let(:merge_request) { instance_double('merge_request', state: 'merged', merge_commit_sha: 'sha') }
 
       before do
@@ -58,8 +107,25 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
 
         allow(gitlab)
+          .to receive(:commit_refs)
+          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
+          .and_return(instance_double('commit_refs', auto_paginate: []))
+
+        allow(gitlab)
           .to receive(:branch)
           .with('gitlab-org/security/gitlab', '14-2-stable-ee')
+      end
+
+      it 'does not check stable branch if version is not specified' do
+        version = nil
+        result = described_class.new(merge_request_iid, version, gitlab_token).execute
+
+        message =
+          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|Merge request 12345> was not ' \
+          'released in any past version. Try checking with the upcoming release version. Ex: `release check 12345 14.2`'
+
+        expect(gitlab).not_to receive(:branch)
+        expect(result).to eq(message)
       end
 
       it 'returns message if branch contains commit' do
@@ -115,6 +181,11 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
       before do
         allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
         allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
+
+        allow(gitlab)
+          .to receive(:commit_refs)
+          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
+          .and_return(instance_double('commit_refs', auto_paginate: []))
 
         allow(gitlab)
           .to receive(:branch)

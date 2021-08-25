@@ -360,15 +360,22 @@ describe Chatops::Commands::Release, :release_command do
 
         expect(Chatops::Gitlab::MergeRequestReleaseChecker).not_to receive(:new)
 
-        expect(instance.perform).to eq('You must specify a merge request IID (ex: 12345) and a self-managed release version (ex: 14.2). Ex: `release check 12345 14.2`')
+        expect(instance.perform).to eq('You must specify a merge request IID (ex: 12345) and an optional self-managed release version (ex: 14.2). Ex: `release check 12345`or `release check 12345 14.3`')
       end
 
-      it 'checks if version is provided' do
-        instance = stubbed_instance('check', '12345', nil)
+      it 'allows nil version' do
+        env = { 'GITLAB_TOKEN' => 'token' }
+        instance = stubbed_instance('check', '12345', nil, env: env)
+        service = instance_spy(Chatops::Gitlab::MergeRequestReleaseChecker)
 
-        expect(Chatops::Gitlab::MergeRequestReleaseChecker).not_to receive(:new)
+        allow(Chatops::Gitlab::MergeRequestReleaseChecker)
+          .to receive(:new)
+          .with('12345', nil, 'token')
+          .and_return(service)
 
-        expect(instance.perform).to eq('You must specify a merge request IID (ex: 12345) and a self-managed release version (ex: 14.2). Ex: `release check 12345 14.2`')
+        instance.perform
+
+        expect(service).to have_received(:execute)
       end
 
       it 'calls MergeRequestReleaseChecker' do

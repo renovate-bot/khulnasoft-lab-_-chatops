@@ -8,6 +8,10 @@ module Chatops
 
       MONTHLY_RELEASE_VERSION_REGEX = /\A(?<major>\d+)\.(?<minor>\d+)\z/
 
+      # We ignore RCs since RCs are created from the stable branch,
+      # and we already check the stable branch.
+      TAG_REGEX = /\Av(?<version>\d+\.\d+\.\d+)-ee\z/
+
       AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
 
       def initialize(merge_request_iid, release_version, token)
@@ -20,12 +24,9 @@ module Chatops
         error = validate_args
         return response_message(error) if error
 
-        result =
-          if stable_branch_exists?
-            check_commit_in_stable_branch(merge_request.merge_commit_sha)
-          else
-            check_commit_deployed_to_gprd(merge_request.merge_commit_sha)
-          end
+        result = check_commit_in_tags_or_stable_branch
+
+        result = check_commit_deployed_to_gprd(merge_request.merge_commit_sha) if result.nil?
 
         response_message(result)
       end
@@ -35,7 +36,7 @@ module Chatops
       attr_reader :mr_iid, :version, :token
 
       def validate_args
-        return :invalid_version_string unless MONTHLY_RELEASE_VERSION_REGEX.match?(version)
+        return :invalid_version_string unless version.nil? || MONTHLY_RELEASE_VERSION_REGEX.match?(version)
 
         return :mr_does_not_exist unless merge_request
 
@@ -53,7 +54,7 @@ module Chatops
       end
 
       def stable_branch_name
-        @stable_branch_name ||= version.tr('.', '-') << '-stable-ee'
+        @stable_branch_name ||= "#{version.tr('.', '-')}-stable-ee"
       end
 
       def stable_branch_exists?
@@ -87,9 +88,46 @@ module Chatops
         []
       end
 
+      def tags_containing_commit(sha)
+        production_client
+          .commit_refs(SECURITY_PROJECT, sha, type: 'tag', per_page: 100)
+          .auto_paginate
+      rescue ::Gitlab::Error::NotFound
+        []
+      end
+
       def auto_deploy_branches_containing_commit(sha)
         branches_containing_commit(sha)
           .select { |b| b.name.match?(AUTO_DEPLOY_BRANCH_REGEX) }
+      end
+
+      def check_commit_in_tags_or_stable_branch
+        if !all_tags_containing_commit.empty?
+          :commit_already_released
+
+        elsif all_tags_containing_commit.empty? && version.nil?
+          # Commit doesn't exist in any tag. And a version is not specified,
+          # so we cannot check the stable branch.
+          :commit_not_released
+
+        elsif stable_branch_exists?
+          check_commit_in_stable_branch(merge_request.merge_commit_sha)
+        end
+      end
+
+      def all_tags_containing_commit
+        @all_tags_containing_commit ||=
+          tags_containing_commit(merge_request.merge_commit_sha).collect do |t|
+            groups = TAG_REGEX.match(t.name)
+            # Some old tags don't follow the naming conventions, so groups will be nil.
+            # For example 11-10-0cfa69752d8-0d9531c80-ee.
+            next unless groups
+
+            {
+              version: Gem::Version.new(groups[:version]),
+              name: t.name
+            }
+          end.compact
       end
 
       def check_commit_in_stable_branch(sha)
@@ -120,6 +158,12 @@ module Chatops
         end
       end
 
+      def lowest_tag
+        lowest_tag = all_tags_containing_commit.min_by { |t| t[:version] }
+
+        lowest_tag[:name]
+      end
+
       def slack_link(link, text)
         "<#{link}|#{text}>"
       end
@@ -132,34 +176,45 @@ module Chatops
         slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{stable_branch_name}", 'stable branch')
       end
 
+      def tag_link(tag)
+        slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{tag}", tag)
+      end
+
       def response_message(code)
         messages = {
           invalid_version_string:
-            "'#{version}' is not a valid monthly release version. Monthly release versions " \
-            'look like 10.0 or 14.2',
+            "'<%= version %>' is not a valid monthly release version. Monthly release versions " \
+            'look like 10.0 or 14.2.',
 
-          mr_does_not_exist: "#{mr_slack_link} does not exist.",
+          mr_does_not_exist:
+            '<%= mr_slack_link %> does not exist.',
 
-          mr_not_merged: "#{mr_slack_link} has not been merged as yet!",
+          mr_not_merged: '<%= mr_slack_link %> has not been merged as yet!',
+
+          commit_already_released: '<%= mr_slack_link %> was first released in <%= tag_link(lowest_tag) %>.',
+
+          commit_not_released:
+            '<%= mr_slack_link %> was not released in any past version. Try checking with the upcoming release ' \
+            'version. Ex: `release check 12345 14.2`',
 
           commit_present_in_stable_branch:
-            "#{mr_slack_link} has been included in the #{stable_branch_link}. This MR " \
-            "will be released in #{version}.",
+            '<%= mr_slack_link %> has been included in the <%= stable_branch_link %>. This MR ' \
+            'will be released in <%= version %>.',
 
           commit_not_present_in_stable_branch:
-            "#{mr_slack_link} has not been included in the #{stable_branch_link}. " \
-            "The MR _will not_ be released in #{version}.",
+            '<%= mr_slack_link %> has not been included in the <%= stable_branch_link %>. ' \
+            'The MR _will not_ be released in <%= version %>.',
 
           commit_deployed_to_gprd:
-            "#{mr_slack_link} has been deployed to gprd. It will most likely be " \
-            "included in release #{version}.",
+            '<%= mr_slack_link %> has been deployed to gprd. It will most likely be ' \
+            'included in release <%= version %>.',
 
           commit_not_deployed_to_gprd:
-            "#{mr_slack_link} has not yet been deployed to gprd. It cannot be included " \
+            '<%= mr_slack_link %> has not yet been deployed to gprd. It cannot be included ' \
             'in the monthly release until it is deployed to gprd.'
         }
 
-        return messages[code] if messages.key?(code)
+        return ERB.new(messages[code]).result(binding) if messages.key?(code)
 
         raise "Did you forget to add a message string? The message string for '#{code}' is unknown."
       end
