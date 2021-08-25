@@ -43,6 +43,7 @@ module Chatops
 
       description 'Managing of GitLab feature flags.'
 
+      # rubocop: disable Metrics/BlockLength
       options do |o|
         o.string(
           '--match',
@@ -69,10 +70,16 @@ module Chatops
           "Ignore the production check when changing a feature flag's state"
         )
 
+        o.boolean(
+          '--ignore-feature-flag-consistency-check',
+          "Ignore the feature flag consistency check when changing a feature flag's state"
+        )
+
         GitlabEnvironments.define_environment_options(o)
 
         o.separator("\nAvailable subcommands:\n\n#{available_subcommands}")
       end
+      # rubocop: enable Metrics/BlockLength
 
       def self.available_subcommands
         Markdown::List.new(COMMANDS.to_a.sort).to_s
@@ -144,24 +151,38 @@ module Chatops
             'For example: `feature get gitaly_tags`'
         end
 
-        feature = Gitlab::FeatureCollection
-          .new(token: gitlab_token, host: gitlab_host)
-          .find_by_name(name)
+        feature = get_feature(name)
 
         return "The feature #{name.inspect} does not exist." unless feature
 
         send_feature_details(feature: feature)
       end
 
+      def get_feature(name)
+        Gitlab::FeatureCollection
+          .new(token: gitlab_token, host: gitlab_host)
+          .find_by_name(name)
+      end
+
+      # rubocop: disable Metrics/CyclomaticComplexity
       # Updates the value of a single feature flag.
       def set
-        check_failure_resp =
+        prod_check_failure_resp =
           'Unable to proceed due to production check failure. ' \
           'If you absolutely must change ' \
           'the state of this feature flag, ' \
           'please confirm with the current SRE ' \
           'oncall `@sre-oncall`, and use the ' \
           '--ignore-production-check option.'
+
+        feature_flag_consistency_check_failure_resp =
+          'Unable to proceed due to inconsistent feature flag status. ' \
+          'When the flag on production is turned on, staging should be on too. ' \
+          'If you absolutely must change ' \
+          'the state of this feature flag, ' \
+          'please confirm with the current SRE ' \
+          'oncall `@sre-oncall`, and use the ' \
+          '--ignore-feature-flag-consistency-check. '
 
         name = arguments[1]
         value = arguments[2]
@@ -176,7 +197,8 @@ module Chatops
             'Valid values are: `true`, `false`, or an integer from 0 to 100.'
         end
 
-        return check_failure_resp unless production_check?
+        return prod_check_failure_resp unless production_check?
+        return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value)
 
         response = Gitlab::Client
           .new(token: gitlab_token, host: gitlab_host)
@@ -190,6 +212,7 @@ module Chatops
       rescue ProductionCheckTimeout => e
         e.message + ' ' + check_failure_resp
       end
+      # rubocop: enable Metrics/CyclomaticComplexity
 
       def production_check?
         return true unless production?
@@ -230,6 +253,26 @@ module Chatops
           end
 
           sleep(PRODUCTION_CHECK_INTERVAL)
+        end
+      end
+
+      def feature_flag_consistency_check?(value)
+        return true if options[:ignore_feature_flag_consistency_check]
+
+        if staging? && disable_feature_value?(value)
+          prod_options = options.dup
+          prod_options.delete(:staging)
+
+          # If production is enabled, we should not turn it off for staging
+          !feature_enabled_with_opts?(prod_options)
+        elsif production? && enable_feature_value?(value)
+          staging_opts = options.dup
+          staging_opts[:staging] = true
+
+          # If staging is disabled, we shouldnt turn on for production
+          feature_enabled_with_opts?(staging_opts)
+        else
+          true
         end
       end
 
@@ -443,6 +486,22 @@ module Chatops
 
       def username
         env.fetch('GITLAB_USER_LOGIN')
+      end
+
+      private
+
+      def enable_feature_value?(value)
+        (value == 'true' || ('1'..'100').cover?(value))
+      end
+
+      def disable_feature_value?(value)
+        %w[false 0].include?(value)
+      end
+
+      def feature_enabled_with_opts?(options)
+        feature_check = Chatops::Commands::Feature.new(['get', arguments[1]], options, env)
+        feature = feature_check.get_feature(arguments[1])
+        feature.enabled?
       end
     end
   end

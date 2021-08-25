@@ -3,6 +3,157 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Feature do
+  shared_examples 'invalid feature flag update' do
+    let(:error_message) { /Unable to proceed due to inconsistent feature flag status. When the flag on production is turned on, staging should be on too./ }
+    let(:command_args) { %w[set foo] + [value] }
+    let(:command_opts) { { project: nil, group: nil, user: 'myuser' } }
+    let(:log_feature_toggle_params) { ['foo', value] }
+    let(:feature_enabled) { false }
+    let(:set_feature_params) do
+      [
+        'foo',
+        value,
+        {
+          project: nil,
+          group: nil,
+          user: 'myuser',
+          actors: nil
+        }
+      ]
+    end
+
+    it 'does not set the feature flag' do
+      command_envs = {
+        'GITLAB_TOKEN' => '123',
+        'GRAFANA_TOKEN' => 'some-grafana-token',
+        'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_USER_LOGIN' => 'alice'
+      }
+      command = described_class.new(command_args, command_opts, command_envs)
+
+      staging_feature_command = instance_double('Chatops::Commands::Feature')
+      feature = instance_double(
+        'feature',
+        name: 'foo',
+        state: 'conditional',
+        gates: gates
+      )
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[get foo], command_opts.merge(staging: true), command_envs)
+        .and_return(staging_feature_command)
+
+      expect(command)
+        .to receive(:production_check?)
+        .and_return(true)
+
+      expect(staging_feature_command)
+        .to receive(:get_feature).with('foo')
+        .and_return(feature)
+
+      expect(feature)
+        .to receive(:enabled?)
+        .and_return(feature_enabled)
+
+      expect(command.set).to match(error_message)
+    end
+  end
+
+  # rubocop: disable RSpec/ExampleLength
+  # rubocop: disable RSpec/MultipleExpectations
+  shared_examples 'valid feature flag update' do
+    let(:feature_enabled) { true }
+    let(:host) { 'gitlab.com' }
+    let(:token) { '123' }
+    let(:tag_env) { ['gprd'] }
+
+    it 'sets the feature flag' do
+      command_envs = {
+        'GITLAB_TOKEN' => '123',
+        'GRAFANA_TOKEN' => 'some-grafana-token',
+        'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_USER_LOGIN' => 'alice'
+      }
+      command = described_class.new(command_args, command_opts, command_envs)
+
+      client = instance_double('Chatops::Gitlab::Client')
+      staging_feature_command = instance_double('Chatops::Commands::Feature')
+      feature = instance_double(
+        'feature',
+        name: 'foo',
+        state: 'conditional',
+        gates: gates
+      )
+
+      expect(Chatops::Gitlab::Client)
+        .to receive(:new)
+        .with(token: token, host: host)
+        .and_return(client)
+
+      allow(described_class)
+        .to receive(:new)
+        .with(%w[get foo], command_opts.merge(staging: true), command_envs)
+        .and_return(staging_feature_command)
+
+      expect(client)
+        .to receive(:set_feature)
+        .with(*set_feature_params)
+        .and_return(feature)
+
+      allow(staging_feature_command)
+        .to receive(:get_feature).with('foo')
+        .and_return(feature)
+
+      allow(feature)
+        .to receive(:enabled?)
+        .and_return(feature_enabled)
+
+      expect(command)
+        .to receive(:production_check?)
+        .and_return(true)
+
+      issue = instance_double('GitLab::Issue')
+      expect(command)
+        .to receive(:log_feature_toggle)
+        .with(*log_feature_toggle_params)
+        .and_return(issue)
+
+      expect(command)
+        .to receive(:send_feature_toggle_event)
+        .with(*log_feature_toggle_params)
+
+      annotate = instance_double('annotate')
+
+      expect(Chatops::Grafana::Annotate)
+        .to receive(:new)
+        .with(token: 'some-grafana-token')
+        .and_return(annotate)
+
+      expect(annotate)
+        .to receive(:annotate!)
+        .with(
+          "alice set feature flag foo to #{log_feature_toggle_params[1]}",
+          tags: tag_env + ['feature-flag', 'foo']
+        )
+
+      expect(command)
+        .to receive(:send_feature_details)
+        .with(
+          feature: an_instance_of(Chatops::Gitlab::Feature),
+          text: 'The feature flag value has been updated!'
+        )
+
+      expect(command)
+        .to receive(:send_feature_toggling_to_qa_channel)
+        .with(issue)
+
+      command.set
+    end
+  end
+  # rubocop: enable RSpec/ExampleLength
+  # rubocop: enable RSpec/MultipleExpectations
+
   describe '.perform' do
     it 'supports a --match option' do
       instance = instance_double('instance')
@@ -111,6 +262,24 @@ describe Chatops::Commands::Feature do
 
       described_class.perform(%w[feature set foo true --ignore-production-check])
     end
+
+    it 'supports a --ignore-feature-flag-consistency-check option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(
+          %w[feature set foo true],
+          a_hash_including(ignore_feature_flag_consistency_check: true),
+          {}
+        )
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[feature set foo true --ignore-feature-flag-consistency-check])
+    end
   end
 
   describe '.available_subcommands' do
@@ -166,7 +335,7 @@ describe Chatops::Commands::Feature do
 
     context 'when using a non-existing feature name' do
       it 'returns an error message' do
-        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123')
+        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
         collection = instance_double('collection')
 
         expect(Chatops::Gitlab::FeatureCollection)
@@ -185,7 +354,7 @@ describe Chatops::Commands::Feature do
 
     context 'when using a valid feature name' do
       it 'sends the details of the feature to Slack' do
-        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123')
+        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
         collection = instance_double('collection')
         feature = instance_double('feature')
 
@@ -234,314 +403,179 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when using valid arguments' do
-      # rubocop: disable RSpec/ExampleLength
-      # rubocop: disable RSpec/MultipleExpectations
-      it 'updates the feature flag' do
-        command = described_class
-          .new(%w[set foo 10], {},
-               'GITLAB_TOKEN' => '123',
-               'GRAFANA_TOKEN' => 'some-grafana-token',
-               'GITLAB_USER_LOGIN' => 'alice')
-
-        client = instance_double('Chatops::Gitlab::Client')
-        feature = instance_double(
-          'feature',
-          name: 'foo',
-          state: 'conditional',
-          gates: [{ 'key' => 'percentage_of_time', 'value' => 10 }]
-        )
-
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123', host: 'gitlab.com')
-          .and_return(client)
-
-        expect(client)
-          .to receive(:set_feature)
-          .with('foo', '10', project: nil, group: nil, user: nil, actors: nil)
-          .and_return(feature)
-
-        expect(command)
-          .to receive(:production_check?)
-          .and_return(true)
-
-        issue = instance_double('GitLab::Issue')
-        expect(command)
-          .to receive(:log_feature_toggle)
-          .with('foo', '10')
-          .and_return(issue)
-
-        expect(command)
-          .to receive(:send_feature_toggle_event)
-          .with('foo', '10')
-
-        annotate = instance_double('annotate')
-        expect(Chatops::Grafana::Annotate)
-          .to receive(:new)
-          .with(token: 'some-grafana-token')
-          .and_return(annotate)
-
-        expect(annotate)
-          .to receive(:annotate!)
-          .with(
-            'alice set feature flag foo to 10',
-            tags: ['gprd', 'feature-flag', 'foo']
-          )
-
-        expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
-
-        expect(command)
-          .to receive(:send_feature_toggling_to_qa_channel)
-          .with(issue)
-
-        command.set
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo 10] }
+        let(:command_opts) { {} }
+        let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 10 }] }
+        let(:log_feature_toggle_params) { %w[foo 10] }
+        let(:set_feature_params) do
+          [
+            'foo',
+            '10',
+            {
+              project: nil,
+              group: nil,
+              user: nil,
+              actors: nil
+            }
+          ]
+        end
       end
-      # rubocop: enable RSpec/ExampleLength
-      # rubocop: enable RSpec/MultipleExpectations
     end
 
     context 'when using a project feature gate' do
-      # rubocop: disable RSpec/ExampleLength
-      # rubocop: disable RSpec/MultipleExpectations
-      it 'updates the feature flag' do
-        command = described_class
-          .new(%w[set foo true],
-               { project: 'gitlab-org/gitaly', group: nil, user: nil },
-               'GITLAB_TOKEN' => '123',
-               'GRAFANA_TOKEN' => 'some-grafana-token',
-               'GITLAB_USER_LOGIN' => 'alice')
-
-        client = instance_double('Chatops::Gitlab::Client')
-        feature = instance_double(
-          'feature',
-          name: 'foo',
-          state: 'conditional',
-          gates: [{ 'project' => 'gitlab-org/gitaly', 'value' => true }]
-        )
-
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123', host: 'gitlab.com')
-          .and_return(client)
-
-        expect(client)
-          .to receive(:set_feature)
-          .with('foo', 'true',
-                project: 'gitlab-org/gitaly',
-                group: nil,
-                user: nil,
-                actors: nil)
-          .and_return(feature)
-
-        expect(command)
-          .to receive(:production_check?)
-          .and_return(true)
-
-        issue = instance_double('GitLab::Issue')
-        expect(command)
-          .to receive(:log_feature_toggle)
-          .with('foo', 'true')
-          .and_return(issue)
-
-        expect(command)
-          .to receive(:send_feature_toggle_event)
-          .with('foo', 'true')
-
-        annotate = instance_double('annotate')
-
-        expect(Chatops::Grafana::Annotate)
-          .to receive(:new)
-          .with(token: 'some-grafana-token')
-          .and_return(annotate)
-
-        expect(annotate)
-          .to receive(:annotate!)
-          .with(
-            'alice set feature flag foo to true',
-            tags: ['gprd', 'feature-flag', 'foo']
-          )
-
-        expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
-
-        expect(command)
-          .to receive(:send_feature_toggling_to_qa_channel)
-          .with(issue)
-
-        command.set
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo true] }
+        let(:command_opts) { { project: 'gitlab-org/gitaly', group: nil, user: nil } }
+        let(:gates) { [{ 'project' => 'gitlab-org/gitaly', 'value' => true }] }
+        let(:log_feature_toggle_params) { %w[foo true] }
+        let(:set_feature_params) do
+          [
+            'foo',
+            'true',
+            {
+              project: 'gitlab-org/gitaly',
+              group: nil,
+              user: nil,
+              actors: nil
+            }
+          ]
+        end
       end
-      # rubocop: enable RSpec/ExampleLength
-      # rubocop: enable RSpec/MultipleExpectations
     end
 
     context 'when using a group feature gate' do
-      # rubocop: disable RSpec/ExampleLength
-      # rubocop: disable RSpec/MultipleExpectations
-      it 'updates the feature flag' do
-        command = described_class
-          .new(%w[set foo true],
-               { project: nil, group: 'gitlab-org', user: nil },
-               'GITLAB_TOKEN' => '123',
-               'GRAFANA_TOKEN' => 'some-grafana-token',
-               'GITLAB_USER_LOGIN' => 'alice')
-
-        client = instance_double('Chatops::Gitlab::Client')
-        feature = instance_double(
-          'feature',
-          name: 'foo',
-          state: 'conditional',
-          gates: [{ 'group' => 'gitlab-org', 'value' => true }]
-        )
-
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123', host: 'gitlab.com')
-          .and_return(client)
-
-        expect(client)
-          .to receive(:set_feature)
-          .with('foo', 'true',
-                project: nil,
-                group: 'gitlab-org',
-                user: nil,
-                actors: nil)
-          .and_return(feature)
-
-        expect(command)
-          .to receive(:production_check?)
-          .and_return(true)
-
-        issue = instance_double('GitLab::Issue')
-        expect(command)
-          .to receive(:log_feature_toggle)
-          .with('foo', 'true')
-          .and_return(issue)
-
-        expect(command)
-          .to receive(:send_feature_toggle_event)
-          .with('foo', 'true')
-
-        annotate = instance_double('annotate')
-
-        expect(Chatops::Grafana::Annotate)
-          .to receive(:new)
-          .with(token: 'some-grafana-token')
-          .and_return(annotate)
-
-        expect(annotate)
-          .to receive(:annotate!)
-          .with(
-            'alice set feature flag foo to true',
-            tags: ['gprd', 'feature-flag', 'foo']
-          )
-
-        expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
-
-        expect(command)
-          .to receive(:send_feature_toggling_to_qa_channel)
-          .with(issue)
-
-        command.set
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo true] }
+        let(:command_opts) { { project: nil, group: 'gitlab-org', user: nil } }
+        let(:gates) { [{ 'group' => 'gitlab-org', 'value' => true }] }
+        let(:log_feature_toggle_params) { %w[foo true] }
+        let(:set_feature_params) do
+          [
+            'foo',
+            'true',
+            {
+              project: nil,
+              group: 'gitlab-org',
+              user: nil,
+              actors: nil
+            }
+          ]
+        end
       end
-      # rubocop: enable RSpec/ExampleLength
-      # rubocop: enable RSpec/MultipleExpectations
     end
 
     context 'when using a user feature gate' do
-      # rubocop: disable RSpec/ExampleLength
-      # rubocop: disable RSpec/MultipleExpectations
-      it 'updates the feature flag' do
-        command = described_class
-          .new(%w[set foo true],
-               { project: nil, group: nil, user: 'myuser' },
-               'GITLAB_TOKEN' => '123',
-               'GRAFANA_TOKEN' => 'some-grafana-token',
-               'GITLAB_USER_LOGIN' => 'alice')
-
-        client = instance_double('Chatops::Gitlab::Client')
-        feature = instance_double(
-          'feature',
-          name: 'foo',
-          state: 'conditional',
-          gates: [{ 'user' => 'myuser', 'value' => true }]
-        )
-
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123', host: 'gitlab.com')
-          .and_return(client)
-
-        expect(client)
-          .to receive(:set_feature)
-          .with('foo', 'true', project: nil,
-                               group: nil,
-                               user: 'myuser',
-                               actors: nil)
-          .and_return(feature)
-
-        expect(command)
-          .to receive(:production_check?)
-          .and_return(true)
-
-        issue = instance_double('GitLab::Issue')
-        expect(command)
-          .to receive(:log_feature_toggle)
-          .with('foo', 'true')
-          .and_return(issue)
-
-        expect(command)
-          .to receive(:send_feature_toggle_event)
-          .with('foo', 'true')
-
-        annotate = instance_double('annotate')
-
-        expect(Chatops::Grafana::Annotate)
-          .to receive(:new)
-          .with(token: 'some-grafana-token')
-          .and_return(annotate)
-
-        expect(annotate)
-          .to receive(:annotate!)
-          .with(
-            'alice set feature flag foo to true',
-            tags: ['gprd', 'feature-flag', 'foo']
-          )
-
-        expect(command)
-          .to receive(:send_feature_details)
-          .with(
-            feature: an_instance_of(Chatops::Gitlab::Feature),
-            text: 'The feature flag value has been updated!'
-          )
-
-        expect(command)
-          .to receive(:send_feature_toggling_to_qa_channel)
-          .with(issue)
-
-        command.set
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo true] }
+        let(:command_opts) { { project: nil, group: nil, user: 'myuser' } }
+        let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+        let(:log_feature_toggle_params) { %w[foo true] }
+        let(:set_feature_params) do
+          [
+            'foo',
+            'true',
+            {
+              project: nil,
+              group: nil,
+              user: 'myuser',
+              actors: nil
+            }
+          ]
+        end
       end
-      # rubocop: enable RSpec/ExampleLength
-      # rubocop: enable RSpec/MultipleExpectations
     end
+
+    # rubocop: disable RSpec/NestedGroups
+    context 'when the flag is turned off in staging' do
+      context 'when turning on production' do
+        context 'when setting a boolean value' do
+          let(:value) { 'true' }
+          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+
+          include_examples 'invalid feature flag update'
+        end
+
+        context 'when setting a percentage value' do
+          let(:value) { '10' }
+          let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
+
+          include_examples 'invalid feature flag update'
+        end
+
+        context 'when the ignore_feature_flag_consistency_check is true' do
+          let(:command_args) { %w[set foo true] }
+          let(:command_opts) { { project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true } }
+          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+          let(:log_feature_toggle_params) { %w[foo true] }
+          let(:set_feature_params) do
+            [
+              'foo',
+              'true',
+              {
+                project: nil,
+                group: nil,
+                user: 'myuser',
+                actors: nil
+              }
+            ]
+          end
+
+          include_examples 'valid feature flag update'
+        end
+      end
+    end
+
+    context 'when the flag is turned on in production' do
+      let(:command_opts) { { project: nil, group: nil, user: 'myuser', staging: true } }
+
+      context 'when turning off in staging' do
+        context 'when setting a boolean value' do
+          let(:value) { 'true' }
+          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+
+          include_examples 'invalid feature flag update'
+        end
+
+        context 'when setting a percentage value' do
+          let(:value) { '10' }
+          let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
+
+          include_examples 'invalid feature flag update'
+        end
+
+        context 'when the ignore_feature_flag_consistency_check is true' do
+          let(:command_args) { %w[set foo true] }
+          let(:command_opts) { { project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true, staging: true } }
+          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+          let(:log_feature_toggle_params) { %w[foo true] }
+          let(:set_feature_params) do
+            [
+              'foo',
+              'true',
+              {
+                project: nil,
+                group: nil,
+                user: 'myuser',
+                actors: nil
+              }
+            ]
+          end
+
+          include_examples 'valid feature flag update' do
+            let(:host) { 'staging.gitlab.com' }
+            let(:token) { '321' }
+            let(:tag_env) { ['gstg'] }
+          end
+        end
+      end
+    end
+    # rubocop: enable RSpec/NestedGroups
 
     context 'when there is an ongoing incident' do
       it 'does not allow changing the feature flag state' do
         command =
-          described_class.new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123')
+          described_class.new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
 
         expect(command).to receive(:production_check?).and_return(false)
 
@@ -556,6 +590,7 @@ describe Chatops::Commands::Feature do
         %w[list],
         {},
         'GITLAB_TOKEN' => '123',
+        'GITLAB_STAGING_TOKEN' => '321',
         'SLACK_TOKEN' => '456',
         'CHAT_CHANNEL' => 'foo'
       )
@@ -583,6 +618,7 @@ describe Chatops::Commands::Feature do
         %w[delete foo],
         {},
         'GITLAB_TOKEN' => '123',
+        'GITLAB_STAGING_TOKEN' => '321',
         'SLACK_TOKEN' => '456',
         'CHAT_CHANNEL' => 'foo'
       )
@@ -737,7 +773,7 @@ describe Chatops::Commands::Feature do
   describe '#attachment_fields_per_state' do
     it 'returns attachment fields grouped per state ' do
       command = described_class
-        .new([], { match: 'foo' }, 'GITLAB_TOKEN' => '123')
+        .new([], { match: 'foo' }, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
 
       feature = Chatops::Gitlab::Feature.new(
         name: 'foo',
@@ -764,7 +800,8 @@ describe Chatops::Commands::Feature do
           [],
           { dev: true },
           'GITLAB_DEV_TOKEN' => '123',
-          'GITLAB_TOKEN' => '456'
+          'GITLAB_TOKEN' => '456',
+          'GITLAB_STAGING_TOKEN' => '321'
         )
 
         expect(command.gitlab_token).to eq('123')
@@ -777,7 +814,8 @@ describe Chatops::Commands::Feature do
           [],
           { pre: true },
           'GITLAB_PRE_TOKEN' => '123',
-          'GITLAB_TOKEN' => '456'
+          'GITLAB_TOKEN' => '456',
+          'GITLAB_STAGING_TOKEN' => '321'
         )
 
         expect(command.gitlab_token).to eq('123')
@@ -870,7 +908,8 @@ describe Chatops::Commands::Feature do
           [],
           {},
           'GITLAB_USER_LOGIN' => 'alice',
-          'GITLAB_TOKEN' => 'foo'
+          'GITLAB_TOKEN' => 'foo',
+          'GITLAB_STAGING_TOKEN' => '321'
         )
 
         client = instance_double(Chatops::Gitlab::Client)
@@ -901,7 +940,8 @@ describe Chatops::Commands::Feature do
           [],
           { ignore_production_check: true },
           'GITLAB_USER_LOGIN' => 'alice',
-          'GITLAB_TOKEN' => 'foo'
+          'GITLAB_TOKEN' => 'foo',
+          'GITLAB_STAGING_TOKEN' => '321'
         )
 
         client = instance_double(Chatops::Gitlab::Client)
@@ -938,7 +978,8 @@ describe Chatops::Commands::Feature do
         'SLACK_TOKEN' => '123',
         'CHAT_CHANNEL' => '456',
         'GITLAB_OPS_TOKEN' => '789',
-        'CI_JOB_TOKEN' => 'abc'
+        'CI_JOB_TOKEN' => 'abc',
+        'GITLAB_STAGING_TOKEN' => '321'
       )
     end
     let(:message) { instance_double('Chatops::Slack::Message', send: nil) }
@@ -982,7 +1023,8 @@ describe Chatops::Commands::Feature do
         described_class.new(
           [],
           { staging: true },
-          'GITLAB_TOKEN' => 'foo'
+          'GITLAB_TOKEN' => 'foo',
+          'GITLAB_STAGING_TOKEN' => '321'
         )
       end
 
