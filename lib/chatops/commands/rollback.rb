@@ -7,7 +7,7 @@ module Chatops
       include GitlabEnvironments
 
       COMMANDS = Set.new(%w[check]).freeze
-      ENVIRONMENTS = %w[gprd gprd-cny gstg].freeze
+      ENVIRONMENTS = %w[gprd gprd-cny gstg gstg-cny].freeze
 
       SOURCE_PROJECT = 'gitlab-org/security/gitlab'
       PACKAGE_PROJECT = 'gitlab-org/security/omnibus-gitlab'

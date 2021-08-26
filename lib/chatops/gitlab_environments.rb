@@ -12,6 +12,7 @@ module Chatops
       'gprd' => 'party-tanuki',
       'gprd-cny' => 'canary',
       'gstg' => 'building_construction',
+      'gstg-cny' => 'hatching_chick',
       'pre' => 'pretzel'
     }.freeze
 

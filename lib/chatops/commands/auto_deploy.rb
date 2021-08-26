@@ -112,7 +112,8 @@ module Chatops
         envs = [
           *environment_status('gprd'),
           *environment_status('gprd-cny'),
-          *environment_status('gstg')
+          *environment_status('gstg'),
+          *environment_status('gstg-cny')
         ]
 
         if sha
@@ -293,7 +294,7 @@ module Chatops
         case env
         when 'gprd', 'gprd-cny'
           PRODUCTION_HOST
-        when 'gstg'
+        when 'gstg', 'gstg-cny'
           STAGING_HOST
         end
       end

@@ -12,7 +12,7 @@ module Chatops
       SUBCOMMANDS = Set.new(%w[lock unlock]).freeze
 
       # Valid environments for lock/unlock
-      ENVIRONMENTS = %w[gprd gprd-cny gstg pre release-gitlab].freeze
+      ENVIRONMENTS = %w[gprd gprd-cny gstg gstg-cny pre release-gitlab].freeze
 
       # The regular expression to use for verifying release candidate versions.
       RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/

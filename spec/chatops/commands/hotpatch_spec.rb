@@ -129,6 +129,7 @@ describe Chatops::Commands::Hotpatch do
           • *production*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
           • *canary*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
           • *staging*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
+          • *staging-canary*: <https://ops.gitlab.net/gitlab-com/engineering/patcher/-/tree/fake-user-1234/patcher/fake-file/.gitkeep|patch directory>
           • :mr: MR <https://gitlab.example.com/proj/-/merge_requests/9000|!9000>
 
           Please see the <https://gitlab.com/gitlab-org/release/docs/-/blob/master/general/deploy/post-deployment-patches.md|release docs> for instructions
@@ -139,20 +140,21 @@ describe Chatops::Commands::Hotpatch do
         allow(chef_client).to receive(:package_version).with('gprd').and_return(
           '13.2.some-gprd-version'
         )
-        allow(chef_client).to receive(:package_version).with(
-          'gprd-cny'
-        ).and_return(
+        allow(chef_client).to receive(:package_version).with('gprd-cny').and_return(
           '13.2.some-cny-version'
         )
         allow(chef_client).to receive(:package_version).with('gstg').and_return(
           '13.2.some-gstg-version'
+        )
+        allow(chef_client).to receive(:package_version).with('gstg-cny').and_return(
+          '13.2.some-gstg-cny-version'
         )
       end
 
       it 'creates patch' do
         expect(command.perform).to eq(patch_result)
 
-        %w[gprd gprd-cny gstg].each do |e|
+        %w[gprd gprd-cny gstg gstg-cny].each do |e|
           expect(chef_client).to have_received(:package_version).once.with(e)
         end
 
@@ -160,6 +162,7 @@ describe Chatops::Commands::Hotpatch do
           13.2.some-gprd-version
           13.2.some-cny-version
           13.2.some-gstg-version
+          13.2.some-gstg-cny-version
         ].each do |v|
           expect(gitlab_client).to have_received(:create_file).once.with(
             'gitlab-com/engineering/patcher',
