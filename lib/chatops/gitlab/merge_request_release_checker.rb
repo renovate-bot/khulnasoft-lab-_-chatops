@@ -43,64 +43,6 @@ module Chatops
         :mr_not_merged if merge_request.state != 'merged'
       end
 
-      def production_client
-        @production_client ||= Gitlab::Client.new(token: token)
-      end
-
-      def merge_request
-        @merge_request ||= production_client.merge_request(CANONICAL_PROJECT, mr_iid)
-      rescue ::Gitlab::Error::NotFound
-        nil
-      end
-
-      def stable_branch_name
-        @stable_branch_name ||= "#{version.tr('.', '-')}-stable-ee"
-      end
-
-      def stable_branch_exists?
-        production_client.branch(SECURITY_PROJECT, stable_branch_name)
-
-        true
-      rescue ::Gitlab::Error::NotFound
-        false
-      end
-
-      def gprd_environment_status
-        rails = Gitlab::Deployments
-          .new(production_client, SECURITY_PROJECT)
-          .upcoming_and_current('gprd')
-
-        rails.map do |ee|
-          {
-            role: 'gprd',
-            revision: (ee&.short_sha || 'unknown'),
-            branch: (ee&.ref || 'unknown'),
-            status: (ee&.status || 'unknown')
-          }
-        end
-      end
-
-      def branches_containing_commit(sha)
-        production_client
-          .commit_refs(SECURITY_PROJECT, sha, type: 'branch', per_page: 100)
-          .auto_paginate
-      rescue ::Gitlab::Error::NotFound
-        []
-      end
-
-      def tags_containing_commit(sha)
-        production_client
-          .commit_refs(SECURITY_PROJECT, sha, type: 'tag', per_page: 100)
-          .auto_paginate
-      rescue ::Gitlab::Error::NotFound
-        []
-      end
-
-      def auto_deploy_branches_containing_commit(sha)
-        branches_containing_commit(sha)
-          .select { |b| b.name.match?(AUTO_DEPLOY_BRANCH_REGEX) }
-      end
-
       def check_commit_in_tags_or_stable_branch
         if !all_tags_containing_commit.empty?
           :commit_already_released
@@ -117,7 +59,7 @@ module Chatops
 
       def all_tags_containing_commit
         @all_tags_containing_commit ||=
-          tags_containing_commit(merge_request.merge_commit_sha).collect do |t|
+          refs_containing_commit('tag', merge_request.merge_commit_sha).collect do |t|
             groups = TAG_REGEX.match(t.name)
             # Some old tags don't follow the naming conventions, so groups will be nil.
             # For example 11-10-0cfa69752d8-0d9531c80-ee.
@@ -132,7 +74,7 @@ module Chatops
 
       def check_commit_in_stable_branch(sha)
         branch_contains_commit =
-          branches_containing_commit(sha)
+          refs_containing_commit('branch', sha)
             .select { |b| b.name == stable_branch_name }
             .length >= 1
 
@@ -156,6 +98,58 @@ module Chatops
         else
           :commit_not_deployed_to_gprd
         end
+      end
+
+      def gprd_environment_status
+        rails = Gitlab::Deployments
+          .new(production_client, SECURITY_PROJECT)
+          .upcoming_and_current('gprd')
+
+        rails.map do |ee|
+          {
+            role: 'gprd',
+            revision: (ee&.short_sha || 'unknown'),
+            branch: (ee&.ref || 'unknown'),
+            status: (ee&.status || 'unknown')
+          }
+        end
+      end
+
+      def auto_deploy_branches_containing_commit(sha)
+        refs_containing_commit('branch', sha)
+          .select { |b| b.name.match?(AUTO_DEPLOY_BRANCH_REGEX) }
+      end
+
+      # Returns branches/tags containing the given commit SHA.
+      # type can be 'branch', 'tag', 'all'.
+      def refs_containing_commit(type, sha)
+        production_client
+          .commit_refs(SECURITY_PROJECT, sha, type: type, per_page: 100)
+          .auto_paginate
+      rescue ::Gitlab::Error::NotFound
+        []
+      end
+
+      def production_client
+        @production_client ||= Gitlab::Client.new(token: token)
+      end
+
+      def merge_request
+        @merge_request ||= production_client.merge_request(CANONICAL_PROJECT, mr_iid)
+      rescue ::Gitlab::Error::NotFound
+        nil
+      end
+
+      def stable_branch_name
+        @stable_branch_name ||= "#{version.tr('.', '-')}-stable-ee"
+      end
+
+      def stable_branch_exists?
+        production_client.branch(SECURITY_PROJECT, stable_branch_name)
+
+        true
+      rescue ::Gitlab::Error::NotFound
+        false
       end
 
       def lowest_tag
