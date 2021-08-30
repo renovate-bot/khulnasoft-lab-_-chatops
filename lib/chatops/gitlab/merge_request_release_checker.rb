@@ -12,10 +12,13 @@ module Chatops
       # and we already check the stable branch.
       TAG_REGEX = /\Av(?<version>\d+\.\d+\.\d+)-ee\z/
 
+      MR_URL_REGEX = %r{https://gitlab.com/(?<project>.+)/-/merge_requests/(?<iid>\d+)}
+      ALLOWED_MR_PROJECTS = [CANONICAL_PROJECT, SECURITY_PROJECT].freeze
+
       AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
 
-      def initialize(merge_request_iid, release_version, token)
-        @mr_iid = merge_request_iid
+      def initialize(merge_request_url, release_version, token)
+        @mr_url = merge_request_url
         @version = release_version
         @token = token
       end
@@ -33,11 +36,17 @@ module Chatops
 
       private
 
-      attr_reader :mr_iid, :version, :token
+      attr_reader :mr_url, :version, :token
 
       def validate_args
         return :invalid_version_string unless version.nil? || MONTHLY_RELEASE_VERSION_REGEX.match?(version)
 
+        validate_merge_request_url
+      end
+
+      def validate_merge_request_url
+        return :invalid_mr_url unless mr_url_parts
+        return :invalid_mr_project unless ALLOWED_MR_PROJECTS.include?(mr_project)
         return :mr_does_not_exist unless merge_request
 
         :mr_not_merged if merge_request.state != 'merged'
@@ -135,9 +144,21 @@ module Chatops
       end
 
       def merge_request
-        @merge_request ||= production_client.merge_request(CANONICAL_PROJECT, mr_iid)
+        @merge_request ||= production_client.merge_request(mr_project, mr_iid)
       rescue ::Gitlab::Error::NotFound
         nil
+      end
+
+      def mr_url_parts
+        @mr_url_parts ||= MR_URL_REGEX.match(mr_url)
+      end
+
+      def mr_project
+        mr_url_parts[:project]
+      end
+
+      def mr_iid
+        mr_url_parts[:iid]
       end
 
       def stable_branch_name
@@ -163,7 +184,7 @@ module Chatops
       end
 
       def mr_slack_link
-        slack_link("https://gitlab.com/#{CANONICAL_PROJECT}/-/merge_requests/#{mr_iid}", "Merge request #{mr_iid}")
+        slack_link(mr_url, "#{mr_project}!#{mr_iid}")
       end
 
       def stable_branch_link
@@ -180,6 +201,10 @@ module Chatops
             "'<%= version %>' is not a valid monthly release version. Monthly release versions " \
             'look like 10.0 or 14.2.',
 
+          invalid_mr_url: '<%= mr_url %> is not a valid merge request URL.',
+
+          invalid_mr_project: 'Only merge requests from <%= ALLOWED_MR_PROJECTS %> are currently supported.',
+
           mr_does_not_exist:
             '<%= mr_slack_link %> does not exist.',
 
@@ -189,7 +214,7 @@ module Chatops
 
           commit_not_released:
             '<%= mr_slack_link %> was not released in any past version. Try checking with the upcoming release ' \
-            'version. Ex: `release check 12345 14.2`',
+            'version. Ex: `release check <MR URL> 14.2`',
 
           commit_present_in_stable_branch:
             '<%= mr_slack_link %> has been included in the <%= stable_branch_link %>. This MR ' \

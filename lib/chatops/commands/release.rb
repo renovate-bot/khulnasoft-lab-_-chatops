@@ -76,13 +76,13 @@ module Chatops
 
           Examples:
 
-            Check if merge request 12345 will be included in 14.2.
+            Check if merge request `gitlab-org/gitlab!12345` will be included in 14.2.
 
-              release check 12345 14.2
+              release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345 14.2
 
-            Check in which version merge request 12345 was introduced.
+            Check in which version merge request `gitlab-org/security/gitlab!12345` was introduced.
 
-              release check 12345
+              release check https://gitlab.com/gitlab-org/security/gitlab/-/merge_requests/12345
 
             Create a task issue for 1.2.3
 
@@ -209,15 +209,15 @@ module Chatops
         trigger_release(version, "#{namespace}:#{__method__}")
       end
 
-      def check(mr_iid = nil, version = nil)
-        if mr_iid.nil?
-          return 'You must specify a merge request IID (ex: 12345) ' \
-            'and an optional self-managed release version (ex: 14.2). Ex: `release check 12345`' \
-            'or `release check 12345 14.3`'
+      def check(mr_url = nil, version = nil)
+        if mr_url.nil?
+          return 'You must specify a merge request URL and an optional self-managed release version. ' \
+            'Ex: `release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345` ' \
+            'or `release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345 14.2`'
         end
 
         ::Chatops::Gitlab::MergeRequestReleaseChecker
-          .new(mr_iid, version, gitlab_token)
+          .new(mr_url, version, gitlab_token)
           .execute
       end
 
