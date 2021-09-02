@@ -21,6 +21,15 @@ describe Chatops::Commands::Feature do
         }
       ]
     end
+    let(:feature) do
+      instance_double(
+        'feature',
+        name: 'foo',
+        state: 'conditional',
+        gates: gates,
+        enabled?: feature_enabled
+      )
+    end
 
     it 'does not set the feature flag' do
       command_envs = {
@@ -32,12 +41,6 @@ describe Chatops::Commands::Feature do
       command = described_class.new(command_args, command_opts, command_envs)
 
       staging_feature_command = instance_double('Chatops::Commands::Feature')
-      feature = instance_double(
-        'feature',
-        name: 'foo',
-        state: 'conditional',
-        gates: gates
-      )
 
       expect(described_class)
         .to receive(:new)
@@ -51,10 +54,6 @@ describe Chatops::Commands::Feature do
       expect(staging_feature_command)
         .to receive(:get_feature).with('foo')
         .and_return(feature)
-
-      expect(feature)
-        .to receive(:enabled?)
-        .and_return(feature_enabled)
 
       expect(command.set).to match(error_message)
     end
@@ -526,6 +525,19 @@ describe Chatops::Commands::Feature do
       end
     end
 
+    context 'when the feature flag does not exist in staging' do
+      context 'when turning on production' do
+        context 'when setting a boolean value' do
+          let(:value) { 'true' }
+          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+
+          include_examples 'invalid feature flag update' do
+            let(:feature) { nil }
+          end
+        end
+      end
+    end
+
     context 'when the flag is turned on in production' do
       let(:command_opts) { { project: nil, group: nil, user: 'myuser', staging: true } }
 
@@ -566,6 +578,21 @@ describe Chatops::Commands::Feature do
             let(:host) { 'staging.gitlab.com' }
             let(:token) { '321' }
             let(:tag_env) { ['gstg'] }
+          end
+        end
+      end
+    end
+
+    context 'when the feature flag does not exist in production' do
+      let(:command_opts) { { project: nil, group: nil, user: 'myuser', staging: true } }
+
+      context 'when turning on staging' do
+        context 'when setting a boolean value' do
+          let(:value) { 'true' }
+          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+
+          include_examples 'invalid feature flag update' do
+            let(:feature) { nil }
           end
         end
       end

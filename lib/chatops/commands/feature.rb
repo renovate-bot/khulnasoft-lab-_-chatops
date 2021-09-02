@@ -501,7 +501,7 @@ module Chatops
       def feature_enabled_with_opts?(options)
         feature_check = Chatops::Commands::Feature.new(['get', arguments[1]], options, env)
         feature = feature_check.get_feature(arguments[1])
-        feature.enabled?
+        feature&.enabled?
       end
     end
   end
