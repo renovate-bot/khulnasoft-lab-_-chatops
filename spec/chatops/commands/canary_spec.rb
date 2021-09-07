@@ -49,10 +49,19 @@ describe Chatops::Commands::Canary do
       ]
     end
 
+    context 'when no environment option is set' do
+      it 'aborts and asks the user to set the environment option' do
+        command = described_class.new
+        expect(command.perform).to eq(
+          '_You need to specify the environment with `--staging` or `--production`._'
+        )
+      end
+    end
+
     context 'when there is a single cny server' do
-      it 'describes a single server with no options' do
+      it 'describes a single server with only the environment option' do
         command = described_class.new(
-          [], {},
+          [], { production: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
@@ -90,7 +99,7 @@ describe Chatops::Commands::Canary do
           .to receive(:server_stats)
           .and_return(gen_status('DRAIN'))
         command = described_class.new(
-          [], { drain: true },
+          [], { staging: true, drain: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
@@ -124,7 +133,7 @@ describe Chatops::Commands::Canary do
         expect(events_client).to receive(:send_event)
           .once.with('Canary set to maint')
         command = described_class.new(
-          [], { maint: true },
+          [], { staging: true, maint: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
@@ -172,7 +181,7 @@ describe Chatops::Commands::Canary do
     context 'when state is set to ready' do
       let(:command) do
         described_class.new(
-          [], { ready: true },
+          [], { staging: true, ready: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
@@ -184,7 +193,7 @@ describe Chatops::Commands::Canary do
     context 'when there is an active deployment' do
       let(:command) do
         described_class.new(
-          [], { disable: true },
+          [], { staging: true, disable: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
@@ -209,7 +218,7 @@ describe Chatops::Commands::Canary do
     context 'when state is set to enable' do
       let(:command) do
         described_class.new(
-          [], { enable: true },
+          [], { staging: true, enable: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
@@ -251,7 +260,7 @@ describe Chatops::Commands::Canary do
     context 'when state is set to disable' do
       let(:command) do
         described_class.new(
-          [], { disable: true },
+          [], { staging: true, disable: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )
@@ -274,7 +283,7 @@ describe Chatops::Commands::Canary do
     context 'when state is set to disable during an active deployment with override' do
       let(:command) do
         described_class.new(
-          [], { disable: true, ignore_deployment_check: true },
+          [], { staging: true, disable: true, ignore_deployment_check: true },
           'CHEF_USERNAME' => 'fake-user',
           'CHEF_PEM_KEY' => 'fake-pem'
         )

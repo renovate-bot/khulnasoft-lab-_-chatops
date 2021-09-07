@@ -12,7 +12,9 @@ module Chatops
       description 'Controls canary traffic'
       options do |o|
         o.bool('--production',
-               'Control production canary traffic instead of staging')
+               'Control production canary traffic')
+        o.bool('--staging',
+               'Control staging canary traffic')
         o.bool('--ready',
                'Set canary to enable connections')
         o.bool('--enable',
@@ -28,7 +30,13 @@ module Chatops
                 'do not use this option unless you know what you are doing!')
       end
 
+      # rubocop: disable Metrics/CyclomaticComplexity
       def perform
+        unless staging? ^ production?
+          return '_You need to specify the environment with ' \
+            '`--staging` or `--production`._'
+        end
+
         # If there is a new state transition, make it here. Otherwise
         # we just print the status and a note about usage
         server_state_commands.each do |state|
@@ -62,6 +70,7 @@ module Chatops
           backend_stats_disp(servers: canary_servers) +
           server_disp(servers: canary_servers, hide_healthy: false)).join("\n")
       end
+      # rubocop: enable Metrics/CyclomaticComplexity
 
       def chef_client
         @chef_client ||= Chatops::Chef::Client.new
@@ -70,7 +79,7 @@ module Chatops
       def usage_disp
         # display some additional text if no options are
         # specifified
-        return [] unless options.empty?
+        return [] unless options.to_hash.reject { |k| %i[production staging].include?(k) }.empty?
 
         ['_Use `/chatops run canary --help` to list canary commands_',
          'Displaying the current canary status:']
@@ -143,6 +152,10 @@ module Chatops
 
       def canary_active_deployment?
         @canary_active_deployment ||= chef_client.canary_active_deployment?
+      end
+
+      def production?
+        options[:production]
       end
     end
   end
