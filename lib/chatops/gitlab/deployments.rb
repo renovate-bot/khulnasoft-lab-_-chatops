@@ -14,14 +14,17 @@ module Chatops
       # Returns an Array of Deployment instances
       def upcoming_and_current(environment)
         latest = @client
-          .latest_deployments(@project, environment, limit: 2)
+          .latest_deployments(@project, environment, limit: 10)
           .map { |d| Deployment.new(d) }
 
-        # Two successful deploys means nothing is running; return only latest
-        latest.pop if latest.length == 2 && latest.all?(&:success?)
-
-        # Remove the latest deploy if it failed
+        # Remove failed deploys
         latest.reject!(&:failed?)
+
+        # Now we only need the latest two
+        latest = latest.take(2)
+
+        # Two successful deploys means nothing is upcoming; return only current
+        latest.pop if latest.length == 2 && latest.all?(&:success?)
 
         latest
       end

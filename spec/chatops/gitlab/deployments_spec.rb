@@ -8,7 +8,7 @@ describe Chatops::Gitlab::Deployments do
 
   def mock_latest_deployments(environment, results)
     expect(client).to receive(:latest_deployments)
-      .with(project, environment, limit: 2)
+      .with(project, environment, limit: 10)
       .and_return(results)
   end
 
@@ -52,8 +52,14 @@ describe Chatops::Gitlab::Deployments do
 
     it 'removes failed deployments' do
       deployments = [
-        deployment(ref: 'main', sha: 'abcdef', status: 'failed'),
-        deployment(ref: 'main', sha: 'aabbcc', status: 'success')
+        deployment(ref: 'main', sha: 'failA', status: 'failed'),
+        deployment(ref: 'main', sha: 'failB', status: 'failed'),
+        deployment(ref: 'main', sha: 'abcdef', status: 'running'),
+        deployment(ref: 'main', sha: 'failC', status: 'failed'),
+        deployment(ref: 'main', sha: 'aabbcc', status: 'success'),
+        deployment(ref: 'main', sha: 'foo', status: 'success'),
+        deployment(ref: 'main', sha: 'bar', status: 'success'),
+        deployment(ref: 'main', sha: 'baz', status: 'success')
       ]
 
       mock_latest_deployments('gprd', deployments)
@@ -61,9 +67,11 @@ describe Chatops::Gitlab::Deployments do
       instance = described_class.new(client, project)
       latest = instance.upcoming_and_current('gprd')
 
-      expect(latest.size).to eq(1)
-      expect(latest.first).to be_success
-      expect(latest.first.sha).to eq('aabbcc')
+      expect(latest.size).to eq(2)
+      expect(latest.first).to be_running
+      expect(latest.first.sha).to eq('abcdef')
+      expect(latest.last).to be_success
+      expect(latest.last.sha).to eq('aabbcc')
     end
 
     it 'returns a single deployment when only 1 exists' do
