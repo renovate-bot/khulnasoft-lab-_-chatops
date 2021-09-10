@@ -58,6 +58,7 @@ module Chatops
     string = string
       .tr('“”«»', '"')
       .tr('‘’‹›', "'")
+      .gsub(/[[:blank:]]/, ' ') # replace non-breaking space otherwise it won't split the words
 
     Shellwords.split(string)
   end

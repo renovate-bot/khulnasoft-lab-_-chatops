@@ -86,5 +86,10 @@ describe Chatops do
       expect(described_class.split_input('foo “bar baz”'))
         .to eq(['foo', 'bar baz'])
     end
+
+    it 'replaces non breaking space' do
+      expect(described_class.split_input("foo\u00A0bar"))
+        .to eq(%w[foo bar])
+    end
   end
 end
