@@ -13,19 +13,41 @@ GitLab.com such as getting the `EXPLAIN ANALYZE` output of a database query.
 
 # Setting Up
 
-To use this repository with GitLab Chatops you need to have a GitLab EE Ultimate
-instance that is somehow publicly reachable. If you're using a development
+This setup is useful if you want to do a full end-to-end test where you enter the slash command
+in Slack and the chatops bot posts a response, which is exactly how slash commands are used by end-users.
+
+You also have the option of [executing the chatops executable from the command line](#local-testing).
+
+1. To use this repository with GitLab Chatops you need to have a GitLab EE Ultimate
+instance (like [GDK](https://gitlab.com/gitlab-org/gitlab-development-kit) or [GCK](https://gitlab.com/gitlab-org/gitlab-compose-kit))
+that is somehow publicly reachable. If you're using a development
 environment you can use [localtunnel](https://localtunnel.github.io/www/) to
 expose your development environment.
 
-Once your environment is reachable you'll need to import this repository into
+1. Once your environment is reachable you'll need to import this repository into
 your environment so you can easily test your changes. Once done you need to set
 up slash Commands integration following the guide at [Slack slash
 commands](https://docs.gitlab.com/ee/user/project/integrations/slack_slash_commands.html).
+You can [create your own workspace](https://slack.com/intl/en-in/help/articles/206845317-Create-a-Slack-workspace)
+(unrelated to the GitLab workspace) in Slack, for testing purposes.
 
-When Slash commands are set up you need to set up the CI runner in your local
+1. When Slash commands are set up you need to set up the CI runner in your local
 environment. The easiest way of setting this up is by using the shell executor
 as this removes the need for also setting up Docker.
+
+1. You also need to build and push a chatops container image into the Container Registry
+of your local chatops project.
+
+   This can be done with the following commands:
+
+   These commands assume that the Container Registry for your GDK instance is accessible at `gdk.test:5000`,
+   and your chatops project is at `root/chatops`. You should be in your local
+   chatops project folder when running these commands:
+
+   1. `docker build -t gdk.test:5000/root/chatops -f docker/Dockerfile.chatops .`
+   1. `docker push gdk.test:5000/root/chatops`
+
+      If asked for username and password, you can enter your GDK username and password.
 
 With everything set up (and running) you can then run chatops commands by typing
 the following into a Slack channel:
