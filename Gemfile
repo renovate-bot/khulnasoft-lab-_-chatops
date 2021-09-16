@@ -13,6 +13,7 @@ group :development do
   gem 'byebug'
   gem 'climate_control'
   gem 'pry'
+  gem 'pry-byebug'
   gem 'rake'
   gem 'rspec'
   gem 'rubocop'

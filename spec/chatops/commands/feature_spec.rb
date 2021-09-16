@@ -66,6 +66,7 @@ describe Chatops::Commands::Feature do
     let(:host) { 'gitlab.com' }
     let(:token) { '123' }
     let(:tag_env) { ['gprd'] }
+    let(:trigger_e2e_tests_params) { log_feature_toggle_params }
 
     it 'sets the feature flag' do
       command_envs = {
@@ -122,6 +123,18 @@ describe Chatops::Commands::Feature do
         .to receive(:send_feature_toggle_event)
         .with(*log_feature_toggle_params)
 
+      tests_pipeline = instance_double('Chatops::Gitlab::TestsPipeline')
+
+      expect(Chatops::Gitlab::TestsPipeline)
+        .to receive(:new)
+        .with(any_args)
+        .and_return(tests_pipeline)
+
+      expect(tests_pipeline)
+        .to receive(:trigger_end_to_end)
+        .with(*trigger_e2e_tests_params)
+        .and_return(:ops_pipeline)
+
       annotate = instance_double('annotate')
 
       expect(Chatops::Grafana::Annotate)
@@ -145,7 +158,7 @@ describe Chatops::Commands::Feature do
 
       expect(command)
         .to receive(:send_feature_toggling_to_qa_channel)
-        .with(issue)
+        .with(issue, :ops_pipeline)
 
       command.set
     end
@@ -712,7 +725,7 @@ describe Chatops::Commands::Feature do
       )
     end
 
-    shared_examples 'message sent to the relevant Slack QA channel' do |channel|
+    shared_examples 'message sent to the relevant Slack QA channel with no pipeline link' do |channel|
       it 'sends a message to the relevant Slack QA channel' do
         message = instance_double('Chatops::Slack::Message', send: nil)
         expect(Chatops::Slack::Message)
@@ -730,34 +743,67 @@ describe Chatops::Commands::Feature do
       end
     end
 
+    shared_examples 'message sent to the relevant Slack QA channel with pipeline link' do |channel|
+      let(:ops_pipeline) { 'https://ops.gitlab.net/gitlab-org/quality/production/-/pipelines/123' }
+
+      it 'sends a message to the relevant Slack QA channel' do
+        message = instance_double('Chatops::Slack::Message', send: nil)
+        expect(Chatops::Slack::Message)
+          .to receive(:new)
+          .with(token: '123', channel: channel)
+          .and_return(message)
+
+        command.send_feature_toggling_to_qa_channel(issue, ops_pipeline)
+      end
+
+      it 'sends a relevant Slack message' do
+        expect_slack_message(blocks: QaMessageBlockMatcher.new(issue, ops_pipeline, username))
+
+        command.send_feature_toggling_to_qa_channel(issue, ops_pipeline)
+      end
+    end
+
     context 'when environment is production' do
+      let(:username) { 'alice' }
       let(:command) do
         described_class.new(
           [],
           {},
           'SLACK_TOKEN' => '123',
-          'CHAT_CHANNEL' => '456'
+          'CHAT_CHANNEL' => '456',
+          'GITLAB_USER_LOGIN' => username
         )
       end
 
       include_examples(
-        'message sent to the relevant Slack QA channel',
+        'message sent to the relevant Slack QA channel with no pipeline link',
+        described_class::QA_CHANNELS[described_class::PRODUCTION_HOST]
+      )
+
+      include_examples(
+        'message sent to the relevant Slack QA channel with pipeline link',
         described_class::QA_CHANNELS[described_class::PRODUCTION_HOST]
       )
     end
 
     context 'when environment is staging' do
+      let(:username) { 'alice' }
       let(:command) do
         described_class.new(
           [],
           { staging: true },
           'SLACK_TOKEN' => '123',
-          'CHAT_CHANNEL' => '456'
+          'CHAT_CHANNEL' => '456',
+          'GITLAB_USER_LOGIN' => username
         )
       end
 
       include_examples(
-        'message sent to the relevant Slack QA channel',
+        'message sent to the relevant Slack QA channel with no pipeline link',
+        described_class::QA_CHANNELS[described_class::STAGING_HOST]
+      )
+      include_examples(
+        'message sent to the relevant Slack QA channel with pipeline link',
         described_class::QA_CHANNELS[described_class::STAGING_HOST]
       )
     end
@@ -773,7 +819,7 @@ describe Chatops::Commands::Feature do
       end
 
       include_examples(
-        'message sent to the relevant Slack QA channel',
+        'message sent to the relevant Slack QA channel with no pipeline link',
         described_class::QA_CHANNELS[described_class::PRE_HOST]
       )
     end
@@ -1067,13 +1113,24 @@ end
 # RSpec argument matcher for verifying the complex `block` Hash passed to
 # `Slack::Message#send` from the described class
 class QaMessageBlockMatcher
-  def initialize(issue)
+  def initialize(issue, trigger_tests_response = nil, username = nil)
     @issue = issue
+    @trigger_tests_response = trigger_tests_response
+    @username = username
   end
 
   def ===(other)
-    json = other.to_json
+    markdown_text = "<#{@issue.web_url}|#{@issue.title}>"
 
-    json.include?("<#{@issue.web_url}|#{@issue.title}>")
+    if @trigger_tests_response
+      markdown_text += "\n"
+      markdown_text += if @trigger_tests_response.include?('Failed')
+                         @trigger_tests_response
+                       else
+                         "An end-to-end test pipeline has been triggered: #{@trigger_tests_response}"
+                       end
+    end
+
+    other.first[:text][:text] == markdown_text
   end
 end

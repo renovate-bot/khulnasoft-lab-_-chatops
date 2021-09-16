@@ -287,7 +287,9 @@ module Chatops
           text: 'The feature flag value has been updated!'
         )
 
-        output << send_feature_toggling_to_qa_channel(issue)
+        trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(env_name).trigger_end_to_end(name, value)
+
+        output << send_feature_toggling_to_qa_channel(issue, trigger_tests_response)
 
         output.compact.join("\n")
       end
@@ -375,13 +377,24 @@ module Chatops
         )
       end
 
-      def send_feature_toggling_to_qa_channel(issue)
+      def send_feature_toggling_to_qa_channel(issue, trigger_tests_response = nil)
         channel = QA_CHANNELS[gitlab_host]
         return unless channel
 
+        markdown_text = "<#{issue.web_url}|#{issue.title}>"
+
+        if trigger_tests_response
+          markdown_text += "\n"
+          markdown_text += if trigger_tests_response.include?('Failed')
+                             trigger_tests_response
+                           else
+                             "An end-to-end test pipeline has been triggered: #{trigger_tests_response}"
+                           end
+        end
+
         blocks = [{
           type: 'section',
-          text: Slack.markdown("<#{issue.web_url}|#{issue.title}>")
+          text: Slack.markdown(markdown_text)
         }]
 
         send_slack_message_safely(
@@ -427,7 +440,6 @@ module Chatops
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
 
         host = gitlab_host
-        username = env.fetch('GITLAB_USER_LOGIN')
         labels = "host::#{host}, change"
 
         description = <<~DESC
