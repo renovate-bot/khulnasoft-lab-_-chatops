@@ -161,11 +161,7 @@ module Chatops
         return user_not_found_error(name) unless user
 
         date = Time.now.strftime('%F')
-
-        # user.note is initially 'nil' when user is created
-        current_note = user.note
-        current_note ||= ''
-        new_note = current_note + "\n#{date}: " + message
+        new_note = "#{user.note}\n#{date}: #{message}"
 
         begin
           production_client.edit_user(user.id, note: new_note)
