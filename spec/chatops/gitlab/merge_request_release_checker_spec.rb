@@ -199,24 +199,11 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
           .to receive(:branch)
           .with('gitlab-org/security/gitlab', '14-2-stable-ee')
           .and_raise(gitlab_error(:NotFound))
-
-        deployments = instance_double(Chatops::Gitlab::Deployments)
-        allow(Chatops::Gitlab::Deployments)
-          .to receive(:new)
-          .with(gitlab, 'gitlab-org/security/gitlab')
-          .and_return(deployments)
-
-        allow(deployments)
-          .to receive(:upcoming_and_current)
-          .with('gprd')
-          .and_return([production_status])
       end
 
       it 'returns message if MR has not been deployed to gprd' do
-        allow(gitlab)
-          .to receive(:refs_containing_commit)
-          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
-          .and_return([])
+        commit = instance_spy(Chatops::Gitlab::ReleaseCheck::Commit, deployed_to_gprd?: false)
+        allow(Chatops::Gitlab::ReleaseCheck::Commit).to receive(:new).and_return(commit)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has not yet been ' \
@@ -226,12 +213,8 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
       end
 
       it 'returns message if MR has been deployed to gprd' do
-        branches_with_commit = [instance_double('branch', type: 'branch', name: production_status.ref)]
-
-        allow(gitlab)
-          .to receive(:refs_containing_commit)
-          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
-          .and_return(branches_with_commit)
+        commit = instance_spy(Chatops::Gitlab::ReleaseCheck::Commit, deployed_to_gprd?: true)
+        allow(Chatops::Gitlab::ReleaseCheck::Commit).to receive(:new).and_return(commit)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has been deployed ' \

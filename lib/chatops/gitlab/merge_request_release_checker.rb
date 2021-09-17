@@ -11,8 +11,6 @@ module Chatops
       MR_URL_REGEX = %r{https://gitlab.com/(?<project>.+)/-/merge_requests/(?<iid>\d+)}
       ALLOWED_MR_PROJECTS = [CANONICAL_PROJECT, SECURITY_PROJECT].freeze
 
-      AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
-
       def initialize(merge_request_url, release_version, token)
         @mr_url = merge_request_url
         @version = release_version
@@ -77,39 +75,16 @@ module Chatops
       end
 
       def check_commit_deployed_to_gprd(sha)
-        env_containing_sha =
-          gprd_environment_status.select do |environment|
-            auto_deploy_branches_containing_commit(sha).any? do |auto_deploy_branch|
-              environment[:branch] == auto_deploy_branch.name && environment[:status] == 'success'
-            end
-          end
+        commit_deployed_to_gprd =
+          Gitlab::ReleaseCheck::Commit
+            .new(production_client, SECURITY_PROJECT, sha)
+            .deployed_to_gprd?
 
-        if env_containing_sha.length >= 1
+        if commit_deployed_to_gprd
           :commit_deployed_to_gprd
         else
           :commit_not_deployed_to_gprd
         end
-      end
-
-      def gprd_environment_status
-        rails = Gitlab::Deployments
-          .new(production_client, SECURITY_PROJECT)
-          .upcoming_and_current('gprd')
-
-        rails.map do |ee|
-          {
-            role: 'gprd',
-            revision: (ee&.short_sha || 'unknown'),
-            branch: (ee&.ref || 'unknown'),
-            status: (ee&.status || 'unknown')
-          }
-        end
-      end
-
-      def auto_deploy_branches_containing_commit(sha)
-        production_client
-          .refs_containing_commit(project: SECURITY_PROJECT, type: 'branch', sha: sha)
-          .select { |b| b.name.match?(AUTO_DEPLOY_BRANCH_REGEX) }
       end
 
       def production_client
