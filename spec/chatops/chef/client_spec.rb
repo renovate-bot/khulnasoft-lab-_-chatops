@@ -91,42 +91,46 @@ describe Chatops::Chef::Client do
   end
 
   describe '#canary_active_deployment?' do
-    it 'true for an disabled role' do
-      allow(Chef::Role)
-        .to receive(:load)
-        .with('gprd-cny-omnibus-version')
-        .and_return(omnibus_role_enabled)
+    %w[gprd gstg].each do |env|
+      it "is true for a disabled #{env} role" do
+        allow(Chef::Role)
+          .to receive(:load)
+          .with("#{env}-cny-omnibus-version")
+          .and_return(omnibus_role_enabled)
 
-      expect(client.canary_active_deployment?).to eq(false)
-    end
+        expect(client.canary_active_deployment?(env: env)).to eq(false)
+      end
 
-    it 'false for a enabled role' do
-      allow(Chef::Role)
-        .to receive(:load)
-        .with('gprd-cny-omnibus-version')
-        .and_return(omnibus_role_disabled)
+      it "is false for an enabled #{env} role" do
+        allow(Chef::Role)
+          .to receive(:load)
+          .with("#{env}-cny-omnibus-version")
+          .and_return(omnibus_role_disabled)
 
-      expect(client.canary_active_deployment?).to eq(true)
-    end
+        expect(client.canary_active_deployment?(env: env)).to eq(true)
+      end
 
-    it 'false for an empty role' do
-      allow(Chef::Role)
-        .to receive(:load)
-        .with('gprd-cny-omnibus-version')
-        .and_return(omnibus_role_empty)
+      it "is false for an empty #{env} role" do
+        allow(Chef::Role)
+          .to receive(:load)
+          .with("#{env}-cny-omnibus-version")
+          .and_return(omnibus_role_empty)
 
-      expect(client.canary_active_deployment?).to eq(false)
+        expect(client.canary_active_deployment?(env: env)).to eq(false)
+      end
     end
   end
 
   describe '#canary_pipeline_url' do
-    it 'returns the pipeline URL' do
-      allow(Chef::Role)
-        .to receive(:load)
-        .with('gprd-cny-omnibus-version')
-        .and_return(omnibus_role_enabled)
+    %w[gstg gprd].each do |env|
+      it "returns the canary pipeline URL for #{env}" do
+        allow(Chef::Role)
+          .to receive(:load)
+          .with("#{env}-cny-omnibus-version")
+          .and_return(omnibus_role_enabled)
 
-      expect(client.canary_pipeline_url).to eq('https://example.com/some/pipeline/url')
+        expect(client.canary_pipeline_url(env: env)).to eq('https://example.com/some/pipeline/url')
+      end
     end
   end
 

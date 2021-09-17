@@ -41,8 +41,8 @@ module Chatops
           .dig('omnibus-gitlab', 'package', 'version') || 'unknown'
       end
 
-      def canary_active_deployment?
-        enabled = canary_omnibus_role
+      def canary_active_deployment?(env:)
+        enabled = canary_omnibus_role(env)
           .default_attributes
           .dig('omnibus-gitlab', 'package', 'enable')
 
@@ -55,8 +55,8 @@ module Chatops
         !enabled
       end
 
-      def canary_pipeline_url
-        canary_omnibus_role
+      def canary_pipeline_url(env:)
+        canary_omnibus_role(env)
           .default_attributes
           .dig('omnibus-gitlab', 'package', '__CI_PIPELINE_URL') || 'unknown'
       end
@@ -105,8 +105,13 @@ module Chatops
         ENV.fetch('CHEF_URL', DEFAULT_CHEF_URL)
       end
 
-      def canary_omnibus_role
-        @canary_omnibus_role ||= omnibus_version_role('gprd-cny')
+      def canary_omnibus_role(env)
+        # Memoize the canary_omnibus_role
+        @canary_omnibus_role ||= Hash.new do |h, key|
+          h[key] = omnibus_version_role("#{key}-cny")
+        end
+
+        @canary_omnibus_role[env]
       end
     end
   end

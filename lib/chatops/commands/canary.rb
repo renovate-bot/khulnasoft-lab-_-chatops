@@ -45,7 +45,7 @@ module Chatops
              canary_active_deployment?
             return [
               'Unable to set canary state because there is a ' \
-                "<#{chef_client.canary_pipeline_url}|" \
+                "<#{chef_client.canary_pipeline_url(env: env_name)}|" \
                 'canary deploy in progress>.',
               'Draining canary while there is a deploy will cause errors for ' \
                 'users connecting to canary hosts.',
@@ -151,7 +151,7 @@ module Chatops
       end
 
       def canary_active_deployment?
-        @canary_active_deployment ||= chef_client.canary_active_deployment?
+        @canary_active_deployment ||= chef_client.canary_active_deployment?(env: env_name)
       end
 
       def production?
