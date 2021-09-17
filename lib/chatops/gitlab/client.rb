@@ -107,6 +107,23 @@ module Chatops
           .paginate_with_limit(limit)
       end
 
+      # Returns branches/tags containing the given commit SHA.
+      #
+      # @param project [Integer, String] the ID (`9970`) of the project or the full
+      #   namespace path (`gitlab-org/gitlab`).
+      # @param sha [String] the commit SHA.
+      # @param type [String] the type of reference you want to check for. One of `tag`, `branch`, `all`.
+      # @return [Array] Array of hashes, with each hash being a reference that contains the given SHA.
+      def refs_containing_commit(project:, sha:, type: 'all')
+        raise ArgumentError, 'Invalid `type` argument' unless %w[all branch tag].include?(type)
+
+        internal_client
+          .commit_refs(project, sha, type: type, per_page: 100)
+          .auto_paginate
+      rescue ::Gitlab::Error::NotFound
+        []
+      end
+
       def_delegator :internal_client, :block_user
       def_delegator :internal_client, :unblock_user
       def_delegator :internal_client, :edit_user

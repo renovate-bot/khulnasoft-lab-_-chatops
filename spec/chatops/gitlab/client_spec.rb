@@ -241,4 +241,24 @@ describe Chatops::Gitlab::Client do
       client.pipeline('foo/bar', 123)
     end
   end
+
+  describe '#refs_containing_commit' do
+    it 'raises ArgumentError if type is not all, tag or branch' do
+      expect { client.refs_containing_commit(project: 'gitlab-org/gitlab', sha: 'sha', type: 'invalid') }
+        .to raise_error(ArgumentError, 'Invalid `type` argument')
+    end
+
+    %w[all tag branch].each do |type|
+      it "calls commit_refs with #{type} argument" do
+        expect(client.internal_client)
+          .to receive(:commit_refs)
+          .with('gitlab-org/gitlab', 'sha', hash_including(type: type))
+          .and_return(instance_double('auto_paginate', auto_paginate: [{ type: 'branch', name: 'master' }]))
+
+        result = client.refs_containing_commit(project: 'gitlab-org/gitlab', sha: 'sha', type: type)
+
+        expect(result).to eq([{ type: 'branch', name: 'master' }])
+      end
+    end
+  end
 end

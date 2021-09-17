@@ -99,41 +99,13 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
       end
 
-      it 'returns the lowest tag ignoring RCs' do
-        tags_with_commit = [
-          instance_double('tag', type: 'tag', name: 'v13.2.0-rc2-ee'),
-          instance_double('tag', type: 'tag', name: 'v13.2.0-rc10-ee'),
-          instance_double('tag', type: 'tag', name: 'v13.2.0-ee'),
-          instance_double('tag', type: 'tag', name: 'v13.10.1-ee'),
-          instance_double('tag', type: 'tag', name: 'v13.10.0-ee')
-        ]
-
-        allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
-          .and_return(instance_double('commit_refs', auto_paginate: tags_with_commit))
+      it 'returns the lowest tag message' do
+        lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: 'v13.2.0-ee')
+        allow(Chatops::Gitlab::ReleaseCheck::LowestTag).to receive(:new).and_return(lowest_tag_service)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> was ' \
           'first released in <https://gitlab.com/gitlab-org/security/gitlab/-/tree/v13.2.0-ee|v13.2.0-ee>.'
-
-        expect(execute).to eq(message)
-      end
-
-      it 'does not fail with a tag that does not follow naming convention' do
-        tags_with_commit = [
-          instance_double('tag', type: 'tag', name: '11-10-0cfa69752d8-0d9531c80-ee'),
-          instance_double('tag', type: 'tag', name: 'v14.3.0-ee')
-        ]
-
-        allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
-          .and_return(instance_double('commit_refs', auto_paginate: tags_with_commit))
-
-        message =
-          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> ' \
-          'was first released in <https://gitlab.com/gitlab-org/security/gitlab/-/tree/v14.3.0-ee|v14.3.0-ee>.'
 
         expect(execute).to eq(message)
       end
@@ -146,10 +118,8 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
         allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
 
-        allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
-          .and_return(instance_double('commit_refs', auto_paginate: []))
+        lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: nil)
+        allow(Chatops::Gitlab::ReleaseCheck::LowestTag).to receive(:new).and_return(lowest_tag_service)
 
         allow(gitlab)
           .to receive(:branch)
@@ -172,9 +142,9 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         branches_with_commit = [instance_double('branch', type: 'branch', name: '14-2-stable-ee')]
 
         allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', hash_including(type: 'branch', per_page: 100))
-          .and_return(instance_double('commit_refs', auto_paginate: branches_with_commit))
+          .to receive(:refs_containing_commit)
+          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
+          .and_return(branches_with_commit)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has been included ' \
@@ -188,9 +158,9 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         branches_with_commit = [instance_double('branch', type: 'branch', name: 'some-branch')]
 
         allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', hash_including(type: 'branch', per_page: 100))
-          .and_return(instance_double('commit_refs', auto_paginate: branches_with_commit))
+          .to receive(:refs_containing_commit)
+          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
+          .and_return(branches_with_commit)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has not been included ' \
@@ -222,10 +192,8 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
         allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
 
-        allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', type: 'tag', per_page: 100)
-          .and_return(instance_double('commit_refs', auto_paginate: []))
+        lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: nil)
+        allow(Chatops::Gitlab::ReleaseCheck::LowestTag).to receive(:new).and_return(lowest_tag_service)
 
         allow(gitlab)
           .to receive(:branch)
@@ -246,9 +214,9 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
 
       it 'returns message if MR has not been deployed to gprd' do
         allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', hash_including(type: 'branch', per_page: 100))
-          .and_return(instance_double('commit_refs', auto_paginate: []))
+          .to receive(:refs_containing_commit)
+          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
+          .and_return([])
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has not yet been ' \
@@ -261,9 +229,9 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         branches_with_commit = [instance_double('branch', type: 'branch', name: production_status.ref)]
 
         allow(gitlab)
-          .to receive(:commit_refs)
-          .with('gitlab-org/security/gitlab', 'sha', hash_including(type: 'branch', per_page: 100))
-          .and_return(instance_double('commit_refs', auto_paginate: branches_with_commit))
+          .to receive(:refs_containing_commit)
+          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
+          .and_return(branches_with_commit)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has been deployed ' \

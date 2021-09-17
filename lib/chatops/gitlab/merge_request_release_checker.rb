@@ -8,10 +8,6 @@ module Chatops
 
       MONTHLY_RELEASE_VERSION_REGEX = /\A(?<major>\d+)\.(?<minor>\d+)\z/
 
-      # We ignore RCs since RCs are created from the stable branch,
-      # and we already check the stable branch.
-      TAG_REGEX = /\Av(?<version>\d+\.\d+\.\d+)-ee\z/
-
       MR_URL_REGEX = %r{https://gitlab.com/(?<project>.+)/-/merge_requests/(?<iid>\d+)}
       ALLOWED_MR_PROJECTS = [CANONICAL_PROJECT, SECURITY_PROJECT].freeze
 
@@ -53,10 +49,10 @@ module Chatops
       end
 
       def check_commit_in_tags_or_stable_branch
-        if !all_tags_containing_commit.empty?
+        if !lowest_tag.nil?
           :commit_already_released
 
-        elsif all_tags_containing_commit.empty? && version.nil?
+        elsif version.nil?
           # Commit doesn't exist in any tag. And a version is not specified,
           # so we cannot check the stable branch.
           :commit_not_released
@@ -66,24 +62,10 @@ module Chatops
         end
       end
 
-      def all_tags_containing_commit
-        @all_tags_containing_commit ||=
-          refs_containing_commit('tag', merge_request.merge_commit_sha).collect do |t|
-            groups = TAG_REGEX.match(t.name)
-            # Some old tags don't follow the naming conventions, so groups will be nil.
-            # For example 11-10-0cfa69752d8-0d9531c80-ee.
-            next unless groups
-
-            {
-              version: Gem::Version.new(groups[:version]),
-              name: t.name
-            }
-          end.compact
-      end
-
       def check_commit_in_stable_branch(sha)
         branch_contains_commit =
-          refs_containing_commit('branch', sha)
+          production_client
+            .refs_containing_commit(project: SECURITY_PROJECT, type: 'branch', sha: sha)
             .select { |b| b.name == stable_branch_name }
             .length >= 1
 
@@ -125,18 +107,9 @@ module Chatops
       end
 
       def auto_deploy_branches_containing_commit(sha)
-        refs_containing_commit('branch', sha)
-          .select { |b| b.name.match?(AUTO_DEPLOY_BRANCH_REGEX) }
-      end
-
-      # Returns branches/tags containing the given commit SHA.
-      # type can be 'branch', 'tag', 'all'.
-      def refs_containing_commit(type, sha)
         production_client
-          .commit_refs(SECURITY_PROJECT, sha, type: type, per_page: 100)
-          .auto_paginate
-      rescue ::Gitlab::Error::NotFound
-        []
+          .refs_containing_commit(project: SECURITY_PROJECT, type: 'branch', sha: sha)
+          .select { |b| b.name.match?(AUTO_DEPLOY_BRANCH_REGEX) }
       end
 
       def production_client
@@ -174,9 +147,10 @@ module Chatops
       end
 
       def lowest_tag
-        lowest_tag = all_tags_containing_commit.min_by { |t| t[:version] }
-
-        lowest_tag[:name]
+        @lowest_tag ||=
+          Gitlab::ReleaseCheck::LowestTag
+            .new(production_client, SECURITY_PROJECT, merge_request.merge_commit_sha)
+            .execute
       end
 
       def slack_link(link, text)
