@@ -21,9 +21,7 @@ module Chatops
         error = validate_args
         return response_message(error) if error
 
-        result = check_commit_in_tags_or_stable_branch
-
-        result = check_commit_deployed_to_gprd(merge_request.merge_commit_sha) if result.nil?
+        result = check_tags_stable_branch_or_gprd
 
         response_message(result)
       end
@@ -46,7 +44,7 @@ module Chatops
         :mr_not_merged if merge_request.state != 'merged'
       end
 
-      def check_commit_in_tags_or_stable_branch
+      def check_tags_stable_branch_or_gprd
         if !lowest_tag.nil?
           :commit_already_released
 
@@ -55,29 +53,26 @@ module Chatops
           # so we cannot check the stable branch.
           :commit_not_released
 
-        elsif stable_branch_exists?
-          check_commit_in_stable_branch(merge_request.merge_commit_sha)
+        elsif stable_branch.exists?
+          check_commit_in_stable_branch
+
+        else
+          check_commit_deployed_to_gprd
         end
       end
 
-      def check_commit_in_stable_branch(sha)
-        branch_contains_commit =
-          production_client
-            .refs_containing_commit(project: SECURITY_PROJECT, type: 'branch', sha: sha)
-            .select { |b| b.name == stable_branch_name }
-            .length >= 1
-
-        if branch_contains_commit
+      def check_commit_in_stable_branch
+        if stable_branch.contains_commit?(merge_request.merge_commit_sha)
           :commit_present_in_stable_branch
         else
           :commit_not_present_in_stable_branch
         end
       end
 
-      def check_commit_deployed_to_gprd(sha)
+      def check_commit_deployed_to_gprd
         commit_deployed_to_gprd =
           Gitlab::ReleaseCheck::Commit
-            .new(production_client, SECURITY_PROJECT, sha)
+            .new(production_client, SECURITY_PROJECT, merge_request.merge_commit_sha)
             .deployed_to_gprd?
 
         if commit_deployed_to_gprd
@@ -85,6 +80,14 @@ module Chatops
         else
           :commit_not_deployed_to_gprd
         end
+      end
+
+      def stable_branch
+        Gitlab::ReleaseCheck::StableBranch.new(
+          production_client,
+          SECURITY_PROJECT,
+          version
+        )
       end
 
       def production_client
@@ -109,18 +112,6 @@ module Chatops
         mr_url_parts[:iid]
       end
 
-      def stable_branch_name
-        @stable_branch_name ||= "#{version.tr('.', '-')}-stable-ee"
-      end
-
-      def stable_branch_exists?
-        production_client.branch(SECURITY_PROJECT, stable_branch_name)
-
-        true
-      rescue ::Gitlab::Error::NotFound
-        false
-      end
-
       def lowest_tag
         @lowest_tag ||=
           Gitlab::ReleaseCheck::LowestTag
@@ -137,7 +128,8 @@ module Chatops
       end
 
       def stable_branch_link
-        slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{stable_branch_name}", 'stable branch')
+        branch_name = stable_branch.name
+        slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{branch_name}", 'stable branch')
       end
 
       def tag_link(tag)

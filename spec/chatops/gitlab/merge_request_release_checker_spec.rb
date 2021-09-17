@@ -114,6 +114,14 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
     context 'when no tag contains commit' do
       let(:merge_request) { instance_double('merge_request', state: 'merged', merge_commit_sha: 'sha') }
 
+      let(:stable_branch_service) do
+        instance_spy(
+          Chatops::Gitlab::ReleaseCheck::StableBranch,
+          name: '14-2-stable-ee',
+          exists?: true
+        )
+      end
+
       before do
         allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
         allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
@@ -121,9 +129,7 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: nil)
         allow(Chatops::Gitlab::ReleaseCheck::LowestTag).to receive(:new).and_return(lowest_tag_service)
 
-        allow(gitlab)
-          .to receive(:branch)
-          .with('gitlab-org/security/gitlab', '14-2-stable-ee')
+        allow(Chatops::Gitlab::ReleaseCheck::StableBranch).to receive(:new).and_return(stable_branch_service)
       end
 
       it 'does not check stable branch if version is not specified' do
@@ -134,17 +140,15 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> was not ' \
           'released in any past version. Try checking with the upcoming release version. Ex: `release check <MR URL> 14.2`'
 
-        expect(gitlab).not_to receive(:branch)
+        expect(Chatops::Gitlab::ReleaseCheck::StableBranch).not_to receive(:new)
         expect(result).to eq(message)
       end
 
       it 'returns message if branch contains commit' do
-        branches_with_commit = [instance_double('branch', type: 'branch', name: '14-2-stable-ee')]
-
-        allow(gitlab)
-          .to receive(:refs_containing_commit)
-          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
-          .and_return(branches_with_commit)
+        allow(stable_branch_service)
+          .to receive(:contains_commit?)
+          .with('sha')
+          .and_return(true)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has been included ' \
@@ -155,12 +159,10 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
       end
 
       it 'returns message if branch does not contain commit' do
-        branches_with_commit = [instance_double('branch', type: 'branch', name: 'some-branch')]
-
-        allow(gitlab)
-          .to receive(:refs_containing_commit)
-          .with(project: 'gitlab-org/security/gitlab', sha: 'sha', type: 'branch')
-          .and_return(branches_with_commit)
+        allow(stable_branch_service)
+          .to receive(:contains_commit?)
+          .with('sha')
+          .and_return(false)
 
         message =
           '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has not been included ' \
@@ -195,10 +197,8 @@ describe Chatops::Gitlab::MergeRequestReleaseChecker do
         lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: nil)
         allow(Chatops::Gitlab::ReleaseCheck::LowestTag).to receive(:new).and_return(lowest_tag_service)
 
-        allow(gitlab)
-          .to receive(:branch)
-          .with('gitlab-org/security/gitlab', '14-2-stable-ee')
-          .and_raise(gitlab_error(:NotFound))
+        stable_branch_service = instance_spy(Chatops::Gitlab::ReleaseCheck::StableBranch, name: '14-2-stable-ee', exists?: false)
+        allow(Chatops::Gitlab::ReleaseCheck::StableBranch).to receive(:new).and_return(stable_branch_service)
       end
 
       it 'returns message if MR has not been deployed to gprd' do
