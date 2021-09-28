@@ -285,6 +285,14 @@ describe Chatops::Commands::AutoDeploy do
         expect(promotable_env_revision(1)).to match('fff1235...ddd1236')
       end
 
+      it 'swaps the order for a running deployment' do
+        upcoming = { revision: 'eee1234', status: 'running' }
+
+        envs.unshift(upcoming)
+
+        expect(promotable_env_revision(0)).to match('abc1234...eee1234')
+      end
+
       it 'returns nil for index out of bounds' do
         expect(promotable_env_revision(100)).to be_nil
       end

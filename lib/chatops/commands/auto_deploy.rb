@@ -349,13 +349,20 @@ module Chatops
         # Can't compare the last environment to anything
         return if idx >= envs.length - 1
 
-        current_rev = envs.dig(idx, :revision)
-        next_rev = envs.dig(idx + 1, :revision)
+        current = envs[idx]
+        previous = envs[idx + 1]
+
+        revisions = [current[:revision], previous[:revision]]
 
         # Can't compare identical revisions
-        return if current_rev == next_rev
+        return if revisions.first == revisions.last
 
-        compare_link(current_rev, next_rev)
+        # A running deployment needs to become the "to" argument
+        #
+        # See https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/1756
+        revisions.reverse! if current[:status] == 'running'
+
+        compare_link(*revisions)
       end
     end
   end
