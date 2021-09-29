@@ -14,7 +14,7 @@ module Chatops
       end
 
       def trigger_end_to_end(feature_name, feature_value)
-        return unless (staging? || production?) && ENV.fetch('TRIGGER_E2E_TESTS')
+        return unless (staging? || production?) && ENV.key?('TRIGGER_E2E_TESTS')
 
         trigger_variables = { feature_toggled: feature_name,
                               feature_value: feature_value,
