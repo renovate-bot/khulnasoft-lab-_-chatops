@@ -26,6 +26,15 @@ describe Chatops::Gitlab::TestsPipeline do
     end
   end
 
+  shared_examples 'end-to-end test does not trigger' do
+    it 'does not trigger end-to-end tests' do
+      expect(Chatops::Gitlab::Client)
+        .not_to receive(:new)
+
+      tests_pipeline.trigger_end_to_end(feature_name, feature_value)
+    end
+  end
+
   context 'when environment is production' do
     around do |example|
       ClimateControl.modify(
@@ -45,18 +54,33 @@ describe Chatops::Gitlab::TestsPipeline do
       { SMOKE_ONLY: true, feature_toggled: feature_name, feature_value: feature_value, toggled_by: username }
     end
 
-    it_behaves_like 'end-to-end test triggers'
+    context 'when TRIGGER_E2E_TESTS is set' do
+      around do |example|
+        ClimateControl.modify(
+          GITLAB_USER_LOGIN: username,
+          GITLAB_OPS_TOKEN: ops_token,
+          PROD_OPS_E2E_TRIGGER_TOKEN: trigger_token,
+          TRIGGER_E2E_TESTS: 'true'
+        ) { example.run }
+      end
+
+      it_behaves_like 'end-to-end test triggers'
+    end
+
+    context 'when TRIGGER_E2E_TESTS is not set' do
+      around do |example|
+        ClimateControl.modify(
+          GITLAB_USER_LOGIN: username,
+          GITLAB_OPS_TOKEN: ops_token,
+          PROD_OPS_E2E_TRIGGER_TOKEN: trigger_token
+        ) { example.run }
+      end
+
+      it_behaves_like 'end-to-end test does not trigger'
+    end
   end
 
   context 'when environment is staging' do
-    around do |example|
-      ClimateControl.modify(
-        GITLAB_USER_LOGIN: username,
-        GITLAB_OPS_TOKEN: ops_token,
-        STAGING_OPS_E2E_TRIGGER_TOKEN: trigger_token
-      ) { example.run }
-    end
-
     let(:tests_pipeline) do
       described_class.new('gstg')
     end
@@ -67,7 +91,30 @@ describe Chatops::Gitlab::TestsPipeline do
       { feature_toggled: feature_name, feature_value: feature_value, toggled_by: username }
     end
 
-    it_behaves_like 'end-to-end test triggers'
+    context 'when TRIGGER_E2E_TESTS is set' do
+      around do |example|
+        ClimateControl.modify(
+          GITLAB_USER_LOGIN: username,
+          GITLAB_OPS_TOKEN: ops_token,
+          STAGING_OPS_E2E_TRIGGER_TOKEN: trigger_token,
+          TRIGGER_E2E_TESTS: 'true'
+        ) { example.run }
+      end
+
+      it_behaves_like 'end-to-end test triggers'
+    end
+
+    context 'when TRIGGER_E2E_TESTS is not set' do
+      around do |example|
+        ClimateControl.modify(
+          GITLAB_USER_LOGIN: username,
+          GITLAB_OPS_TOKEN: ops_token,
+          STAGING_OPS_E2E_TRIGGER_TOKEN: trigger_token
+        ) { example.run }
+      end
+
+      it_behaves_like 'end-to-end test does not trigger'
+    end
   end
 
   context 'when environment is dev' do
@@ -75,11 +122,6 @@ describe Chatops::Gitlab::TestsPipeline do
       described_class.new('dev')
     end
 
-    it 'does not trigger end-to-end tests' do
-      expect(Chatops::Gitlab::Client)
-        .not_to receive(:new)
-
-      tests_pipeline.trigger_end_to_end(feature_name, feature_value)
-    end
+    it_behaves_like 'end-to-end test does not trigger'
   end
 end
