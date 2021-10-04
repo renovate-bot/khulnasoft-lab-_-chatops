@@ -179,8 +179,9 @@ module Chatops
           environment_variables_for(version)
         )
 
-        url = response.web_url
+        inc_rollbacks_metric if options[:rollback]
 
+        url = response.web_url
         "The deploy has been scheduled and can be viewed <#{url}|here>"
       rescue StandardError => error
         "The deploy could not be scheduled: #{error.message}"
@@ -237,6 +238,16 @@ module Chatops
         env.fetch('TAKEOFF_TRIGGER_HOST')
       end
 
+      # Returns the API token to use for interacting with delivery-metrics
+      def delivery_metrics_token
+        env.fetch('DELIVERY_METRICS_TOKEN')
+      end
+
+      # Returns the delivery-metrics endpoint
+      def delivery_metrics_url
+        env.fetch('DELIVERY_METRICS_URL')
+      end
+
       def environment
         base =
           if options[:production]
@@ -272,6 +283,15 @@ module Chatops
         return if ENVIRONMENTS.include?(env)
 
         raise "Invalid environment `#{env}`, must be one of #{ENVIRONMENTS.join(', ')}"
+      end
+
+      def inc_rollbacks_metric
+        HTTP
+          .headers("X-Private-Token": delivery_metrics_token)
+          .post(
+            "#{delivery_metrics_url}/api/deployment_rollbacks_started_total/inc",
+            form: { labels: environment }
+          )
       end
     end
   end

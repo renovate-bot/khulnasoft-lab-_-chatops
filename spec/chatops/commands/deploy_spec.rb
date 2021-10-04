@@ -228,6 +228,27 @@ describe Chatops::Commands::Deploy do
       end
     end
 
+    context 'with a rollback' do
+      it 'increments the rollbacks counter metric' do
+        env = instance_double('Hash', fetch: '', "[]": '')
+        allow(env).to receive(:to_hash).and_return(env)
+
+        command = described_class
+          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50],
+               { rollback: true, gstg: true },
+               env)
+
+        response = instance_double('response', web_url: 'bar')
+        expect(command.client)
+          .to receive(:run_trigger)
+          .and_return(response)
+
+        expect(command).to receive(:inc_rollbacks_metric)
+
+        command.perform
+      end
+    end
+
     context 'with extraneous arguments' do
       it 'returns an error' do
         command = described_class
@@ -657,6 +678,39 @@ describe Chatops::Commands::Deploy do
         .with(version)
 
       command.perform
+    end
+  end
+
+  describe '#inc_rollbacks_metric' do
+    subject(:command) do
+      described_class.new(
+        %w[12.0.201906051128-30e31e4afb1.bd6aadb8c50],
+        { canary: true, staging: true },
+        'DELIVERY_METRICS_TOKEN' => token,
+        'DELIVERY_METRICS_URL' => url
+      )
+    end
+
+    let(:token) { 'a-token' }
+    let(:url) { 'http://example.com' }
+
+    it 'sets X-Private-Token header' do
+      expect(HTTP).to receive(:headers)
+        .with("X-Private-Token": token)
+        .and_return(instance_spy('HTTP::Client'))
+
+      command.inc_rollbacks_metric
+    end
+
+    it 'makes a POST requests' do
+      client = instance_spy('HTTP::Client')
+      expect(HTTP).to receive(:headers).and_return(client)
+
+      command.inc_rollbacks_metric
+
+      expect(client).to have_received(:post)
+        .with("#{url}/api/deployment_rollbacks_started_total/inc",
+              form: { labels: 'gstg-cny' })
     end
   end
 end
