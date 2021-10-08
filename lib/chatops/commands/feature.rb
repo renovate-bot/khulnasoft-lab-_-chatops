@@ -381,20 +381,9 @@ module Chatops
         channel = QA_CHANNELS[gitlab_host]
         return unless channel
 
-        markdown_text = "<#{issue.web_url}|#{issue.title}>"
-
-        if trigger_tests_response
-          markdown_text += "\n"
-          markdown_text += if trigger_tests_response.include?('Failed')
-                             trigger_tests_response
-                           else
-                             "An end-to-end test pipeline has been triggered: #{trigger_tests_response}"
-                           end
-        end
-
         blocks = [{
           type: 'section',
-          text: Slack.markdown(markdown_text)
+          text: Slack.markdown(text_for_slack_message(trigger_tests_response, issue))
         }]
 
         send_slack_message_safely(
@@ -402,6 +391,22 @@ module Chatops
           channel: channel,
           slack_args: { blocks: blocks }
         )
+      end
+
+      def text_for_slack_message(trigger_tests_response, issue)
+        if trigger_tests_response
+          body = if trigger_tests_response.include?('Failed')
+                   trigger_tests_response
+                 else
+                   "An end-to-end test pipeline has been triggered: #{trigger_tests_response}"
+                 end
+        end
+
+        <<~DESC
+          <#{issue.web_url}|#{issue.title}>
+
+          #{body}
+        DESC
       end
 
       def send_slack_message_safely(slack_token:, channel:, slack_args:)

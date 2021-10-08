@@ -18,9 +18,9 @@ module Chatops
 
         trigger_variables = { feature_toggled: feature_name,
                               feature_value: feature_value,
-                              toggled_by: ENV.fetch('GITLAB_USER_LOGIN') }
+                              gitlab_username: ENV.fetch('GITLAB_USER_LOGIN') }
 
-        trigger_variables[:SMOKE_ONLY] = true if production?
+        trigger_variables[:chat_user_id] = ENV.fetch('CHAT_USER_ID') if ENV.key?('CHAT_USER_ID')
 
         response = ops_client.run_trigger(quality_project_path,
                                           ops_e2e_trigger_token,

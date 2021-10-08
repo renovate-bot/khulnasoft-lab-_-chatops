@@ -737,7 +737,7 @@ describe Chatops::Commands::Feature do
       end
 
       it 'sends a relevant Slack message' do
-        expect_slack_message(blocks: QaMessageBlockMatcher.new(issue))
+        expect_slack_message(blocks: QaMessageBlockMatcher.new(issue, command))
 
         command.send_feature_toggling_to_qa_channel(issue)
       end
@@ -757,7 +757,7 @@ describe Chatops::Commands::Feature do
       end
 
       it 'sends a relevant Slack message' do
-        expect_slack_message(blocks: QaMessageBlockMatcher.new(issue, ops_pipeline, username))
+        expect_slack_message(blocks: QaMessageBlockMatcher.new(issue, command, ops_pipeline))
 
         command.send_feature_toggling_to_qa_channel(issue, ops_pipeline)
       end
@@ -1113,23 +1113,14 @@ end
 # RSpec argument matcher for verifying the complex `block` Hash passed to
 # `Slack::Message#send` from the described class
 class QaMessageBlockMatcher
-  def initialize(issue, trigger_tests_response = nil, username = nil)
+  def initialize(issue, command = nil, trigger_tests_response = nil)
     @issue = issue
+    @command = command
     @trigger_tests_response = trigger_tests_response
-    @username = username
   end
 
   def ===(other)
-    markdown_text = "<#{@issue.web_url}|#{@issue.title}>"
-
-    if @trigger_tests_response
-      markdown_text += "\n"
-      markdown_text += if @trigger_tests_response.include?('Failed')
-                         @trigger_tests_response
-                       else
-                         "An end-to-end test pipeline has been triggered: #{@trigger_tests_response}"
-                       end
-    end
+    markdown_text = @command.text_for_slack_message(@trigger_tests_response, @issue)
 
     other.first[:text][:text] == markdown_text
   end
