@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe Chatops::Commands::Rollback do
+describe Chatops::Commands::Rollback, :release_command do
   let(:fake_client) { spy }
 
   let(:env) do
@@ -64,89 +64,13 @@ describe Chatops::Commands::Rollback do
       expect(command.perform).to match('Invalid environment')
     end
 
-    it 'compares the latest deployments' do
-      command = described_class.new(%w[check gprd], *env)
+    it 'triggers a check for the specified environment' do
+      instance = stubbed_instance('check', 'gprd')
 
-      deployments = [
-        instance_double('deployment', sha: 'abcdefg'),
-        instance_double('deployment', sha: '1234567')
-      ]
-      compare = instance_double('compare', diffs: [], compare_timeout: false)
+      expect(instance).to receive(:trigger_release)
+        .with(nil, 'auto_deploy:rollback_check', ROLLBACK_CURRENT: 'gprd', ROLLBACK_TARGET: 'gprd')
 
-      expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'success', limit: 2)
-        .and_return(deployments)
-      expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::SOURCE_PROJECT, 'gprd', limit: 1)
-        .and_return([])
-
-      expect(fake_client).to receive(:compare)
-        .with(described_class::SOURCE_PROJECT, '1234567', 'abcdefg')
-        .and_return(compare)
-
-      expect(Chatops::Gitlab::RollbackCheck).to receive(:new)
-        .with(compare, nil)
-        .and_call_original
-
-      expect_slack_message(blocks: RollbackBlockMatcher.new('gprd'))
-
-      command.perform
+      instance.perform
     end
-
-    # rubocop: disable RSpec/ExampleLength
-    it 'includes a running deployment and the rollback package' do
-      command = described_class.new(%w[check gprd], *env)
-
-      running = instance_double('deployment', sha: 'a1b2c3d4', status: 'running')
-      deployments = [
-        instance_double('deployment', sha: 'abcdefg'),
-        instance_double('deployment', sha: '1234567')
-      ]
-      package = instance_double('deployment', ref: 'omnibus+package')
-      compare = instance_double('compare', diffs: [], compare_timeout: false)
-
-      expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::SOURCE_PROJECT, 'gprd', status: 'success', limit: 2)
-        .and_return(deployments)
-      expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::SOURCE_PROJECT, 'gprd', limit: 1)
-        .and_return([running])
-      expect(fake_client).to receive(:latest_deployments)
-        .with(described_class::PACKAGE_PROJECT, 'gprd', status: 'success', limit: 2)
-        .and_return([nil, package])
-
-      expect(fake_client).to receive(:compare)
-        .with(described_class::SOURCE_PROJECT, '1234567', 'abcdefg')
-        .and_return(compare)
-
-      expect(Chatops::Gitlab::RollbackCheck).to receive(:new)
-        .with(compare, running)
-        .and_call_original
-
-      expect_slack_message(
-        blocks: RollbackBlockMatcher.new(
-          'gprd',
-          package: 'omnibus-package',
-          rollback: '/chatops run deploy --rollback --production omnibus-package'
-        )
-      )
-
-      command.perform
-    end
-    # rubocop: enable RSpec/ExampleLength
-  end
-end
-
-class RollbackBlockMatcher
-  def initialize(env, package: '', rollback: '')
-    @env = env
-    @package = package
-    @rollback = rollback
-  end
-
-  def ===(other)
-    other.to_json.include?(":party-tanuki: #{@env}") &&
-      (@package.empty? || other.to_json.include?("`#{@package}`")) &&
-      (@rollback.empty? || other.to_json.include?("*Rollback command:* `#{@rollback}`"))
   end
 end
