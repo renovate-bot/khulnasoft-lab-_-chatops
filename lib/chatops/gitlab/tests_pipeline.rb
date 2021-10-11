@@ -9,15 +9,18 @@ module Chatops
       # The project where the end-to-end test smoke pipeline will be triggered for run against gitlab.com
       PRODUCTION_QUALITY_PROJECT = 'gitlab-org/quality/production'
 
-      def initialize(environment)
+      def initialize(environment, options, feature_name, feature_value)
         @environment = environment
+        @options = options
+        @feature_name = feature_name
+        @feature_value = feature_value
       end
 
-      def trigger_end_to_end(feature_name, feature_value)
-        return unless (staging? || production?) && ENV.key?('TRIGGER_E2E_TESTS')
+      def trigger_end_to_end
+        return unless should_trigger?
 
-        trigger_variables = { feature_toggled: feature_name,
-                              feature_value: feature_value,
+        trigger_variables = { feature_toggled: @feature_name,
+                              feature_value: @feature_value,
                               gitlab_username: ENV.fetch('GITLAB_USER_LOGIN') }
 
         trigger_variables[:chat_user_id] = ENV.fetch('CHAT_USER_ID') if ENV.key?('CHAT_USER_ID')
@@ -32,7 +35,32 @@ module Chatops
         "Failed to trigger end-to-end test pipeline: #{e.message}"
       end
 
+      def should_trigger?
+        ENV.key?('TRIGGER_E2E_TESTS') &&
+          @feature_value != 'false' &&
+          allowed_environment? &&
+          allowed_user? &&
+          allowed_group? &&
+          allowed_project?
+      end
+
       private
+
+      def allowed_environment?
+        staging? || production?
+      end
+
+      def allowed_user?
+        @options[:user].nil? || @options[:user] == 'gitlab-qa'
+      end
+
+      def allowed_group?
+        @options[:group].nil? || @options[:group] == 'gitlab-qa-sandbox-group'
+      end
+
+      def allowed_project?
+        @options[:project].nil?
+      end
 
       def ops_client
         @ops_client ||= Gitlab::Client

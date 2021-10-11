@@ -164,7 +164,7 @@ module Chatops
           .find_by_name(name)
       end
 
-      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/CyclomaticComplexity, Metrics/AbcSize
       # Updates the value of a single feature flag.
       def set
         prod_check_failure_resp =
@@ -208,11 +208,11 @@ module Chatops
                                     actors: options[:actors])
 
         feature = Gitlab::Feature.from_api_response(response)
-        perform_side_effects(name, value, feature)
+        perform_side_effects(name, value, feature, options)
       rescue ProductionCheckTimeout => e
         e.message + ' ' + check_failure_resp
       end
-      # rubocop: enable Metrics/CyclomaticComplexity
+      # rubocop: enable Metrics/CyclomaticComplexity, Metrics/AbcSize
 
       def production_check?
         return true unless production?
@@ -276,7 +276,7 @@ module Chatops
         end
       end
 
-      def perform_side_effects(name, value, feature)
+      def perform_side_effects(name, value, feature, options)
         annotate_feature_toggle(name, value)
         send_feature_toggle_event(name, value)
         issue = log_feature_toggle(name, value)
@@ -287,7 +287,7 @@ module Chatops
           text: 'The feature flag value has been updated!'
         )
 
-        trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(env_name).trigger_end_to_end(name, value)
+        trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(env_name, options, name, value).trigger_end_to_end
 
         output << send_feature_toggling_to_qa_channel(issue, trigger_tests_response)
 

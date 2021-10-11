@@ -66,7 +66,6 @@ describe Chatops::Commands::Feature do
     let(:host) { 'gitlab.com' }
     let(:token) { '123' }
     let(:tag_env) { ['gprd'] }
-    let(:trigger_e2e_tests_params) { log_feature_toggle_params }
 
     it 'sets the feature flag' do
       command_envs = {
@@ -132,7 +131,6 @@ describe Chatops::Commands::Feature do
 
       expect(tests_pipeline)
         .to receive(:trigger_end_to_end)
-        .with(*trigger_e2e_tests_params)
         .and_return(:ops_pipeline)
 
       annotate = instance_double('annotate')
