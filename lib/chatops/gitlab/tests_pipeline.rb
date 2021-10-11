@@ -37,7 +37,7 @@ module Chatops
 
       def should_trigger?
         ENV.key?('TRIGGER_E2E_TESTS') &&
-          @feature_value != 'false' &&
+          %w[100 true].include?(@feature_value) &&
           allowed_environment? &&
           allowed_user? &&
           allowed_group? &&

@@ -103,6 +103,18 @@ describe Chatops::Gitlab::TestsPipeline do
       it { expect(tests_pipeline.should_trigger?).to eq false }
     end
 
+    context 'when feature_value is 90' do
+      let(:feature_value) { '90' }
+
+      it { expect(tests_pipeline.should_trigger?).to eq false }
+    end
+
+    context 'when feature_value is 100' do
+      let(:feature_value) { '100' }
+
+      it { expect(tests_pipeline.should_trigger?).to eq true }
+    end
+
     context 'when a project is specified' do
       let(:options) do
         { project: 'some-project', group: nil, user: nil }
