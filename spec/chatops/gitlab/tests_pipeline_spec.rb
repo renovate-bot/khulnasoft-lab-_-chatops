@@ -170,6 +170,12 @@ describe Chatops::Gitlab::TestsPipeline do
       { project: nil, group: nil, user: nil }
     end
 
+    around do |example|
+      ClimateControl.modify(
+        TRIGGER_E2E_TESTS: nil
+      ) { example.run }
+    end
+
     it { expect(tests_pipeline.should_trigger?).to eq false }
   end
 end
