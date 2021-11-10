@@ -36,9 +36,10 @@ module Chatops
 
       # IDs of QA channels to send message each time a feature flag is set
       QA_CHANNELS = {
-        STAGING_HOST => 'CBS3YKMGD', # `#qa-staging`
-        PRODUCTION_HOST => 'CCNNKFP8B', # `#qa-production`
-        PRE_HOST => 'CR7QH0RV1' # `qa-preprod`
+        STAGING_HOST => 'CBS3YKMGD',       # `#qa-staging`
+        STAGING_REF_HOST => 'C02JGFF2EAZ', # `#qa-staging-ref`
+        PRODUCTION_HOST => 'CCNNKFP8B',    # `#qa-production`
+        PRE_HOST => 'CR7QH0RV1'            # `#qa-preprod`
       }.freeze
 
       description 'Managing of GitLab feature flags.'
@@ -426,7 +427,7 @@ module Chatops
       end
 
       def send_feature_toggle_event(name, value)
-        return unless staging? || production?
+        return unless staging? || staging_ref? || production?
 
         message = "feature '#{name}' updated to '#{value}'"
         Chatops::Events::Client

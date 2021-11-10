@@ -36,6 +36,7 @@ describe Chatops::Commands::Feature do
         'GITLAB_TOKEN' => '123',
         'GRAFANA_TOKEN' => 'some-grafana-token',
         'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_STAGING_REF_TOKEN' => '654',
         'GITLAB_USER_LOGIN' => 'alice'
       }
       command = described_class.new(command_args, command_opts, command_envs)
@@ -72,6 +73,7 @@ describe Chatops::Commands::Feature do
         'GITLAB_TOKEN' => '123',
         'GRAFANA_TOKEN' => 'some-grafana-token',
         'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_STAGING_REF_TOKEN' => '654',
         'GITLAB_USER_LOGIN' => 'alice'
       }
       command = described_class.new(command_args, command_opts, command_envs)
@@ -190,7 +192,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          a_hash_including(staging: true, dev: false, ops: false, pre: false),
+          a_hash_including(staging: true, staging_ref: false, dev: false, ops: false, pre: false),
           {}
         )
         .and_return(instance)
@@ -201,6 +203,24 @@ describe Chatops::Commands::Feature do
       described_class.perform(%w[feature list --staging])
     end
 
+    it 'supports a --staging-ref option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(
+          %w[feature list],
+          a_hash_including(staging: false, staging_ref: true, dev: false, ops: false, pre: false),
+          {}
+        )
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[feature list --staging-ref])
+    end
+
     it 'supports a --dev option' do
       instance = instance_double('instance')
 
@@ -208,7 +228,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          a_hash_including(staging: false, dev: true, ops: false, pre: false),
+          a_hash_including(staging: false, staging_ref: false, dev: true, ops: false, pre: false),
           {}
         )
         .and_return(instance)
@@ -226,7 +246,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          a_hash_including(staging: false, dev: false, ops: true, pre: false),
+          a_hash_including(staging: false, staging_ref: false, dev: false, ops: true, pre: false),
           {}
         )
         .and_return(instance)
@@ -244,7 +264,7 @@ describe Chatops::Commands::Feature do
         .to receive(:new)
         .with(
           %w[feature list],
-          a_hash_including(staging: false, dev: false, ops: false, pre: true),
+          a_hash_including(staging: false, staging_ref: false, dev: false, ops: false, pre: true),
           {}
         )
         .and_return(instance)
@@ -345,7 +365,7 @@ describe Chatops::Commands::Feature do
 
     context 'when using a non-existing feature name' do
       it 'returns an error message' do
-        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
+        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
         collection = instance_double('collection')
 
         expect(Chatops::Gitlab::FeatureCollection)
@@ -364,7 +384,7 @@ describe Chatops::Commands::Feature do
 
     context 'when using a valid feature name' do
       it 'sends the details of the feature to Slack' do
-        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
+        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
         collection = instance_double('collection')
         feature = instance_double('feature')
 
@@ -613,7 +633,7 @@ describe Chatops::Commands::Feature do
     context 'when there is an ongoing incident' do
       it 'does not allow changing the feature flag state' do
         command =
-          described_class.new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
+          described_class.new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
 
         expect(command).to receive(:production_check?).and_return(false)
 
@@ -629,6 +649,7 @@ describe Chatops::Commands::Feature do
         {},
         'GITLAB_TOKEN' => '123',
         'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_STAGING_REF_TOKEN' => '654',
         'SLACK_TOKEN' => '456',
         'CHAT_CHANNEL' => 'foo'
       )
@@ -657,6 +678,7 @@ describe Chatops::Commands::Feature do
         {},
         'GITLAB_TOKEN' => '123',
         'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_STAGING_REF_TOKEN' => '654',
         'SLACK_TOKEN' => '456',
         'CHAT_CHANNEL' => 'foo'
       )
@@ -806,6 +828,28 @@ describe Chatops::Commands::Feature do
       )
     end
 
+    context 'when environment is staging-ref' do
+      let(:username) { 'alice' }
+      let(:command) do
+        described_class.new(
+          [],
+          { staging_ref: true },
+          'SLACK_TOKEN' => '123',
+          'CHAT_CHANNEL' => '456',
+          'GITLAB_USER_LOGIN' => username
+        )
+      end
+
+      include_examples(
+        'message sent to the relevant Slack QA channel with no pipeline link',
+        described_class::QA_CHANNELS[described_class::STAGING_REF_HOST]
+      )
+      include_examples(
+        'message sent to the relevant Slack QA channel with pipeline link',
+        described_class::QA_CHANNELS[described_class::STAGING_REF_HOST]
+      )
+    end
+
     context 'when environment is pre' do
       let(:command) do
         described_class.new(
@@ -844,7 +888,7 @@ describe Chatops::Commands::Feature do
   describe '#attachment_fields_per_state' do
     it 'returns attachment fields grouped per state ' do
       command = described_class
-        .new([], { match: 'foo' }, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321')
+        .new([], { match: 'foo' }, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
 
       feature = Chatops::Gitlab::Feature.new(
         name: 'foo',
@@ -872,7 +916,8 @@ describe Chatops::Commands::Feature do
           { dev: true },
           'GITLAB_DEV_TOKEN' => '123',
           'GITLAB_TOKEN' => '456',
-          'GITLAB_STAGING_TOKEN' => '321'
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
         expect(command.gitlab_token).to eq('123')
@@ -886,10 +931,25 @@ describe Chatops::Commands::Feature do
           { pre: true },
           'GITLAB_PRE_TOKEN' => '123',
           'GITLAB_TOKEN' => '456',
-          'GITLAB_STAGING_TOKEN' => '321'
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
         expect(command.gitlab_token).to eq('123')
+      end
+    end
+
+    context 'when using staging-ref' do
+      it 'returns the value of GITLAB_STAGING_REF_TOKEN' do
+        command = described_class.new(
+          [],
+          { staging_ref: true },
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654',
+          'GITLAB_TOKEN' => '456'
+        )
+
+        expect(command.gitlab_token).to eq('654')
       end
     end
 
@@ -899,6 +959,7 @@ describe Chatops::Commands::Feature do
           [],
           { staging: true },
           'GITLAB_STAGING_TOKEN' => '123',
+          'GITLAB_STAGING_REF_TOKEN' => '654',
           'GITLAB_TOKEN' => '456'
         )
 
@@ -912,6 +973,7 @@ describe Chatops::Commands::Feature do
           [],
           {},
           'GITLAB_STAGING_TOKEN' => '123',
+          'GITLAB_STAGING_REF_TOKEN' => '654',
           'GITLAB_TOKEN' => '456'
         )
 
@@ -934,6 +996,14 @@ describe Chatops::Commands::Feature do
         command = described_class.new([], pre: true)
 
         expect(command.gitlab_host).to eq('pre.gitlab.com')
+      end
+    end
+
+    context 'when using staging-ref' do
+      it 'returns staging-ref.gitlab.com' do
+        command = described_class.new([], staging_ref: true)
+
+        expect(command.gitlab_host).to eq('staging-ref.gitlab.com')
       end
     end
 
@@ -980,7 +1050,8 @@ describe Chatops::Commands::Feature do
           {},
           'GITLAB_USER_LOGIN' => 'alice',
           'GITLAB_TOKEN' => 'foo',
-          'GITLAB_STAGING_TOKEN' => '321'
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
         client = instance_double(Chatops::Gitlab::Client)
@@ -1012,7 +1083,8 @@ describe Chatops::Commands::Feature do
           { ignore_production_check: true },
           'GITLAB_USER_LOGIN' => 'alice',
           'GITLAB_TOKEN' => 'foo',
-          'GITLAB_STAGING_TOKEN' => '321'
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
         client = instance_double(Chatops::Gitlab::Client)
@@ -1050,7 +1122,8 @@ describe Chatops::Commands::Feature do
         'CHAT_CHANNEL' => '456',
         'GITLAB_OPS_TOKEN' => '789',
         'CI_JOB_TOKEN' => 'abc',
-        'GITLAB_STAGING_TOKEN' => '321'
+        'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_STAGING_REF_TOKEN' => '654'
       )
     end
     let(:message) { instance_double('Chatops::Slack::Message', send: nil) }
@@ -1095,7 +1168,8 @@ describe Chatops::Commands::Feature do
           [],
           { staging: true },
           'GITLAB_TOKEN' => 'foo',
-          'GITLAB_STAGING_TOKEN' => '321'
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654'
         )
       end
 

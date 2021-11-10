@@ -4,6 +4,7 @@ module Chatops
   module GitlabEnvironments
     DEV_HOST = 'dev.gitlab.org'
     STAGING_HOST = 'staging.gitlab.com'
+    STAGING_REF_HOST = 'staging-ref.gitlab.com'
     OPS_HOST = 'ops.gitlab.net'
     PRE_HOST = 'pre.gitlab.com'
     PRODUCTION_HOST = 'gitlab.com'
@@ -13,12 +14,14 @@ module Chatops
       'gprd-cny' => 'canary',
       'gstg' => 'building_construction',
       'gstg-cny' => 'hatching_chick',
+      'gstg-ref' => 'construction',
       'pre' => 'pretzel'
     }.freeze
 
     def self.define_environment_options(options)
       options.boolean('--dev', "Use #{DEV_HOST}")
       options.boolean('--staging', "Use #{STAGING_HOST}")
+      options.boolean('--staging-ref', "Use #{STAGING_REF_HOST}")
       options.boolean('--ops', "Use #{OPS_HOST}")
       options.boolean('--pre', "Use #{PRE_HOST}")
     end
@@ -32,6 +35,8 @@ module Chatops
         DEV_HOST
       elsif staging?
         STAGING_HOST
+      elsif staging_ref?
+        STAGING_REF_HOST
       elsif ops?
         OPS_HOST
       elsif pre?
@@ -46,6 +51,8 @@ module Chatops
         'dev'
       elsif staging?
         'gstg'
+      elsif staging_ref?
+        'gstg-ref'
       elsif ops?
         'ops'
       elsif pre?
@@ -61,6 +68,8 @@ module Chatops
           'GITLAB_DEV_TOKEN'
         elsif staging?
           'GITLAB_STAGING_TOKEN'
+        elsif staging_ref?
+          'GITLAB_STAGING_REF_TOKEN'
         elsif ops?
           'GITLAB_OPS_TOKEN'
         elsif pre?
@@ -78,6 +87,10 @@ module Chatops
 
     def staging?
       options[:staging]
+    end
+
+    def staging_ref?
+      options[:staging_ref]
     end
 
     def ops?

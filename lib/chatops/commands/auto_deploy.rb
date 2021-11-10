@@ -113,7 +113,8 @@ module Chatops
           *environment_status('gprd'),
           *environment_status('gprd-cny'),
           *environment_status('gstg'),
-          *environment_status('gstg-cny')
+          *environment_status('gstg-cny'),
+          *environment_status('gstg-ref')
         ]
 
         if sha
@@ -296,6 +297,8 @@ module Chatops
           PRODUCTION_HOST
         when 'gstg', 'gstg-cny'
           STAGING_HOST
+        when 'gstg-ref'
+          STAGING_REF_HOST
         end
       end
 
