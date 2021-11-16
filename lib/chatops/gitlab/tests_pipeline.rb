@@ -21,7 +21,8 @@ module Chatops
 
         trigger_variables = { feature_toggled: @feature_name,
                               feature_value: @feature_value,
-                              gitlab_username: ENV.fetch('GITLAB_USER_LOGIN') }
+                              gitlab_username: ENV.fetch('GITLAB_USER_LOGIN'),
+                              FULL_ONLY: 'true' }
 
         trigger_variables[:chat_user_id] = ENV.fetch('CHAT_USER_ID') if ENV.key?('CHAT_USER_ID')
 
