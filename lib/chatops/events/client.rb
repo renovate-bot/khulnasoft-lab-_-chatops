@@ -3,7 +3,7 @@
 module Chatops
   module Events
     class Client
-      VALID_ENVS = %w[gstg gprd].freeze
+      VALID_ENVS = %w[gstg gstg-ref gprd].freeze
 
       attr_reader :client
 

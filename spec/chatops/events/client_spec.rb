@@ -91,7 +91,7 @@ describe Chatops::Events::Client do
       expect { described_class.new('some-invalid-env') }
         .to raise_error(
           RuntimeError,
-          'Only gstg,gprd are valid envs for sending events, ' \
+          'Only gstg,gstg-ref,gprd are valid envs for sending events, ' \
           "got 'some-invalid-env'."
         )
     end
