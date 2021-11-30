@@ -288,18 +288,7 @@ module Chatops
       end
 
       def environment_text(env)
-        ":#{env_icon(env[:role])}: #{env_host(env[:role])}"
-      end
-
-      def env_host(env)
-        case env
-        when 'gprd', 'gprd-cny'
-          PRODUCTION_HOST
-        when 'gstg', 'gstg-cny'
-          STAGING_HOST
-        when 'gstg-ref'
-          STAGING_REF_HOST
-        end
+        ":#{env_icon(env[:role])}: #{env[:role]}"
       end
 
       def task_icon(task)
