@@ -11,7 +11,8 @@ module Chatops
         new(
           name: feature.name,
           state: feature.state,
-          gates: feature.gates
+          gates: feature.gates,
+          definitions: feature.definition
         )
       end
 
@@ -28,10 +29,11 @@ module Chatops
       # name - The name of the feature flag.
       # state - The state of the feature such as "on" or "conditional".
       # gates - The list of feature gates for this flag.
-      def initialize(name:, state:, gates: [])
+      def initialize(name:, state:, gates: [], definitions: nil)
         @name = name
         @state = state
         @gates = gates
+        @definitions = definitions
       end
 
       # Returns `true` if the feature is enabled.

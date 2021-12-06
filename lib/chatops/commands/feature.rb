@@ -42,6 +42,10 @@ module Chatops
         PRE_HOST => 'CR7QH0RV1'            # `#qa-preprod`
       }.freeze
 
+      SUPPORT_CHANNELS = {
+        PRODUCTION_HOST => 'C4XFU81LG' # '#support_gitlab-com'
+      }.freeze
+
       description 'Managing of GitLab feature flags.'
 
       # rubocop: disable Metrics/BlockLength
@@ -291,6 +295,7 @@ module Chatops
         trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(env_name, options, name, value).trigger_end_to_end
 
         output << send_feature_toggling_to_qa_channel(issue, trigger_tests_response)
+        output << send_feature_toggling_to_support_channel(feature, issue)
 
         output.compact.join("\n")
       end
@@ -394,6 +399,22 @@ module Chatops
         )
       end
 
+      def send_feature_toggling_to_support_channel(feature, issue)
+        channel = SUPPORT_CHANNELS[gitlab_host]
+        return unless channel
+
+        blocks = [{
+          type: 'section',
+          text: Slack.markdown(text_for_support_slack_message(feature, issue))
+        }]
+
+        send_slack_message_safely(
+          slack_token: slack_token,
+          channel: channel,
+          slack_args: { blocks: blocks }
+        )
+      end
+
       def text_for_slack_message(trigger_tests_response, issue)
         if trigger_tests_response
           body = if trigger_tests_response.include?('Failed')
@@ -401,6 +422,19 @@ module Chatops
                  else
                    "An end-to-end test pipeline has been triggered: #{trigger_tests_response}"
                  end
+        end
+
+        <<~DESC
+          <#{issue.web_url}|#{issue.title}>
+
+          #{body}
+        DESC
+      end
+
+      def text_for_support_slack_message(feature, issue)
+        if feature
+          body = "Rollout URL: #{feature.definitions.rollout_issue_url}\n"
+          body += "Introduced by URL: #{fature.definitions.introduced_by_url}"
         end
 
         <<~DESC
