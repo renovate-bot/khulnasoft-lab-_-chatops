@@ -434,7 +434,7 @@ module Chatops
       def text_for_support_slack_message(feature, issue)
         if feature
           body = "Rollout URL: #{feature.definitions.rollout_issue_url}\n"
-          body += "Introduced by URL: #{fature.definitions.introduced_by_url}"
+          body += "Introduced by URL: #{feature.definitions.introduced_by_url}"
         end
 
         <<~DESC
