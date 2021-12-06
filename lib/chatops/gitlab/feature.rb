@@ -4,7 +4,7 @@ module Chatops
   module Gitlab
     # Class for storing and formatting information about a feature flag.
     class Feature
-      attr_reader :name, :gates
+      attr_reader :name, :gates, :definitions
 
       # Returns a new Feature based on a raw feature object returned by the API.
       def self.from_api_response(feature)
