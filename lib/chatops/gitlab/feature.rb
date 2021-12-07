@@ -4,15 +4,14 @@ module Chatops
   module Gitlab
     # Class for storing and formatting information about a feature flag.
     class Feature
-      attr_reader :name, :gates, :definitions
+      attr_reader :name, :gates
 
       # Returns a new Feature based on a raw feature object returned by the API.
       def self.from_api_response(feature)
         new(
           name: feature.name,
           state: feature.state,
-          gates: feature.gates,
-          definitions: feature.definition
+          gates: feature.gates
         )
       end
 
@@ -29,11 +28,10 @@ module Chatops
       # name - The name of the feature flag.
       # state - The state of the feature such as "on" or "conditional".
       # gates - The list of feature gates for this flag.
-      def initialize(name:, state:, gates: [], definitions: nil)
+      def initialize(name:, state:, gates: [])
         @name = name
         @state = state
         @gates = gates
-        @definitions = definitions
       end
 
       # Returns `true` if the feature is enabled.

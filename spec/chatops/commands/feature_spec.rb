@@ -84,15 +84,7 @@ describe Chatops::Commands::Feature do
         'feature',
         name: 'foo',
         state: 'conditional',
-        gates: gates,
-        definition: {
-          name: 'my_user_feature',
-          introduced_by_url: 'https://foo.bar/project-org/project/-/merge_requests/1',
-          rollout_issue_url: 'https://foo.bar/project-org/project/-/issues/2',
-          group: 'group::ci',
-          type: 'development',
-          default_enabled: false
-        }
+        gates: gates
       )
 
       expect(Chatops::Gitlab::Client)
@@ -167,10 +159,6 @@ describe Chatops::Commands::Feature do
       expect(command)
         .to receive(:send_feature_toggling_to_qa_channel)
         .with(issue, :ops_pipeline)
-
-      expect(command)
-        .to receive(:send_feature_toggling_to_support_channel)
-        .with(an_instance_of(Chatops::Gitlab::Feature), issue)
 
       command.set
     end

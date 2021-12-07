@@ -3,17 +3,6 @@
 require 'spec_helper'
 
 describe Chatops::Gitlab::FeatureCollection do
-  let(:feature_definition) do
-    {
-      name: 'my_user_feature',
-      introduced_by_url: 'https://foo.bar/project-org/project/-/merge_requests/1',
-      rollout_issue_url: 'https://foo.bar/project-org/project/-/issues/2',
-      group: 'group::ci',
-      type: 'development',
-      default_enabled: false
-    }
-  end
-
   describe '#find_by_name' do
     context 'when the feature does not exist' do
       it 'returns nil' do
@@ -35,8 +24,7 @@ describe Chatops::Gitlab::FeatureCollection do
           'feature',
           name: 'foo',
           state: 'on',
-          gates: [],
-          definition: feature_definition
+          gates: []
         )
 
         expect(collection)
@@ -58,21 +46,19 @@ describe Chatops::Gitlab::FeatureCollection do
           'feature b',
           name: 'b',
           state: 'on',
-          gates: [], definition: feature_definition
+          gates: []
         ),
         instance_double(
           'feature a',
           name: 'a',
           state: 'on',
-          gates: [],
-          definition: feature_definition
+          gates: []
         ),
         instance_double(
           'feature c',
           name: 'c',
           state: 'off',
-          gates: [],
-          definition: feature_definition
+          gates: []
         )
       ]
 
@@ -97,8 +83,7 @@ describe Chatops::Gitlab::FeatureCollection do
           'feature a',
           name: 'a',
           state: 'on',
-          gates: [],
-          definition: feature_definition
+          gates: []
         )
       ]
 
