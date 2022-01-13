@@ -334,6 +334,7 @@ module Chatops
           .delete_feature(name)
 
         send_feature_toggle_event(name, 'deleted')
+        log_feature_toggle(name, 'deleted')
 
         send_slack_message_safely(
           slack_token: slack_token,
@@ -484,7 +485,7 @@ module Chatops
 
         issue = client.create_issue(
           LOG_PROJECT,
-          "Feature flag #{name.inspect} has been set to #{value.inspect}",
+          issue_title(name, value),
           labels: labels,
           description: description
         )
@@ -507,6 +508,14 @@ module Chatops
       end
 
       private
+
+      def issue_title(name, value)
+        if value == 'deleted'
+          "Feature flag #{name.inspect} has been deleted"
+        else
+          "Feature flag #{name.inspect} has been set to #{value.inspect}"
+        end
+      end
 
       def enable_feature_value?(value)
         (value == 'true' || ('1'..'100').cover?(value))

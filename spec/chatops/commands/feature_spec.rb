@@ -672,39 +672,54 @@ describe Chatops::Commands::Feature do
   end
 
   describe '#delete' do
-    it 'sends the deleted flag to Slack' do
-      command = described_class.new(
+    let(:log_feature_toggle_params) { %w[foo deleted] }
+    let(:issue) { instance_double('GitLab::Issue') }
+    let(:client) { instance_double('client') }
+    let(:message) { instance_double('message') }
+
+    let(:command) do
+      described_class.new(
         %w[delete foo],
         {},
         'GITLAB_TOKEN' => '123',
+        'GITLAB_USER_LOGIN' => 'alice',
         'GITLAB_STAGING_TOKEN' => '321',
         'GITLAB_STAGING_REF_TOKEN' => '654',
         'SLACK_TOKEN' => '456',
         'CHAT_CHANNEL' => 'foo'
       )
+    end
 
-      client = instance_double('client')
-      expect(Chatops::Gitlab::Client)
-        .to receive(:new)
-        .with(token: '123', host: 'gitlab.com')
-        .and_return(client)
+    before do
+      allow(Chatops::Gitlab::Client).to receive(:new).and_return(client)
+      allow(client).to receive(:delete_feature)
+      allow(Chatops::Slack::Message).to receive(:new).and_return(message)
+      allow(message).to receive(:send)
+      allow(command).to receive(:log_feature_toggle)
+    end
 
-      expect(client)
-        .to receive(:delete_feature)
-        .with('foo')
+    it 'tells the client to delete the feature flag' do
+      expect(Chatops::Gitlab::Client).to receive(:new).with(token: '123', host: 'gitlab.com').and_return(client)
+      expect(client).to receive(:delete_feature).with('foo')
 
-      message = instance_double('message')
-      expect(Chatops::Slack::Message)
-        .to receive(:new)
-        .with(token: '456', channel: 'foo')
-        .and_return(message)
+      command.delete
+    end
 
-      expect(message).to receive(:send)
-        .with(text: 'Feature flag foo has been removed from gitlab.com!')
+    it 'logs the deletion of the feature flag to chatops' do
+      expect(command).to receive(:send_feature_toggle_event).with('foo', 'deleted')
 
-      expect(command)
-        .to receive(:send_feature_toggle_event)
-        .with('foo', 'deleted')
+      command.delete
+    end
+
+    it 'sends the deleted flag to Slack' do
+      expect(Chatops::Slack::Message).to receive(:new).with(token: '456', channel: 'foo').and_return(message)
+      expect(message).to receive(:send).with(text: 'Feature flag foo has been removed from gitlab.com!')
+
+      command.delete
+    end
+
+    it 'sends the deleted flag to create an issue' do
+      expect(command).to receive(:log_feature_toggle).with(*log_feature_toggle_params).and_return(issue)
 
       command.delete
     end
