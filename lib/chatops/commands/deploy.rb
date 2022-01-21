@@ -124,6 +124,7 @@ module Chatops
 
       # Lock an environment and prevent it from being deployed
       def lock(env)
+        env = normalize_environment(env)
         assert_environment!(env)
 
         Chef::Client.new.lock_environment(env)
@@ -133,6 +134,7 @@ module Chatops
 
       # Unlock an environment and allow it to be deployed
       def unlock(env)
+        env = normalize_environment(env)
         assert_environment!(env)
 
         Chef::Client.new.unlock_environment(env)
@@ -283,6 +285,15 @@ module Chatops
         return if ENVIRONMENTS.include?(env)
 
         raise "Invalid environment `#{env}`, must be one of #{ENVIRONMENTS.join(', ')}"
+      end
+
+      def normalize_environment(env)
+        # Let's not be pedantic just because the Chef role is unusual
+        if env == 'release'
+          'release-gitlab'
+        else
+          env
+        end
       end
 
       def inc_rollbacks_metric

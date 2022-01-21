@@ -268,6 +268,15 @@ describe Chatops::Commands::Deploy do
       expect { instance.perform }.to raise_error(/Invalid environment/)
     end
 
+    it 'normalizes the release environment' do
+      instance = described_class.new(%w[lock release])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      instance.perform
+
+      expect(client).to have_received(:lock_environment).with('release-gitlab')
+    end
+
     it 'locks the given environment' do
       instance = described_class.new(%w[lock gprd])
       client = stub_const('Chatops::Chef::Client', spy)
@@ -283,6 +292,15 @@ describe Chatops::Commands::Deploy do
       instance = described_class.new(%w[unlock foo-environment])
 
       expect { instance.perform }.to raise_error(/Invalid environment/)
+    end
+
+    it 'normalizes the release environment' do
+      instance = described_class.new(%w[unlock release])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      instance.perform
+
+      expect(client).to have_received(:unlock_environment).with('release-gitlab')
     end
 
     it 'unlocks the given environment' do
