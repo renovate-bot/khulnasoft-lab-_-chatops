@@ -696,6 +696,7 @@ describe Chatops::Commands::Feature do
       allow(Chatops::Slack::Message).to receive(:new).and_return(message)
       allow(message).to receive(:send)
       allow(command).to receive(:log_feature_toggle)
+      allow(command).to receive(:send_feature_toggle_event)
     end
 
     it 'tells the client to delete the feature flag' do
