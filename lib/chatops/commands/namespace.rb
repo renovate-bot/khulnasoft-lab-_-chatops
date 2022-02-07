@@ -48,17 +48,18 @@ module Chatops
         end
       end
 
-      def find(name = nil)
-        return 'You must supply a namespace path or ID.' unless name
+      def find(*names)
+        return 'You must supply one or more namespace paths or IDs.' if names.empty?
+        return 'Too many namespaces provided (max 5).' if names.size > 5
 
-        namespace_info = Gitlab::Client
-          .new(token: gitlab_token)
-          .find_namespace(name)
+        client = Gitlab::Client.new(token: gitlab_token)
 
-        if namespace_info
+        namespaces_info = names.map { |n| client.find_namespace(n) }.compact
+
+        return 'The namespace could not be found.' if namespaces_info.empty?
+
+        namespaces_info.each do |namespace_info|
           submit_namespace_details(namespace_info)
-        else
-          'The namespace could not be found.'
         end
       end
 

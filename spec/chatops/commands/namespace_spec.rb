@@ -43,15 +43,42 @@ describe Chatops::Commands::Namespace do
   end
 
   describe '#find' do
-    context 'without a namesapce' do
+    let(:client) { instance_double('client') }
+    let(:namespace1) do
+      instance_double(
+        'namespace',
+        id: '1234567',
+        name: 'testname',
+        kind: 'group',
+        path: 'foobar',
+        billable_members_count: 42,
+        plan: 'default',
+        extra_shared_runners_minutes_limit: 2000
+      )
+    end
+
+    let(:namespace2) do
+      instance_double(
+        'namespace',
+        id: '1234568',
+        name: 'testname',
+        kind: 'group',
+        path: 'foobar',
+        billable_members_count: 42,
+        plan: 'default',
+        extra_shared_runners_minutes_limit: 2000
+      )
+    end
+
+    context 'without a namespace' do
       it 'returns an error message' do
         command = described_class.new(%w[find])
 
-        expect(command.find).to eq('You must supply a namespace path or ID.')
+        expect(command.find).to eq('You must supply one or more namespace paths or IDs.')
       end
     end
 
-    context 'with a valid namespace' do
+    context 'with a single valid namespace' do
       it 'sends the details of the namespace to Slack' do
         command = described_class.new(
           %w[1234567],
@@ -59,17 +86,6 @@ describe Chatops::Commands::Namespace do
           'GITLAB_TOKEN' => '1234',
           'CHAT_CHANNEL' => 'test_channel',
           'SLACK_TOKEN' => '123'
-        )
-        client = instance_double('client')
-        namespace = instance_double(
-          'namespace',
-          id: '1234567',
-          name: 'testname',
-          kind: 'group',
-          path: 'foobar',
-          billable_members_count: 42,
-          plan: 'default',
-          extra_shared_runners_minutes_limit: 2000
         )
 
         expect(Chatops::Gitlab::Client)
@@ -80,13 +96,92 @@ describe Chatops::Commands::Namespace do
         expect(client)
           .to receive(:find_namespace)
           .with('1234567')
-          .and_return(namespace)
+          .and_return(namespace1)
 
         expect(command)
           .to receive(:submit_namespace_details)
-          .with(namespace)
+          .with(namespace1)
 
         command.find('1234567')
+      end
+    end
+
+    context 'with a multiple valid namespaces' do
+      it 'sends the details of the namespaces to Slack' do
+        command = described_class.new(
+          %w[1234567 1234568],
+          {},
+          'GITLAB_TOKEN' => '1234',
+          'CHAT_CHANNEL' => 'test_channel',
+          'SLACK_TOKEN' => '123'
+        )
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '1234')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:find_namespace)
+          .with('1234567')
+          .and_return(namespace1)
+
+        expect(client)
+          .to receive(:find_namespace)
+          .with('1234568')
+          .and_return(namespace2)
+
+        expect(command)
+          .to receive(:submit_namespace_details)
+          .with(namespace1)
+
+        expect(command)
+          .to receive(:submit_namespace_details)
+          .with(namespace2)
+
+        command.find('1234567', '1234568')
+      end
+    end
+
+    context 'with a valid and invalid namespace' do
+      it 'sends the details of the valid namespace to Slack' do
+        command = described_class.new(
+          %w[1234567],
+          {},
+          'GITLAB_TOKEN' => '1234',
+          'CHAT_CHANNEL' => 'test_channel',
+          'SLACK_TOKEN' => '123'
+        )
+
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '1234')
+          .and_return(client)
+
+        expect(client)
+          .to receive(:find_namespace)
+          .with('1234567')
+          .and_return(namespace1)
+
+        expect(client)
+          .to receive(:find_namespace)
+          .with('1234569')
+          .and_return(nil)
+
+        expect(command)
+          .to receive(:submit_namespace_details)
+          .with(namespace1)
+
+        command.find('1234567', '1234569')
+      end
+    end
+
+    context 'with too many arguments' do
+      it 'returns an error message' do
+        command = described_class.new(%w[find])
+        ids = %w[1 2 3 4 5 6]
+
+        expect(command.find(*ids)).to eq('Too many namespaces provided (max 5).')
       end
     end
   end
