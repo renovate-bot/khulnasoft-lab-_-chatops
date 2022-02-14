@@ -83,11 +83,12 @@ module Chatops
       end
 
       def stable_branch
-        Gitlab::ReleaseCheck::StableBranch.new(
-          production_client,
-          SECURITY_PROJECT,
-          version
-        )
+        @stable_branch ||=
+          Gitlab::ReleaseCheck::StableBranch.new(
+            production_client,
+            SECURITY_PROJECT,
+            version
+          )
       end
 
       def production_client
