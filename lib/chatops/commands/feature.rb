@@ -279,7 +279,7 @@ module Chatops
 
       def perform_side_effects(name, value, feature, options)
         annotate_feature_toggle(name, value)
-        send_feature_toggle_event(name, value)
+        send_feature_toggle_event(name, value, options)
         issue = log_feature_toggle(name, value)
 
         output = []
@@ -427,18 +427,26 @@ module Chatops
           .map { |vals| vals.map(&:to_attachment_field) }
       end
 
-      def send_feature_toggle_event(name, value)
+      def send_feature_toggle_event(name, value, options: {})
         return unless staging? || staging_ref? || production?
 
         message = "feature '#{name}' updated to '#{value}'"
+
+        scopes = {
+          feature_scope_project: options[:project],
+          feature_scope_group: options[:group],
+          feature_scope_user: options[:user],
+          feature_scope_actors: options[:actors].to_s
+        }.compact
+
         Chatops::Events::Client
           .new(env_name)
           .send_event(
             message,
             fields: {
-              'feature_name' => name,
-              'feature_value' => value.to_s
-            }
+              feature_name: name,
+              feature_value: value.to_s
+            }.merge(scopes)
           )
       end
 
