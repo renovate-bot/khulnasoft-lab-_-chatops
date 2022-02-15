@@ -7,6 +7,7 @@ describe Chatops::Commands::Feature do
     let(:error_message) { /Unable to proceed due to inconsistent feature flag status. When the flag on production is turned on, staging should be on too./ }
     let(:command_args) { %w[set foo] + [value] }
     let(:command_opts) { { project: nil, group: nil, user: 'myuser' } }
+    let(:log_feature_toggle_params) { ['foo', value] }
     let(:feature_enabled) { false }
     let(:set_feature_params) do
       [
@@ -121,7 +122,7 @@ describe Chatops::Commands::Feature do
 
       expect(command)
         .to receive(:send_feature_toggle_event)
-        .with(*log_feature_toggle_params, command_opts)
+        .with(*log_feature_toggle_params)
 
       tests_pipeline = instance_double('Chatops::Gitlab::TestsPipeline')
 
