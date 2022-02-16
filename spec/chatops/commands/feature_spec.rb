@@ -7,7 +7,6 @@ describe Chatops::Commands::Feature do
     let(:error_message) { /Unable to proceed due to inconsistent feature flag status. When the flag on production is turned on, staging should be on too./ }
     let(:command_args) { %w[set foo] + [value] }
     let(:command_opts) { { project: nil, group: nil, user: 'myuser' } }
-    let(:log_feature_toggle_params) { ['foo', value] }
     let(:feature_enabled) { false }
     let(:set_feature_params) do
       [
@@ -117,12 +116,23 @@ describe Chatops::Commands::Feature do
       issue = instance_double('GitLab::Issue')
       expect(command)
         .to receive(:log_feature_toggle)
-        .with(*log_feature_toggle_params)
+        .with(log_feature_toggle_fields[:feature_name], log_feature_toggle_fields[:feature_value])
         .and_return(issue)
 
-      expect(command)
-        .to receive(:send_feature_toggle_event)
-        .with(*log_feature_toggle_params)
+      events_client = instance_double('Chatops::Events::Client')
+
+      expect(Chatops::Events::Client)
+        .to receive(:new)
+        .with(any_args)
+        .and_return(events_client)
+
+      expect(events_client)
+        .to receive(:send_event)
+        .with(
+          "feature '#{log_feature_toggle_fields[:feature_name]}' " \
+          "updated to '#{log_feature_toggle_fields[:feature_value]}'",
+          fields: log_feature_toggle_fields
+        )
 
       tests_pipeline = instance_double('Chatops::Gitlab::TestsPipeline')
 
@@ -145,7 +155,7 @@ describe Chatops::Commands::Feature do
       expect(annotate)
         .to receive(:annotate!)
         .with(
-          "alice set feature flag foo to #{log_feature_toggle_params[1]}",
+          "alice set feature flag foo to #{log_feature_toggle_fields[:feature_value]}",
           tags: tag_env + ['feature-flag', 'foo']
         )
 
@@ -437,7 +447,7 @@ describe Chatops::Commands::Feature do
         let(:command_args) { %w[set foo 10] }
         let(:command_opts) { {} }
         let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 10 }] }
-        let(:log_feature_toggle_params) { %w[foo 10] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '10' } }
         let(:set_feature_params) do
           [
             'foo',
@@ -458,7 +468,7 @@ describe Chatops::Commands::Feature do
         let(:command_args) { %w[set foo true] }
         let(:command_opts) { { project: 'gitlab-org/gitaly', group: nil, user: nil } }
         let(:gates) { [{ 'project' => 'gitlab-org/gitaly', 'value' => true }] }
-        let(:log_feature_toggle_params) { %w[foo true] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_project: 'gitlab-org/gitaly' } }
         let(:set_feature_params) do
           [
             'foo',
@@ -479,7 +489,7 @@ describe Chatops::Commands::Feature do
         let(:command_args) { %w[set foo true] }
         let(:command_opts) { { project: nil, group: 'gitlab-org', user: nil } }
         let(:gates) { [{ 'group' => 'gitlab-org', 'value' => true }] }
-        let(:log_feature_toggle_params) { %w[foo true] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_group: 'gitlab-org' } }
         let(:set_feature_params) do
           [
             'foo',
@@ -500,7 +510,7 @@ describe Chatops::Commands::Feature do
         let(:command_args) { %w[set foo true] }
         let(:command_opts) { { project: nil, group: nil, user: 'myuser' } }
         let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
-        let(:log_feature_toggle_params) { %w[foo true] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser' } }
         let(:set_feature_params) do
           [
             'foo',
@@ -537,7 +547,7 @@ describe Chatops::Commands::Feature do
           let(:command_args) { %w[set foo true] }
           let(:command_opts) { { project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
-          let(:log_feature_toggle_params) { %w[foo true] }
+          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser' } }
           let(:set_feature_params) do
             [
               'foo',
@@ -591,7 +601,7 @@ describe Chatops::Commands::Feature do
           let(:command_args) { %w[set foo true] }
           let(:command_opts) { { project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true, staging: true } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
-          let(:log_feature_toggle_params) { %w[foo true] }
+          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser' } }
           let(:set_feature_params) do
             [
               'foo',
