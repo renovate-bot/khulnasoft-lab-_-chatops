@@ -9,12 +9,6 @@ describe Chatops::Gitlab::ReleaseCheck::StableBranch do
   let(:gitlab_ee) { 'gitlab-org/security/gitlab' }
   let(:version) { '14.2' }
 
-  before do
-    allow(client)
-      .to receive(:branch)
-      .with('gitlab-org/security/gitlab', '14-2-stable-ee')
-  end
-
   describe '#exists?' do
     it 'returns true if branch does not raise error' do
       allow(client)

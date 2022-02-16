@@ -129,8 +129,7 @@ module Chatops
       end
 
       def stable_branch_link
-        branch_name = stable_branch.name
-        slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{branch_name}", 'stable branch')
+        slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{stable_branch.name}", 'stable branch')
       end
 
       def tag_link(tag)
