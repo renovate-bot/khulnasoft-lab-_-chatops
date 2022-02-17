@@ -216,7 +216,7 @@ module Chatops
             'or `release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345 14.2`'
         end
 
-        ::Chatops::Gitlab::MergeRequestReleaseChecker
+        ::Chatops::Gitlab::ReleaseCheck::Service
           .new(mr_url, version, gitlab_token)
           .execute
       end

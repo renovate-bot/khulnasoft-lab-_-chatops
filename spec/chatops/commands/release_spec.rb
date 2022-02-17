@@ -358,7 +358,7 @@ describe Chatops::Commands::Release, :release_command do
       it 'checks if MR URL is provided' do
         instance = stubbed_instance('check', nil, '14.2')
 
-        expect(Chatops::Gitlab::MergeRequestReleaseChecker).not_to receive(:new)
+        expect(Chatops::Gitlab::ReleaseCheck::Service).not_to receive(:new)
 
         message =
           'You must specify a merge request URL and an optional self-managed release version. ' \
@@ -371,9 +371,9 @@ describe Chatops::Commands::Release, :release_command do
       it 'allows nil version' do
         env = { 'GITLAB_TOKEN' => 'token' }
         instance = stubbed_instance('check', 'https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345', nil, env: env)
-        service = instance_spy(Chatops::Gitlab::MergeRequestReleaseChecker)
+        service = instance_spy(Chatops::Gitlab::ReleaseCheck::Service)
 
-        allow(Chatops::Gitlab::MergeRequestReleaseChecker)
+        allow(Chatops::Gitlab::ReleaseCheck::Service)
           .to receive(:new)
           .with('https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345', nil, 'token')
           .and_return(service)
@@ -383,12 +383,12 @@ describe Chatops::Commands::Release, :release_command do
         expect(service).to have_received(:execute)
       end
 
-      it 'calls MergeRequestReleaseChecker' do
+      it 'calls ReleaseCheck::Service' do
         env = { 'GITLAB_TOKEN' => 'token' }
         instance = stubbed_instance('check', 'https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345', '14.1', env: env)
-        service = instance_spy(Chatops::Gitlab::MergeRequestReleaseChecker)
+        service = instance_spy(Chatops::Gitlab::ReleaseCheck::Service)
 
-        allow(Chatops::Gitlab::MergeRequestReleaseChecker)
+        allow(Chatops::Gitlab::ReleaseCheck::Service)
           .to receive(:new)
           .with('https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345', '14.1', 'token')
           .and_return(service)

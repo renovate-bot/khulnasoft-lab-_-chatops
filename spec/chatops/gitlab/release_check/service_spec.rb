@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-describe Chatops::Gitlab::MergeRequestReleaseChecker do
+describe Chatops::Gitlab::ReleaseCheck::Service do
   describe '#execute' do
     subject(:execute) { described_class.new(merge_request_url, release_version, gitlab_token).execute }
 
