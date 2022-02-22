@@ -6,7 +6,11 @@ module Chatops
       class LowestTag
         # We ignore RCs since RCs are created from the stable branch,
         # and we already check the stable branch.
-        TAG_REGEX = /\Av(?<version>\d+\.\d+\.\d+)-ee\z/
+        # v14.7.0-ee
+        GITLAB_TAG_REGEX = /\Av(?<version>\d+\.\d+\.\d+)-ee\z/
+
+        # 14.7.0+ee.0
+        OMNIBUS_TAG_REGEX = /\A(?<version>\d+\.\d+\.\d+)\+ee\.\d+\z/
 
         def initialize(client, project, commit_sha)
           @client = client
@@ -35,7 +39,7 @@ module Chatops
             client
               .refs_containing_commit(project: project, type: 'tag', sha: sha)
               .collect do |t|
-                groups = TAG_REGEX.match(t.name)
+                groups = tag_regex.match(t.name)
                 # Some old tags don't follow the naming conventions, so groups will be nil.
                 # For example 11-10-0cfa69752d8-0d9531c80-ee.
                 next unless groups
@@ -49,6 +53,15 @@ module Chatops
                 }
               end
               .compact
+        end
+
+        def tag_regex
+          @tag_regex ||=
+            if Projects::GITLAB_SECURITY_PROJECT == project
+              GITLAB_TAG_REGEX
+            elsif Projects::OMNIBUS_SECURITY_PROJECT == project
+              OMNIBUS_TAG_REGEX
+            end
         end
       end
     end
