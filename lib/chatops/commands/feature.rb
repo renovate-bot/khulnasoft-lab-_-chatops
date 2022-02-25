@@ -66,9 +66,6 @@ module Chatops
         o.bool('--actors',
                'Modifier to roll out a feature flag to a percentage of actors')
 
-        o.bool('--random',
-               'Modifier to roll out a feature flag to a percentage of time')
-
         o.boolean(
           '--ignore-production-check',
           "Ignore the production check when changing a feature flag's state"
@@ -124,7 +121,7 @@ module Chatops
           feature set gitaly_tags true
 
           # To enable a feature 50% of the time:
-          feature set gitaly_tags 50 --random
+          feature set gitaly_tags 50
 
           # To enable a feature 50% of the actors:
           feature set gitaly_tags 50 --actors
@@ -168,7 +165,7 @@ module Chatops
           .find_by_name(name)
       end
 
-      # rubocop: disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+      # rubocop: disable Metrics/CyclomaticComplexity, Metrics/AbcSize
       # Updates the value of a single feature flag.
       def set
         prod_check_failure_resp =
@@ -201,12 +198,6 @@ module Chatops
             'Valid values are: `true`, `false`, or an integer from 0 to 100.'
         end
 
-        return 'One of `--actors` or `--random` must be set for percentage values.' \
-          if options.slice(:actors, :random).none? && (1..99).cover?(value.to_i)
-
-        return '`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`.' \
-          if options.slice(:actors, :random).any? && options.slice(:project, :group, :user).any?
-
         return prod_check_failure_resp unless production_check?
         return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value)
 
@@ -222,7 +213,7 @@ module Chatops
       rescue ProductionCheckTimeout => e
         e.message + ' ' + check_failure_resp
       end
-      # rubocop: enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+      # rubocop: enable Metrics/CyclomaticComplexity, Metrics/AbcSize
 
       def production_check?
         return true unless production?
@@ -535,7 +526,7 @@ module Chatops
       end
 
       def enable_feature_value?(value)
-        (value == 'true' || (1..100).cover?(value.to_i))
+        (value == 'true' || ('1'..'100').cover?(value))
       end
 
       def disable_feature_value?(value)

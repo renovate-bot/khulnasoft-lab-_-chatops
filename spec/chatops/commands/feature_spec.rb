@@ -6,10 +6,20 @@ describe Chatops::Commands::Feature do
   shared_examples 'invalid feature flag update' do
     let(:error_message) { /Unable to proceed due to inconsistent feature flag status. When the flag on production is turned on, staging should be on too./ }
     let(:command_args) { %w[set foo] + [value] }
-    let(:staging) { false }
-    let(:command_opts_this_env) { staging ? command_opts.merge(staging: true) : command_opts }
-    let(:command_opts_other_env) { staging ? command_opts : command_opts.merge(staging: true) }
+    let(:command_opts) { { project: nil, group: nil, user: 'myuser' } }
     let(:feature_enabled) { false }
+    let(:set_feature_params) do
+      [
+        'foo',
+        value,
+        {
+          project: nil,
+          group: nil,
+          user: 'myuser',
+          actors: nil
+        }
+      ]
+    end
     let(:feature) do
       instance_double(
         'feature',
@@ -28,20 +38,20 @@ describe Chatops::Commands::Feature do
         'GITLAB_STAGING_REF_TOKEN' => '654',
         'GITLAB_USER_LOGIN' => 'alice'
       }
-      command = described_class.new(command_args, command_opts_this_env, command_envs)
+      command = described_class.new(command_args, command_opts, command_envs)
 
-      other_env_feature_command = instance_double('Chatops::Commands::Feature')
+      staging_feature_command = instance_double('Chatops::Commands::Feature')
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[get foo], command_opts_other_env, command_envs)
-        .and_return(other_env_feature_command)
+        .with(%w[get foo], command_opts.merge(staging: true), command_envs)
+        .and_return(staging_feature_command)
 
       expect(command)
         .to receive(:production_check?)
         .and_return(true)
 
-      expect(other_env_feature_command)
+      expect(staging_feature_command)
         .to receive(:get_feature).with('foo')
         .and_return(feature)
 
@@ -104,7 +114,6 @@ describe Chatops::Commands::Feature do
         .and_return(true)
 
       issue = instance_double('GitLab::Issue')
-
       expect(command)
         .to receive(:log_feature_toggle)
         .with(log_feature_toggle_fields[:feature_name], log_feature_toggle_fields[:feature_value])
@@ -413,7 +422,7 @@ describe Chatops::Commands::Feature do
       it 'returns an error message' do
         command = described_class.new(%w[set])
 
-        expect(command.set).to match(/You must specify the name of the feature flag and its new value/)
+        expect(command.set).to match(/You must specify the name of the feature/)
       end
     end
 
@@ -421,7 +430,7 @@ describe Chatops::Commands::Feature do
       it 'returns an error message' do
         command = described_class.new(%w[set foo])
 
-        expect(command.set).to match(/You must specify the name of the feature flag and its new value/)
+        expect(command.set).to match(/You must specify the name of the feature/)
       end
     end
 
@@ -433,96 +442,10 @@ describe Chatops::Commands::Feature do
       end
     end
 
-    # rubocop: disable RSpec/NestedGroups
-    context 'when not specifying --random or --actors for a percentage value' do
-      context 'with a value of 0' do
-        include_examples 'valid feature flag update' do
-          let(:command_args) { %w[set foo 0] }
-          let(:command_opts) { {} }
-          let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 0 }] }
-          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '0' } }
-          let(:set_feature_params) do
-            [
-              'foo',
-              '0',
-              {
-                project: nil,
-                group: nil,
-                user: nil,
-                actors: nil
-              }
-            ]
-          end
-        end
-      end
-
-      context 'with a value of 100' do
-        include_examples 'valid feature flag update' do
-          let(:command_args) { %w[set foo 100] }
-          let(:command_opts) { {} }
-          let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 100 }] }
-          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '100' } }
-          let(:set_feature_params) do
-            [
-              'foo',
-              '100',
-              {
-                project: nil,
-                group: nil,
-                user: nil,
-                actors: nil
-              }
-            ]
-          end
-        end
-      end
-
-      context 'with a value of 1' do
-        it 'returns an error message' do
-          command = described_class.new(%w[set foo 1])
-
-          expect(command.set).to match(/One of `--actors` or `--random` must be set for percentage values/)
-        end
-      end
-
-      context 'with a value of 42' do
-        it 'returns an error message' do
-          command = described_class.new(%w[set foo 42])
-
-          expect(command.set).to match(/One of `--actors` or `--random` must be set for percentage values/)
-        end
-      end
-
-      context 'with a value of 99' do
-        it 'returns an error message' do
-          command = described_class.new(%w[set foo 99])
-
-          expect(command.set).to match(/One of `--actors` or `--random` must be set for percentage values/)
-        end
-      end
-    end
-    # rubocop: enable RSpec/NestedGroups
-
-    context 'when using a feature gate together with --random' do
-      it 'returns an error message' do
-        command = described_class.new(%w[set foo true], random: true, user: 'myuser')
-
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
-      end
-    end
-
-    context 'when using a feature gate together with --actors' do
-      it 'returns an error message' do
-        command = described_class.new(%w[set foo true], actors: true, user: 'myuser')
-
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
-      end
-    end
-
     context 'when using valid arguments' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo 10] }
-        let(:command_opts) { { random: true } }
+        let(:command_opts) { {} }
         let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 10 }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '10' } }
         let(:set_feature_params) do
@@ -543,7 +466,7 @@ describe Chatops::Commands::Feature do
     context 'when using a project feature gate' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }
-        let(:command_opts) { { project: 'gitlab-org/gitaly' } }
+        let(:command_opts) { { project: 'gitlab-org/gitaly', group: nil, user: nil } }
         let(:gates) { [{ 'project' => 'gitlab-org/gitaly', 'value' => true }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_project: 'gitlab-org/gitaly' } }
         let(:set_feature_params) do
@@ -564,7 +487,7 @@ describe Chatops::Commands::Feature do
     context 'when using a group feature gate' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }
-        let(:command_opts) { { group: 'gitlab-org' } }
+        let(:command_opts) { { project: nil, group: 'gitlab-org', user: nil } }
         let(:gates) { [{ 'group' => 'gitlab-org', 'value' => true }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_group: 'gitlab-org' } }
         let(:set_feature_params) do
@@ -585,7 +508,7 @@ describe Chatops::Commands::Feature do
     context 'when using a user feature gate' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }
-        let(:command_opts) { { user: 'myuser' } }
+        let(:command_opts) { { project: nil, group: nil, user: 'myuser' } }
         let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser' } }
         let(:set_feature_params) do
@@ -608,7 +531,6 @@ describe Chatops::Commands::Feature do
       context 'when turning on production' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { user: 'myuser' } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update'
@@ -616,7 +538,6 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a percentage value' do
           let(:value) { '10' }
-          let(:command_opts) { { random: true } }
           let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
 
           include_examples 'invalid feature flag update'
@@ -624,7 +545,7 @@ describe Chatops::Commands::Feature do
 
         context 'when the ignore_feature_flag_consistency_check is true' do
           let(:command_args) { %w[set foo true] }
-          let(:command_opts) { { user: 'myuser', ignore_feature_flag_consistency_check: true } }
+          let(:command_opts) { { project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
           let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser' } }
           let(:set_feature_params) do
@@ -649,7 +570,6 @@ describe Chatops::Commands::Feature do
       context 'when turning on production' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { user: 'myuser' } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update' do
@@ -660,12 +580,11 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when the flag is turned on in production' do
-      context 'when turning off in staging' do
-        let(:staging) { false }
+      let(:command_opts) { { project: nil, group: nil, user: 'myuser', staging: true } }
 
+      context 'when turning off in staging' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { user: 'myuser' } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update'
@@ -673,7 +592,6 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a percentage value' do
           let(:value) { '10' }
-          let(:command_opts) { { random: true } }
           let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
 
           include_examples 'invalid feature flag update'
@@ -681,7 +599,7 @@ describe Chatops::Commands::Feature do
 
         context 'when the ignore_feature_flag_consistency_check is true' do
           let(:command_args) { %w[set foo true] }
-          let(:command_opts) { { user: 'myuser', ignore_feature_flag_consistency_check: true, staging: true } }
+          let(:command_opts) { { project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true, staging: true } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
           let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser' } }
           let(:set_feature_params) do
@@ -707,12 +625,11 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when the feature flag does not exist in production' do
-      let(:command_opts) { { user: 'myuser', staging: true } }
+      let(:command_opts) { { project: nil, group: nil, user: 'myuser', staging: true } }
 
       context 'when turning on staging' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { user: 'myuser' } }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update' do
@@ -726,7 +643,7 @@ describe Chatops::Commands::Feature do
     context 'when there is an ongoing incident' do
       it 'does not allow changing the feature flag state' do
         command =
-          described_class.new(%w[set foo 10], { random: true }, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
+          described_class.new(%w[set foo 10], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
 
         expect(command).to receive(:production_check?).and_return(false)
 
