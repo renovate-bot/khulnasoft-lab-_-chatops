@@ -66,6 +66,9 @@ module Chatops
         o.bool('--actors',
                'Modifier to roll out a feature flag to a percentage of actors')
 
+        o.bool('--random',
+               'Modifier to roll out a feature flag to a percentage of time')
+
         o.boolean(
           '--ignore-production-check',
           "Ignore the production check when changing a feature flag's state"
@@ -121,7 +124,7 @@ module Chatops
           feature set gitaly_tags true
 
           # To enable a feature 50% of the time:
-          feature set gitaly_tags 50
+          feature set gitaly_tags 50 --random
 
           # To enable a feature 50% of the actors:
           feature set gitaly_tags 50 --actors
@@ -165,7 +168,7 @@ module Chatops
           .find_by_name(name)
       end
 
-      # rubocop: disable Metrics/CyclomaticComplexity, Metrics/AbcSize
+      # rubocop: disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       # Updates the value of a single feature flag.
       def set
         prod_check_failure_resp =
@@ -198,6 +201,12 @@ module Chatops
             'Valid values are: `true`, `false`, or an integer from 0 to 100.'
         end
 
+        return 'One of `--actors` or `--random` must be set for percentage values.' \
+          unless valid_setting_for_percentage_value?(value, options)
+
+        return '`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`.' \
+          unless valid_actors_random_setting?(options)
+
         return prod_check_failure_resp unless production_check?
         return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value)
 
@@ -213,7 +222,7 @@ module Chatops
       rescue ProductionCheckTimeout => e
         e.message + ' ' + check_failure_resp
       end
-      # rubocop: enable Metrics/CyclomaticComplexity, Metrics/AbcSize
+      # rubocop: enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
       def production_check?
         return true unless production?
@@ -526,7 +535,7 @@ module Chatops
       end
 
       def enable_feature_value?(value)
-        (value == 'true' || ('1'..'100').cover?(value))
+        (value == 'true' || valid_numeric_value?(value) && (1..100).cover?(value.to_i))
       end
 
       def disable_feature_value?(value)
@@ -537,6 +546,30 @@ module Chatops
         feature_check = Chatops::Commands::Feature.new(['get', arguments[1]], options, env)
         feature = feature_check.get_feature(arguments[1])
         feature&.enabled?
+      end
+
+      def actors_or_random?(options)
+        options[:actors] || options[:random]
+      end
+
+      def valid_numeric_value?(value)
+        value.match?(/^\d+$/)
+      end
+
+      def percentage_value?(value)
+        valid_numeric_value?(value) && (1..99).cover?(value.to_i)
+      end
+
+      def valid_setting_for_percentage_value?(value, options)
+        return true unless percentage_value?(value)
+
+        actors_or_random?(options)
+      end
+
+      def valid_actors_random_setting?(options)
+        return true unless actors_or_random?(options)
+
+        options.slice(:project, :group, :user).compact.none?
       end
     end
   end
