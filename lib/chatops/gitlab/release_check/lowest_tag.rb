@@ -57,9 +57,9 @@ module Chatops
 
         def tag_regex
           @tag_regex ||=
-            if Projects::GITLAB_SECURITY_PROJECT == project
+            if Projects::GITLAB_SECURITY == project
               GITLAB_TAG_REGEX
-            elsif Projects::OMNIBUS_SECURITY_PROJECT == project
+            elsif Projects::OMNIBUS_SECURITY == project
               OMNIBUS_TAG_REGEX
             end
         end

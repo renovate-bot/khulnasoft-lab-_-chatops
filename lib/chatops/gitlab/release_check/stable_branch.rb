@@ -27,9 +27,9 @@ module Chatops
 
         def name
           @name ||=
-            if Projects::GITLAB_SECURITY_PROJECT == project
+            if Projects::GITLAB_SECURITY == project
               "#{version.tr('.', '-')}-stable-ee"
-            elsif Projects::OMNIBUS_SECURITY_PROJECT == project
+            elsif Projects::OMNIBUS_SECURITY == project
               "#{version.tr('.', '-')}-stable"
             end
         end

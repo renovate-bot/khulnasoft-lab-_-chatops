@@ -4,13 +4,14 @@ module Chatops
   module Gitlab
     module ReleaseCheck
       class Service
-        SECURITY_PROJECT = 'gitlab-org/security/gitlab'
-        CANONICAL_PROJECT = 'gitlab-org/gitlab'
-
         MONTHLY_RELEASE_VERSION_REGEX = /\A(?<major>\d+)\.(?<minor>\d+)\z/
 
         MR_URL_REGEX = %r{https://gitlab.com/(?<project>.+)/-/merge_requests/(?<iid>\d+)}
-        ALLOWED_MR_PROJECTS = [CANONICAL_PROJECT, SECURITY_PROJECT].freeze
+
+        ALLOWED_MR_PROJECTS = [
+          Projects::GITLAB_CANONICAL, Projects::GITLAB_SECURITY,
+          Projects::OMNIBUS_CANONICAL, Projects::OMNIBUS_SECURITY
+        ].freeze
 
         def initialize(merge_request_url, release_version, token)
           @mr_url = merge_request_url
@@ -73,7 +74,7 @@ module Chatops
         def check_commit_deployed_to_gprd
           commit_deployed_to_gprd =
             Gitlab::ReleaseCheck::Commit
-              .new(production_client, SECURITY_PROJECT, merge_request.merge_commit_sha)
+              .new(production_client, security_project, merge_request.merge_commit_sha)
               .deployed_to_gprd?
 
           if commit_deployed_to_gprd
@@ -87,7 +88,7 @@ module Chatops
           @stable_branch ||=
             Gitlab::ReleaseCheck::StableBranch.new(
               production_client,
-              SECURITY_PROJECT,
+              security_project,
               version
             )
         end
@@ -114,10 +115,14 @@ module Chatops
           mr_url_parts[:iid]
         end
 
+        def security_project
+          Projects.security_project_for(mr_project)
+        end
+
         def lowest_tag
           @lowest_tag ||=
             Gitlab::ReleaseCheck::LowestTag
-              .new(production_client, SECURITY_PROJECT, merge_request.merge_commit_sha)
+              .new(production_client, security_project, merge_request.merge_commit_sha)
               .execute
         end
 
@@ -130,11 +135,11 @@ module Chatops
         end
 
         def stable_branch_link
-          slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{stable_branch.name}", 'stable branch')
+          slack_link("https://gitlab.com/#{security_project}/-/tree/#{stable_branch.name}", 'stable branch')
         end
 
         def tag_link(tag)
-          slack_link("https://gitlab.com/#{SECURITY_PROJECT}/-/tree/#{tag}", tag)
+          slack_link("https://gitlab.com/#{security_project}/-/tree/#{tag}", tag)
         end
 
         def response_message(code)

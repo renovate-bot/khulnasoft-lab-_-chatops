@@ -56,18 +56,18 @@ module Chatops
 
         def auto_deploy_regex
           @auto_deploy_regex ||=
-            if Projects::GITLAB_SECURITY_PROJECT == project
+            if Projects::GITLAB_SECURITY == project
               GITLAB_AUTO_DEPLOY_BRANCH_REGEX
-            elsif Projects::OMNIBUS_SECURITY_PROJECT == project
+            elsif Projects::OMNIBUS_SECURITY == project
               OMNIBUS_AUTO_DEPLOY_TAG_REGEX
             end
         end
 
         def ref_type
           @ref_type ||=
-            if Projects::GITLAB_SECURITY_PROJECT == project
+            if Projects::GITLAB_SECURITY == project
               'branch'
-            elsif Projects::OMNIBUS_SECURITY_PROJECT == project
+            elsif Projects::OMNIBUS_SECURITY == project
               'tag'
             end
         end

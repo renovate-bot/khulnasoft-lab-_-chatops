@@ -38,13 +38,13 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
     end
 
     context 'with merge request from unsupported project' do
-      let(:merge_request_url) { 'https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345' }
+      let(:merge_request_url) { 'https://gitlab.com/gitlab-org/unsupported-project/-/merge_requests/12345' }
 
       it 'checks merge request url' do
         expect(Chatops::Gitlab::Client).not_to receive(:new)
 
         message =
-          'Only merge requests from ["gitlab-org/gitlab", "gitlab-org/security/gitlab"] ' \
+          "Only merge requests from #{described_class::ALLOWED_MR_PROJECTS} " \
           'are currently supported.'
 
         expect(execute).to eq(message)
@@ -111,25 +111,53 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
       end
     end
 
+    context 'with omnibus project and commit is present in tags' do
+      let(:merge_request_url) { 'https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345' }
+      let(:merge_request) { instance_double('merge_request', state: 'merged', merge_commit_sha: 'sha') }
+
+      before do
+        allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
+        allow(gitlab).to receive(:merge_request).with('gitlab-org/omnibus-gitlab', '12345').and_return(merge_request)
+      end
+
+      it 'returns the lowest tag message' do
+        lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: '13.2.0+ee.0')
+        allow(Chatops::Gitlab::ReleaseCheck::LowestTag)
+          .to receive(:new)
+          .with(gitlab, 'gitlab-org/security/omnibus-gitlab', 'sha')
+          .and_return(lowest_tag_service)
+
+        message =
+          '<https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345|gitlab-org/omnibus-gitlab!12345> was ' \
+          'first released in <https://gitlab.com/gitlab-org/security/omnibus-gitlab/-/tree/13.2.0+ee.0|13.2.0+ee.0>.'
+
+        expect(execute).to eq(message)
+      end
+    end
+
     context 'when no tag contains commit' do
+      let(:merge_request_url) { 'https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345' }
       let(:merge_request) { instance_double('merge_request', state: 'merged', merge_commit_sha: 'sha') }
 
       let(:stable_branch_service) do
         instance_spy(
           Chatops::Gitlab::ReleaseCheck::StableBranch,
-          name: '14-2-stable-ee',
+          name: '14-2-stable',
           exists?: true
         )
       end
 
       before do
         allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
-        allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
+        allow(gitlab).to receive(:merge_request).with('gitlab-org/omnibus-gitlab', '12345').and_return(merge_request)
 
         lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: nil)
         allow(Chatops::Gitlab::ReleaseCheck::LowestTag).to receive(:new).and_return(lowest_tag_service)
 
-        allow(Chatops::Gitlab::ReleaseCheck::StableBranch).to receive(:new).and_return(stable_branch_service)
+        allow(Chatops::Gitlab::ReleaseCheck::StableBranch)
+          .to receive(:new)
+          .with(gitlab, 'gitlab-org/security/omnibus-gitlab', anything)
+          .and_return(stable_branch_service)
       end
 
       it 'does not check stable branch if version is not specified' do
@@ -137,7 +165,7 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
         result = described_class.new(merge_request_url, version, gitlab_token).execute
 
         message =
-          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> was not ' \
+          '<https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345|gitlab-org/omnibus-gitlab!12345> was not ' \
           'released in any past version. Try checking with the upcoming release version. Ex: `release check <MR URL> 14.2`'
 
         expect(Chatops::Gitlab::ReleaseCheck::StableBranch).not_to receive(:new)
@@ -151,8 +179,8 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
           .and_return(true)
 
         message =
-          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has been included ' \
-          'in the <https://gitlab.com/gitlab-org/security/gitlab/-/tree/14-2-stable-ee|stable branch>. ' \
+          '<https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345|gitlab-org/omnibus-gitlab!12345> has been included ' \
+          'in the <https://gitlab.com/gitlab-org/security/omnibus-gitlab/-/tree/14-2-stable|stable branch>. ' \
           'This MR will be released in 14.2.'
 
         expect(execute).to eq(message)
@@ -165,8 +193,8 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
           .and_return(false)
 
         message =
-          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has not been included ' \
-          'in the <https://gitlab.com/gitlab-org/security/gitlab/-/tree/14-2-stable-ee|stable branch>. ' \
+          '<https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345|gitlab-org/omnibus-gitlab!12345> has not been included ' \
+          'in the <https://gitlab.com/gitlab-org/security/omnibus-gitlab/-/tree/14-2-stable|stable branch>. ' \
           'The MR _will not_ be released in 14.2.'
 
         expect(execute).to eq(message)
@@ -174,30 +202,17 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
     end
 
     context 'when stable branch does not exist' do
+      let(:merge_request_url) { 'https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345' }
       let(:merge_request) { instance_double('merge_reqeust', state: 'merged', merge_commit_sha: 'sha') }
-
-      let(:production_status) do
-        instance_double(
-          'deployment',
-          role: 'gprd',
-          version: '11.9.0-pre',
-          revision: '0874a8d346c',
-          ref: '11-9-auto-deploy-20190804',
-          package: '11.9.201908042020-0874a8d346c.2ee9f1d280d',
-          sha: 'long-sha',
-          status: 'success',
-          short_sha: '0874a8d346c'
-        )
-      end
 
       before do
         allow(Chatops::Gitlab::Client).to receive(:new).and_return(gitlab)
-        allow(gitlab).to receive(:merge_request).with('gitlab-org/gitlab', '12345').and_return(merge_request)
+        allow(gitlab).to receive(:merge_request).with('gitlab-org/omnibus-gitlab', '12345').and_return(merge_request)
 
         lowest_tag_service = instance_spy(Chatops::Gitlab::ReleaseCheck::LowestTag, execute: nil)
         allow(Chatops::Gitlab::ReleaseCheck::LowestTag).to receive(:new).and_return(lowest_tag_service)
 
-        stable_branch_service = instance_spy(Chatops::Gitlab::ReleaseCheck::StableBranch, name: '14-2-stable-ee', exists?: false)
+        stable_branch_service = instance_spy(Chatops::Gitlab::ReleaseCheck::StableBranch, name: '14-2-stable', exists?: false)
         allow(Chatops::Gitlab::ReleaseCheck::StableBranch).to receive(:new).and_return(stable_branch_service)
       end
 
@@ -206,7 +221,7 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
         allow(Chatops::Gitlab::ReleaseCheck::Commit).to receive(:new).and_return(commit)
 
         message =
-          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has not yet been ' \
+          '<https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345|gitlab-org/omnibus-gitlab!12345> has not yet been ' \
           'deployed to gprd. It cannot be included in the monthly release until it is deployed to gprd.'
 
         expect(execute).to eq(message)
@@ -217,7 +232,7 @@ describe Chatops::Gitlab::ReleaseCheck::Service do
         allow(Chatops::Gitlab::ReleaseCheck::Commit).to receive(:new).and_return(commit)
 
         message =
-          '<https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345|gitlab-org/gitlab!12345> has been deployed ' \
+          '<https://gitlab.com/gitlab-org/omnibus-gitlab/-/merge_requests/12345|gitlab-org/omnibus-gitlab!12345> has been deployed ' \
           'to gprd. It will most likely be included in release 14.2.'
 
         expect(execute).to eq(message)
