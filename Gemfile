@@ -16,6 +16,7 @@ group :development do
   gem 'pry-byebug'
   gem 'rake'
   gem 'rspec'
+  gem 'rspec-parameterized', require: false
   gem 'rubocop'
   gem 'rubocop-rspec'
   gem 'simplecov'

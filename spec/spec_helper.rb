@@ -28,6 +28,7 @@ require 'chatops'
 require 'climate_control'
 require 'stringio'
 require 'timecop'
+require 'rspec-parameterized'
 
 Dir[File.expand_path('support/**/*.rb', __dir__)].each { |f| require f }
 
