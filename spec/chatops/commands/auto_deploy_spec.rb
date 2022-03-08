@@ -299,6 +299,33 @@ describe Chatops::Commands::AutoDeploy do
     end
   end
 
+  describe '#security_status' do
+    def merge_request_stub(values = {})
+      # HACK: `stringify_keys` without requiring ActiveSupport
+      values = JSON.parse(values.to_json)
+
+      Gitlab::ObjectifiedHash.new(values)
+    end
+
+    it 'reports undeployed merge requests' do
+      command = described_class.new(%w[security_status], *env)
+
+      merged = merge_request_stub(web_url: 'example.com/mr/1', references: { full: 'foo/bar!1' })
+      deployed = merge_request_stub(web_url: 'example.com/mr/2', references: { full: 'foo/bar!2' })
+
+      expect(fake_client).to receive(:merge_requests)
+        .with(anything, hash_excluding(environment: 'gprd'))
+        .and_return([merged, deployed])
+      expect(fake_client).to receive(:merge_requests)
+        .with(anything, hash_including(environment: 'gprd'))
+        .and_return([deployed])
+
+      expect_slack_message(blocks: SecurityStatusBlockMatcher.new(merged.web_url))
+
+      command.perform
+    end
+  end
+
   describe '#blockers' do
     let(:command) { described_class.new([], *env) }
 
@@ -420,6 +447,18 @@ class StatusBlockMatcher
       json.include?(@status[:revision]) &&
       json.include?(@status[:branch]) &&
       json.include?(@status[:package])
+  end
+end
+
+class SecurityStatusBlockMatcher
+  def initialize(expected)
+    @expected = expected
+  end
+
+  def ===(other)
+    json = other.to_json
+
+    json.include?(':warning:') && json.include?(@expected)
   end
 end
 

@@ -166,6 +166,7 @@ module Chatops
       def_delegator :internal_client, :update_variable
 
       def_delegator :internal_client, :merge_request
+      def_delegator :internal_client, :merge_requests
 
       def_delegator :internal_client, :branch
     end

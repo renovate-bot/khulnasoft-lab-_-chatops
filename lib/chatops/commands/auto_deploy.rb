@@ -8,7 +8,7 @@ module Chatops
       include ::Chatops::Release::Command
 
       COMMANDS =
-        Set.new(%w[pause prepare status tag unpause blockers lock unlock])
+        Set.new(%w[pause prepare status security_status tag unpause blockers lock unlock])
 
       SOURCE_HOST = 'https://gitlab.com'
 
@@ -128,6 +128,34 @@ module Chatops
         else
           post_environment_status(envs)
           production_checks if options[:checks]
+        end
+      end
+
+      def security_status
+        query = { state: 'merged', target_branch: 'master', per_page: 50 }
+
+        merged = production_client.merge_requests(RAILS_PROJECT, query).map(&:to_h)
+        deployed = production_client.merge_requests(RAILS_PROJECT, query.merge(environment: 'gprd')).map(&:to_h)
+        diff = merged - deployed
+
+        if diff.empty?
+          ':white_check_mark: All merged Security MRs have been deployed to Production.'
+        else
+          blocks = ::Slack::BlockKit.blocks
+
+          blocks.section do |section|
+            section.mrkdwn(text: ":warning: The following merged Security MRs haven't been deployed to Production:")
+          end
+
+          blocks.section do |section|
+            lines = diff.map do |mr|
+              "• <#{mr['web_url']}|#{mr['references']['full']}>"
+            end
+
+            section.mrkdwn(text: lines.join("\n"))
+          end
+
+          slack_message.send(blocks: blocks.as_json)
         end
       end
 
