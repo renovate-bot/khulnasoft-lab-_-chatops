@@ -139,12 +139,12 @@ module Chatops
         diff = merged - deployed
 
         if diff.empty?
-          ':white_check_mark: All merged Security MRs have been deployed to Production.'
+          ":white_check_mark: All merged MRs in `#{RAILS_PROJECT}` have been deployed to Production."
         else
           blocks = ::Slack::BlockKit.blocks
 
           blocks.section do |section|
-            section.mrkdwn(text: ":warning: The following merged Security MRs haven't been deployed to Production:")
+            section.mrkdwn(text: ":warning: Some merged MRs in `#{RAILS_PROJECT}` haven't been deployed to Production:")
           end
 
           blocks.section do |section|
