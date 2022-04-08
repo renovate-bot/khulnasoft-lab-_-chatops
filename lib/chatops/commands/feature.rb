@@ -60,6 +60,10 @@ module Chatops
           'The path of a group to set a feature flag for, e.g. gitlab-org'
         )
         o.string(
+          '--namespace',
+          'The path of a group or user namespace to set a feature flag for, e.g. gitlab-org'
+        )
+        o.string(
           '--user',
           'The username of a user to set a feature flag for, e.g. someuser'
         )
@@ -135,6 +139,10 @@ module Chatops
           # To enable a feature for a group
           feature set --group=gitlab-org gitaly_tags
 
+          # To enable a feature for a namespace
+          feature set --namespace=gitlab-org gitaly_tags # Same as `feature set --group=gitlab-org gitaly_tags`
+          feature set --namespace=someuser gitaly_tags
+
           # To enable a feature for a user
           feature set --user=someuser gitaly_tags
 
@@ -204,8 +212,10 @@ module Chatops
         return 'One of `--actors` or `--random` must be set for percentage values.' \
           unless valid_setting_for_percentage_value?(value, options)
 
-        return '`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`.' \
+        # rubocop: disable Metrics/LineLength
+        return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`.' \
           unless valid_actors_random_setting?(options)
+        # rubocop: enable Metrics/LineLength
 
         return prod_check_failure_resp unless production_check?
         return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value)
@@ -214,6 +224,7 @@ module Chatops
           .new(token: gitlab_token, host: gitlab_host)
           .set_feature(name, value, project: options[:project],
                                     group: options[:group],
+                                    namespace: options[:namespace],
                                     user: options[:user],
                                     actors: options[:actors])
 
@@ -444,6 +455,7 @@ module Chatops
         scopes = {
           feature_scope_project: options[:project],
           feature_scope_group: options[:group],
+          feature_scope_namespace: options[:namespace],
           feature_scope_user: options[:user],
           feature_scope_actors: options[:actors]&.to_s
         }.compact
@@ -466,31 +478,7 @@ module Chatops
         host = gitlab_host
         labels = "host::#{host}, change"
 
-        description = <<~DESC
-          * Feature flag: `#{name}`
-          * New value: `#{value}`
-          * Percentage of actors: `#{options[:actors]}`
-          * Changed by: [`@#{username}`](https://gitlab.com/#{username})
-          * Changed on (in UTC): `#{Time.now.utc.iso8601}`
-          * Host: https://#{host}
-
-          ## Feature flag scopes
-
-          This feature flag applies the following scopes (if any):
-
-          | User                        | Project                        | Group
-          |-----------------------------|--------------------------------|-------------
-          | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}`
-
-          When a value is set to `nil` it means the scope does not apply. If
-          none of these scopes are set it means the feature flag applies to
-          everybody.
-
-          <hr>
-
-          :robot: This issue was generated using [GitLab
-          Chatops](https://gitlab.com/gitlab-com/chatops/).
-        DESC
+        description = issue_description(name, value)
 
         if options[:ignore_production_check]
           labels += ', Production check ignored'
@@ -525,6 +513,34 @@ module Chatops
       end
 
       private
+
+      def issue_description(name, value)
+        <<~DESC
+          * Feature flag: `#{name}`
+          * New value: `#{value}`
+          * Percentage of actors: `#{options[:actors]}`
+          * Changed by: [`@#{username}`](https://gitlab.com/#{username})
+          * Changed on (in UTC): `#{Time.now.utc.iso8601}`
+          * Host: https://#{gitlab_host}
+
+          ## Feature flag scopes
+
+          This feature flag applies the following scopes (if any):
+
+          | User                        | Project                        | Group                        | Namespace                        |
+          |-----------------------------|--------------------------------|------------------------------|----------------------------------|
+          | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}` | `#{options[:namespace].inspect}` |
+
+          When a value is set to `nil` it means the scope does not apply. If
+          none of these scopes are set it means the feature flag applies to
+          everybody.
+
+          <hr>
+
+          :robot: This issue was generated using [GitLab
+          Chatops](https://gitlab.com/gitlab-com/chatops/).
+        DESC
+      end
 
       def issue_title(name, value)
         if value == 'deleted'
@@ -569,7 +585,7 @@ module Chatops
       def valid_actors_random_setting?(options)
         return true unless actors_or_random?(options)
 
-        options.slice(:project, :group, :user).compact.none?
+        options.slice(:project, :group, :namespace, :user).compact.none?
       end
     end
   end

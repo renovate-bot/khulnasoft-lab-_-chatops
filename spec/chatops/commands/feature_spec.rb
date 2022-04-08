@@ -409,9 +409,11 @@ describe Chatops::Commands::Feature do
   end
 
   describe '#set' do
+    let(:default_opts) { { actors: false, random: false, project: nil, group: nil, namespace: nil, user: nil } }
+
     context 'when not specifying a feature name' do
       it 'returns an error message' do
-        command = described_class.new(%w[set], actors: false, random: false, project: nil, group: nil, user: nil)
+        command = described_class.new(%w[set], default_opts)
 
         expect(command.set).to match(/You must specify the name of the feature flag and its new value/)
       end
@@ -419,7 +421,7 @@ describe Chatops::Commands::Feature do
 
     context 'when not specifying a feature value' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo], actors: false, random: false, project: nil, group: nil, user: nil)
+        command = described_class.new(%w[set foo], default_opts)
 
         expect(command.set).to match(/You must specify the name of the feature flag and its new value/)
       end
@@ -427,7 +429,7 @@ describe Chatops::Commands::Feature do
 
     context 'when specifying an invalid feature value' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo bar], actors: false, random: false, project: nil, group: nil, user: nil)
+        command = described_class.new(%w[set foo bar], default_opts)
 
         expect(command.set).to match(/The value "bar" is invalid/)
       end
@@ -438,7 +440,7 @@ describe Chatops::Commands::Feature do
       context 'with a value of 0' do
         include_examples 'valid feature flag update' do
           let(:command_args) { %w[set foo 0] }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: nil } }
+          let(:command_opts) { default_opts }
           let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 0 }] }
           let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '0', feature_scope_actors: 'false' } }
           let(:set_feature_params) do
@@ -448,6 +450,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                namespace: nil,
                 user: nil,
                 actors: false
               }
@@ -459,7 +462,7 @@ describe Chatops::Commands::Feature do
       context 'with a value of 100' do
         include_examples 'valid feature flag update' do
           let(:command_args) { %w[set foo 100] }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: nil } }
+          let(:command_opts) { default_opts }
           let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 100 }] }
           let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '100', feature_scope_actors: 'false' } }
           let(:set_feature_params) do
@@ -469,6 +472,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                namespace: nil,
                 user: nil,
                 actors: false
               }
@@ -479,7 +483,7 @@ describe Chatops::Commands::Feature do
 
       context 'with a value of 1' do
         it 'returns an error message' do
-          command = described_class.new(%w[set foo 1], actors: false, random: false, project: nil, group: nil, user: nil)
+          command = described_class.new(%w[set foo 1], default_opts)
 
           expect(command.set).to match(/One of `--actors` or `--random` must be set for percentage values/)
         end
@@ -487,7 +491,7 @@ describe Chatops::Commands::Feature do
 
       context 'with a value of 42' do
         it 'returns an error message' do
-          command = described_class.new(%w[set foo 42], actors: false, random: false, project: nil, group: nil, user: nil)
+          command = described_class.new(%w[set foo 42], default_opts)
 
           expect(command.set).to match(/One of `--actors` or `--random` must be set for percentage values/)
         end
@@ -495,7 +499,7 @@ describe Chatops::Commands::Feature do
 
       context 'with a value of 99' do
         it 'returns an error message' do
-          command = described_class.new(%w[set foo 99], actors: false, random: false, project: nil, group: nil, user: nil)
+          command = described_class.new(%w[set foo 99], default_opts)
 
           expect(command.set).to match(/One of `--actors` or `--random` must be set for percentage values/)
         end
@@ -505,56 +509,98 @@ describe Chatops::Commands::Feature do
 
     context 'when using a project feature gate together with --random' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo true], actors: false, random: true, project: 'gitlab-org/gitaly', group: nil, user: nil)
+        opts = default_opts.merge(random: true, project: 'gitlab-org/gitaly')
+        command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
       end
     end
 
     context 'when using a project feature gate together with --actors' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo true], actors: true, random: false, project: 'gitlab-org/gitaly', group: nil, user: nil)
+        opts = default_opts.merge(actors: true, project: 'gitlab-org/gitaly')
+        command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
       end
     end
 
     context 'when using a group feature gate together with --random' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo true], actors: false, random: true, project: nil, group: 'gitlab-org', user: nil)
+        opts = default_opts.merge(random: true, group: 'gitlab-org')
+        command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
       end
     end
 
     context 'when using a group feature gate together with --actors' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo true], actors: true, random: false, project: nil, group: 'gitlab-org', user: nil)
+        opts = default_opts.merge(actors: true, group: 'gitlab-org')
+        command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
+      end
+    end
+
+    context 'when using a group namespace feature gate together with --random' do
+      it 'returns an error message' do
+        opts = default_opts.merge(random: true, namespace: 'gitlab-org')
+        command = described_class.new(%w[set foo true], **opts)
+
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
+      end
+    end
+
+    context 'when using a group namespace feature gate together with --actors' do
+      it 'returns an error message' do
+        opts = default_opts.merge(actors: true, namespace: 'gitlab-org')
+        command = described_class.new(%w[set foo true], **opts)
+
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
+      end
+    end
+
+    context 'when using a user namespace feature gate together with --random' do
+      it 'returns an error message' do
+        opts = default_opts.merge(random: true, namespace: 'myuser')
+        command = described_class.new(%w[set foo true], **opts)
+
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
+      end
+    end
+
+    context 'when using a user namespace feature gate together with --actors' do
+      it 'returns an error message' do
+        opts = default_opts.merge(actors: true, namespace: 'myuser')
+        command = described_class.new(%w[set foo true], **opts)
+
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
       end
     end
 
     context 'when using a user feature gate together with --random' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo true], actors: false, random: true, project: nil, group: nil, user: 'myuser')
+        opts = default_opts.merge(random: true, user: 'myuser')
+        command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
       end
     end
 
     context 'when using a user feature gate together with --actors' do
       it 'returns an error message' do
-        command = described_class.new(%w[set foo true], actors: true, random: false, project: nil, group: nil, user: 'myuser')
+        opts = default_opts.merge(actors: true, user: 'myuser')
+        command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group` or `--user`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`/)
       end
     end
 
     context 'when using valid arguments' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo 10] }
-        let(:command_opts) { { actors: false, random: true, project: nil, group: nil, user: nil } }
+        let(:command_opts) { default_opts.merge(random: true) }
         let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 10 }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '10', feature_scope_actors: 'false' } }
         let(:set_feature_params) do
@@ -564,6 +610,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              namespace: nil,
               user: nil,
               actors: false
             }
@@ -575,7 +622,7 @@ describe Chatops::Commands::Feature do
     context 'when using a project feature gate' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }
-        let(:command_opts) { { actors: false, random: false, project: 'gitlab-org/gitaly', group: nil, user: nil } }
+        let(:command_opts) { default_opts.merge(project: 'gitlab-org/gitaly') }
         let(:gates) { [{ 'project' => 'gitlab-org/gitaly', 'value' => true }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_project: 'gitlab-org/gitaly', feature_scope_actors: 'false' } }
         let(:set_feature_params) do
@@ -585,6 +632,7 @@ describe Chatops::Commands::Feature do
             {
               project: 'gitlab-org/gitaly',
               group: nil,
+              namespace: nil,
               user: nil,
               actors: false
             }
@@ -596,7 +644,7 @@ describe Chatops::Commands::Feature do
     context 'when using a group feature gate' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }
-        let(:command_opts) { { actors: false, random: false, project: nil, group: 'gitlab-org', user: nil } }
+        let(:command_opts) { default_opts.merge(group: 'gitlab-org') }
         let(:gates) { [{ 'group' => 'gitlab-org', 'value' => true }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_group: 'gitlab-org', feature_scope_actors: 'false' } }
         let(:set_feature_params) do
@@ -606,6 +654,51 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: 'gitlab-org',
+              namespace: nil,
+              user: nil,
+              actors: false
+            }
+          ]
+        end
+      end
+    end
+
+    context 'when using a group namespace feature gate' do
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo true] }
+        let(:command_opts) { default_opts.merge(namespace: 'gitlab-org') }
+        let(:gates) { [{ 'namespace' => 'gitlab-org', 'value' => true }] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_namespace: 'gitlab-org', feature_scope_actors: 'false' } }
+        let(:set_feature_params) do
+          [
+            'foo',
+            'true',
+            {
+              project: nil,
+              group: nil,
+              namespace: 'gitlab-org',
+              user: nil,
+              actors: false
+            }
+          ]
+        end
+      end
+    end
+
+    context 'when using a user namespace feature gate' do
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo true] }
+        let(:command_opts) { default_opts.merge(namespace: 'myuser') }
+        let(:gates) { [{ 'namespace' => 'myuser', 'value' => true }] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_namespace: 'myuser', feature_scope_actors: 'false' } }
+        let(:set_feature_params) do
+          [
+            'foo',
+            'true',
+            {
+              project: nil,
+              group: nil,
+              namespace: 'myuser',
               user: nil,
               actors: false
             }
@@ -617,7 +710,7 @@ describe Chatops::Commands::Feature do
     context 'when using a user feature gate' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }
-        let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser' } }
+        let(:command_opts) { default_opts.merge(user: 'myuser') }
         let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser', feature_scope_actors: 'false' } }
         let(:set_feature_params) do
@@ -627,6 +720,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              namespace: nil,
               user: 'myuser',
               actors: false
             }
@@ -640,7 +734,7 @@ describe Chatops::Commands::Feature do
       context 'when turning on production' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser' } }
+          let(:command_opts) { default_opts.merge(user: 'myuser') }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update'
@@ -648,7 +742,7 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a percentage value' do
           let(:value) { '10' }
-          let(:command_opts) { { actors: false, random: true, project: nil, group: nil, user: nil } }
+          let(:command_opts) { default_opts.merge(random: true) }
           let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
 
           include_examples 'invalid feature flag update'
@@ -656,7 +750,7 @@ describe Chatops::Commands::Feature do
 
         context 'when the ignore_feature_flag_consistency_check is true' do
           let(:command_args) { %w[set foo true] }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true } }
+          let(:command_opts) { default_opts.merge(user: 'myuser', ignore_feature_flag_consistency_check: true) }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
           let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser', feature_scope_actors: 'false' } }
           let(:set_feature_params) do
@@ -666,6 +760,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                namespace: nil,
                 user: 'myuser',
                 actors: false
               }
@@ -681,7 +776,7 @@ describe Chatops::Commands::Feature do
       context 'when turning on production' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser' } }
+          let(:command_opts) { default_opts.merge(user: 'myuser') }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update' do
@@ -697,7 +792,7 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser' } }
+          let(:command_opts) { default_opts.merge(user: 'myuser') }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update'
@@ -705,7 +800,7 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a percentage value' do
           let(:value) { '10' }
-          let(:command_opts) { { actors: false, random: true, project: nil, group: nil, user: nil } }
+          let(:command_opts) { default_opts.merge(random: true) }
           let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
 
           include_examples 'invalid feature flag update'
@@ -713,7 +808,7 @@ describe Chatops::Commands::Feature do
 
         context 'when the ignore_feature_flag_consistency_check is true' do
           let(:command_args) { %w[set foo true] }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser', ignore_feature_flag_consistency_check: true, staging: true } }
+          let(:command_opts) { default_opts.merge(user: 'myuser', ignore_feature_flag_consistency_check: true, staging: true) }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
           let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser', feature_scope_actors: 'false' } }
           let(:set_feature_params) do
@@ -723,6 +818,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                namespace: nil,
                 user: 'myuser',
                 actors: false
               }
@@ -739,12 +835,12 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when the feature flag does not exist in production' do
-      let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser', staging: true } }
+      let(:command_opts) { default_opts.merge(user: 'myuser', staging: true) }
 
       context 'when turning on staging' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { { actors: false, random: false, project: nil, group: nil, user: 'myuser' } }
+          let(:command_opts) { default_opts.merge(user: 'myuser') }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
 
           include_examples 'invalid feature flag update' do
@@ -757,8 +853,9 @@ describe Chatops::Commands::Feature do
 
     context 'when there is an ongoing incident' do
       it 'does not allow changing the feature flag state' do
+        opts = default_opts.merge(random: true)
         command =
-          described_class.new(%w[set foo 10], { actors: false, random: true, project: nil, group: nil, user: nil }, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
+          described_class.new(%w[set foo 10], opts, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
 
         expect(command).to receive(:production_check?).and_return(false)
 

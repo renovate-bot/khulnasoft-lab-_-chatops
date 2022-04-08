@@ -58,12 +58,14 @@ module Chatops
                       project: nil,
                       group: nil,
                       user: nil,
+                      namespace: nil,
                       actors: false)
 
         body = { value: value }
 
         body[:project] = project if project
         body[:group] = group if group
+        body[:namespace] = namespace if namespace
         body[:user] = user if user
         body[:key] = 'percentage_of_actors' if actors
 
