@@ -6,13 +6,18 @@ module Chatops
     class Deploy
       include Command
 
-      usage "#{command_name} [VERSION] [OPTIONS]"
-      description 'Schedules a deployment using takeoff'
+      usage "#{command_name} [VERSION] [ENVIRONMENT] [OPTIONS]"
+      description 'Starts a deployment to a specified environment'
 
       SUBCOMMANDS = Set.new(%w[lock unlock]).freeze
 
-      # Valid environments for lock/unlock
-      ENVIRONMENTS = %w[gprd gprd-cny gstg gstg-cny gstg-ref pre release-gitlab].freeze
+      # Valid environments
+      # NOTE: We deploy to `release`, but (un)lock a `release-gitlab` Chef role
+      ENVIRONMENTS = %w[
+        gprd gprd-cny
+        gstg gstg-cny gstg-ref
+        pre release release-gitlab
+      ].freeze
 
       # The regular expression to use for verifying release candidate versions.
       RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/
@@ -29,18 +34,7 @@ module Chatops
       # Default package repository to use if TAKEOFF_DEPLOY_REPO is undefined
       DEFAULT_REPO = 'gitlab/pre-release'
 
-      options do |o| # rubocop:disable Metrics/BlockLength
-        o.bool('--production', 'Deploy to production, instead of staging')
-        o.bool(
-          '--canary',
-          'Only deploy to a canary, instead of the entire environment'
-        )
-        o.bool(
-          '--pre',
-          'Deploy to the PreProd environment'
-        )
-        o.bool('--release', 'Deploy to the Release environment')
-
+      options do |o|
         o.bool('--warmup', 'Only perform a warmup, instead of a full deploy')
         o.bool('--check', 'Run with CHECKMODE (dry-run)')
 
@@ -93,13 +87,19 @@ module Chatops
 
           public_send(command, *arguments)
         else
-          deploy
+          version, target = arguments.shift(2)
+
+          return 'Must provide a version and a target environment' if version.nil? || version.empty?
+
+          # Handle a swapped environment/version argument
+          version, target = target, version if ENVIRONMENTS.include?(version) && !ENVIRONMENTS.include?(target)
+
+          deploy(version, target)
         end
       end
 
-      def deploy
-        return 'The first argument must be the version to deploy' unless version?
-
+      def deploy(version, target)
+        assert_environment!(target)
         prepared_version = prepare_version(version)
 
         unless version_valid?(prepared_version)
@@ -107,7 +107,7 @@ module Chatops
             'Versions must be in the format MAJOR.MINOR.PATCH(-rcN)'
         end
 
-        if environment == 'release' && !prepared_version.match?(VERSION_REGEX)
+        if target == 'release' && !prepared_version.match?(VERSION_REGEX)
           return 'The release environment is only allowed to receive ' \
             'packages soon to be released.  Auto-deploys and RC\'s are ' \
             'not allowed.'
@@ -119,12 +119,12 @@ module Chatops
             '`--ignore-production-checks`?'
         end
 
-        schedule_deploy(prepared_version)
+        schedule_deploy(prepared_version, target)
       end
 
       # Lock an environment and prevent it from being deployed
       def lock(env)
-        env = normalize_environment(env)
+        env = normalize_chef_environment(env)
         assert_environment!(env)
 
         Chef::Client.new.lock_environment(env)
@@ -134,7 +134,7 @@ module Chatops
 
       # Unlock an environment and allow it to be deployed
       def unlock(env)
-        env = normalize_environment(env)
+        env = normalize_chef_environment(env)
         assert_environment!(env)
 
         Chef::Client.new.unlock_environment(env)
@@ -173,15 +173,15 @@ module Chatops
         version.match?(regex)
       end
 
-      def schedule_deploy(version)
+      def schedule_deploy(version, target)
         response = client.run_trigger(
           trigger_project,
           trigger_token,
           :master,
-          environment_variables_for(version)
+          environment_variables_for(version, target)
         )
 
-        inc_rollbacks_metric if options[:rollback]
+        inc_rollbacks_metric(target) if options[:rollback]
 
         url = response.web_url
         "The deploy has been scheduled and can be viewed <#{url}|here>"
@@ -189,9 +189,9 @@ module Chatops
         "The deploy could not be scheduled: #{error.message}"
       end
 
-      def environment_variables_for(version)
+      def environment_variables_for(version, target)
         vars = {
-          'DEPLOY_ENVIRONMENT': environment,
+          'DEPLOY_ENVIRONMENT': target,
           'DEPLOY_VERSION': version,
           'DEPLOY_REPO': repository,
           'DEPLOY_USER': env['GITLAB_USER_NAME'],
@@ -250,34 +250,12 @@ module Chatops
         env.fetch('DELIVERY_METRICS_URL')
       end
 
-      def environment
-        base =
-          if options[:production]
-            'gprd'
-          elsif options[:pre]
-            'pre'
-          elsif options[:release]
-            'release'
-          else
-            'gstg'
-          end
-
-        if options[:canary]
-          "#{base}-cny"
+      def normalize_chef_environment(env)
+        # Let's not be pedantic just because the Chef role is unusual
+        if env == 'release'
+          'release-gitlab'
         else
-          base
-        end
-      end
-
-      def version
-        @version ||= arguments.shift
-      end
-
-      def version?
-        if version && !version.empty?
-          true
-        else
-          false
+          env
         end
       end
 
@@ -287,16 +265,7 @@ module Chatops
         raise "Invalid environment `#{env}`, must be one of #{ENVIRONMENTS.join(', ')}"
       end
 
-      def normalize_environment(env)
-        # Let's not be pedantic just because the Chef role is unusual
-        if env == 'release'
-          'release-gitlab'
-        else
-          env
-        end
-      end
-
-      def inc_rollbacks_metric
+      def inc_rollbacks_metric(environment)
         HTTP
           .headers("X-Private-Token": delivery_metrics_token)
           .post(

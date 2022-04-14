@@ -4,62 +4,6 @@ require 'spec_helper'
 
 describe Chatops::Commands::Deploy do
   describe '.perform' do
-    it 'supports a --production option' do
-      instance = instance_double('instance')
-
-      expect(described_class)
-        .to receive(:new)
-        .with(%w[], a_hash_including(production: true), {})
-        .and_return(instance)
-
-      expect(instance)
-        .to receive(:perform)
-
-      described_class.perform(%w[--production])
-    end
-
-    it 'supports a --canary option' do
-      instance = instance_double('instance')
-
-      expect(described_class)
-        .to receive(:new)
-        .with(%w[], a_hash_including(canary: true), {})
-        .and_return(instance)
-
-      expect(instance)
-        .to receive(:perform)
-
-      described_class.perform(%w[--canary])
-    end
-
-    it 'supports a --pre option' do
-      instance = instance_double('instance')
-
-      expect(described_class)
-        .to receive(:new)
-        .with(%w[], a_hash_including(pre: true), {})
-        .and_return(instance)
-
-      expect(instance)
-        .to receive(:perform)
-
-      described_class.perform(%w[--pre])
-    end
-
-    it 'supports a --release option' do
-      instance = instance_double('instance')
-
-      expect(described_class)
-        .to receive(:new)
-        .with(%w[], a_hash_including(release: true), {})
-        .and_return(instance)
-
-      expect(instance)
-        .to receive(:perform)
-
-      described_class.perform(%w[--release])
-    end
-
     it 'supports a --allow-precheck-failure option' do
       instance = instance_double('instance')
 
@@ -136,7 +80,7 @@ describe Chatops::Commands::Deploy do
 
   describe '#perform' do
     it 'falls back to default behavior without a subcommand' do
-      instance = described_class.new
+      instance = described_class.new(%w[foo])
 
       expect(instance).to receive(:deploy)
 
@@ -156,36 +100,58 @@ describe Chatops::Commands::Deploy do
     context 'without a version' do
       it 'returns an error message' do
         expect(described_class.new.perform)
-          .to eq('The first argument must be the version to deploy')
+          .to eq('Must provide a version and a target environment')
       end
     end
 
     context 'with an invalid version' do
       it 'returns an error message' do
-        expect(described_class.new(%w[11.0]).perform)
+        expect(described_class.new(%w[11.0 gstg]).perform)
           .to match(/The specified version is invalid/)
       end
     end
 
     context 'with a valid version without the EE suffix' do
       it 'automatically adds the suffix' do
-        command = described_class.new(%w[11.3.0])
+        command = described_class.new(%w[11.3.0 gprd])
 
         expect(command)
           .to receive(:schedule_deploy)
-          .with('11.3.0-ee.0')
+          .with('11.3.0-ee.0', 'gprd')
 
         command.perform
       end
     end
 
-    context 'with a valid RC version' do
-      it 'automatically adds the suffix' do
-        command = described_class.new(%w[11.3.0-rc1])
+    context 'with a valid environment and then a version' do
+      it 'deploys the specified version to the specified environment' do
+        command = described_class
+          .new(%w[gprd 12.0.201906051128-30e31e4afb1.bd6aadb8c50])
 
         expect(command)
           .to receive(:schedule_deploy)
-          .with('11.3.0-rc1.ee.0')
+          .with('12.0.201906051128-30e31e4afb1.bd6aadb8c50', 'gprd')
+
+        command.perform
+      end
+    end
+
+    context 'with a valid version and an invalid environment' do
+      it 'raises an error' do
+        command = described_class
+          .new(%w[imagination-land 12.0.201906051128-30e31e4afb1.bd6aadb8c50])
+
+        expect { command.perform }.to raise_error(/Invalid environment/)
+      end
+    end
+
+    context 'with a valid RC version' do
+      it 'automatically adds the suffix' do
+        command = described_class.new(%w[gstg-cny 11.3.0-rc1])
+
+        expect(command)
+          .to receive(:schedule_deploy)
+          .with('11.3.0-rc1.ee.0', 'gstg-cny')
 
         command.perform
       end
@@ -193,11 +159,11 @@ describe Chatops::Commands::Deploy do
 
     context 'with a valid stable version' do
       it 'deploys from the stable repository' do
-        command = described_class.new(%w[11.3.0-ee.0])
+        command = described_class.new(%w[gstg-ref 11.3.0-ee.0])
 
         expect(command)
           .to receive(:schedule_deploy)
-          .with('11.3.0-ee.0')
+          .with('11.3.0-ee.0', 'gstg-ref')
 
         command.perform
       end
@@ -205,11 +171,11 @@ describe Chatops::Commands::Deploy do
 
     context 'with a valid RC version' do
       it 'deploys from the pre-release repository' do
-        command = described_class.new(%w[11.3.0-rc1.ee.0])
+        command = described_class.new(%w[11.3.0-rc1.ee.0 gprd-cny])
 
         expect(command)
           .to receive(:schedule_deploy)
-          .with('11.3.0-rc1.ee.0')
+          .with('11.3.0-rc1.ee.0', 'gprd-cny')
 
         command.perform
       end
@@ -218,11 +184,11 @@ describe Chatops::Commands::Deploy do
     context 'with a valid auto-deploy version' do
       it 'deploys using an auto-deploy version' do
         command = described_class
-          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50])
+          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50 pre])
 
         expect(command)
           .to receive(:schedule_deploy)
-          .with('12.0.201906051128-30e31e4afb1.bd6aadb8c50')
+          .with('12.0.201906051128-30e31e4afb1.bd6aadb8c50', 'pre')
 
         command.perform
       end
@@ -234,8 +200,8 @@ describe Chatops::Commands::Deploy do
         allow(env).to receive(:to_hash).and_return(env)
 
         command = described_class
-          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50],
-               { rollback: true, gstg: true },
+          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50 gstg],
+               { rollback: true },
                env)
 
         response = instance_double('response', web_url: 'bar')
@@ -252,7 +218,7 @@ describe Chatops::Commands::Deploy do
     context 'with extraneous arguments' do
       it 'returns an error' do
         command = described_class
-          .new(%w[12.0.201906051128-30e31e4afb1.bd6aadb8c50 --invalid-argument])
+          .new(%w[gstg 12.0.201906051128-30e31e4afb1.bd6aadb8c50 --invalid-argument])
 
         result = command.perform
 
@@ -351,7 +317,7 @@ describe Chatops::Commands::Deploy do
     context 'when the request is valid' do
       it 'returns a success message' do
         command = described_class.new(
-          %w[11.3.0-rc1.ee.0],
+          %w[11.3.0-rc1.ee.0 gstg],
           { ignore_production_checks: 'false' },
           'TAKEOFF_TRIGGER_TOKEN' => '123',
           'TAKEOFF_TRIGGER_PROJECT' => 'foo',
@@ -377,8 +343,7 @@ describe Chatops::Commands::Deploy do
           )
           .and_return(response)
 
-        message = command
-          .schedule_deploy('11.3.0-rc1.ee.0')
+        message = command.perform
 
         expect(message)
           .to eq('The deploy has been scheduled and can be viewed <bar|here>')
@@ -388,7 +353,7 @@ describe Chatops::Commands::Deploy do
     context 'when the request is invalid' do
       it 'returns an error message' do
         command = described_class.new(
-          %w[11.3.0-rc1.ee.0],
+          %w[11.3.0-rc1.ee.0 gprd-cny],
           {},
           'TAKEOFF_TRIGGER_TOKEN' => '123',
           'TAKEOFF_TRIGGER_PROJECT' => 'foo',
@@ -399,8 +364,7 @@ describe Chatops::Commands::Deploy do
           .to receive(:run_trigger)
           .and_raise(StandardError.new('oops'))
 
-        message = command
-          .schedule_deploy('11.3.0-rc1.ee.0')
+        message = command.perform
 
         expect(message)
           .to eq('The deploy could not be scheduled: oops')
@@ -410,19 +374,19 @@ describe Chatops::Commands::Deploy do
 
   describe '#environment_variables_for' do
     it 'includes the DEPLOY_ENVIRONMENT variable' do
-      vars = described_class.new.environment_variables_for('1.0')
+      vars = described_class.new.environment_variables_for('1.0', 'gstg')
 
       expect(vars[:DEPLOY_ENVIRONMENT]).to eq('gstg')
     end
 
     it 'includes the DEPLOY_VERSION variable' do
-      vars = described_class.new.environment_variables_for('1.0')
+      vars = described_class.new.environment_variables_for('1.0', 'foo')
 
       expect(vars[:DEPLOY_VERSION]).to eq('1.0')
     end
 
     it 'includes the DEPLOY_REPO variable' do
-      vars = described_class.new.environment_variables_for('1.0')
+      vars = described_class.new.environment_variables_for('1.0', 'foo')
 
       expect(vars[:DEPLOY_REPO]).to eq('gitlab/pre-release')
     end
@@ -430,7 +394,7 @@ describe Chatops::Commands::Deploy do
     context 'when a warmup is requested' do
       it 'includes the TAKEOFF_WARMUP environment variable' do
         command = described_class.new([], { warmup: true }, {})
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars[:TAKEOFF_WARMUP]).to eq('1')
       end
@@ -439,7 +403,7 @@ describe Chatops::Commands::Deploy do
     context 'when a warmup is not requested' do
       it 'does not include the TAKEOFF_WARMUP environment variable' do
         command = described_class.new
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars.key?(:TAKEOFF_WARMUP)).to eq(false)
       end
@@ -448,7 +412,7 @@ describe Chatops::Commands::Deploy do
     context 'when checkmode is requested' do
       it 'includes the CHECKMODE environment variable' do
         command = described_class.new([], { check: true }, {})
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars[:CHECKMODE]).to eq('true')
       end
@@ -457,7 +421,7 @@ describe Chatops::Commands::Deploy do
     context 'when skip haproxy is requested' do
       it 'includes the ANSIBLE_SKIP_TAGS environment variable' do
         command = described_class.new([], { skip_haproxy: true }, {})
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars[:ANSIBLE_SKIP_TAGS]).to eq('haproxy')
       end
@@ -466,7 +430,7 @@ describe Chatops::Commands::Deploy do
     context 'when skip haproxy is not requested' do
       it 'does not include the ANSIBLE_SKIP_TAGS environment variable' do
         command = described_class.new
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars.key?(:ANSIBLE_SKIP_TAGS)).to eq(false)
       end
@@ -475,7 +439,7 @@ describe Chatops::Commands::Deploy do
     context 'when allow failure of prechecks is requested' do
       it 'includes the PRECHECK_IGNORE_ERRORS environment variable' do
         command = described_class.new([], { allow_precheck_failure: true }, {})
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars[:PRECHECK_IGNORE_ERRORS]).to eq('yes')
       end
@@ -484,7 +448,7 @@ describe Chatops::Commands::Deploy do
     context 'when allow failure of prechecks is not requested' do
       it 'does not include the PRECHECK_IGNORE_ERRORS environment variable' do
         command = described_class.new
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars.key?(:PRECHECK_IGNORE_ERRORS)).to eq(false)
       end
@@ -493,14 +457,14 @@ describe Chatops::Commands::Deploy do
     context 'when rollback is requested' do
       it 'includes the DEPLOY_ROLLBACK environment variable' do
         command = described_class.new([], { rollback: true }, {})
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars[:DEPLOY_ROLLBACK]).to eq('true')
       end
 
       it 'includes the IGNORE_PRODUCTION_CHECKS environment variable' do
         command = described_class.new([], { rollback: true }, {})
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars[:IGNORE_PRODUCTION_CHECKS]).to include('rollback')
       end
@@ -509,7 +473,7 @@ describe Chatops::Commands::Deploy do
     context 'when DEPLOY_ROLLBACK is not requested' do
       it 'does not include the DEPLOY_ROLLBACK environment variable' do
         command = described_class.new
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars.key?(:DEPLOY_ROLLBACK)).to eq(false)
       end
@@ -524,7 +488,7 @@ describe Chatops::Commands::Deploy do
           { ignore_production_checks: provided_reason },
           {}
         )
-        vars = command.environment_variables_for('1.0')
+        vars = command.environment_variables_for('1.0', 'foo')
 
         expect(vars[:IGNORE_PRODUCTION_CHECKS]).to eq(expected_reason)
       end
@@ -598,102 +562,30 @@ describe Chatops::Commands::Deploy do
     end
   end
 
-  describe '#environment' do
-    it 'returns gstg by default' do
-      expect(described_class.new.environment).to eq('gstg')
-    end
-
-    it 'returns gprd when the --production option is set' do
-      command = described_class.new([], production: true)
-
-      expect(command.environment).to eq('gprd')
-    end
-
-    it 'returns pre when the --pre option is set' do
-      command = described_class.new([], pre: true)
-
-      expect(command.environment).to eq('pre')
-    end
-
-    it 'returns release when the --release option is set' do
-      command = described_class.new([], release: true)
-
-      expect(command.environment).to eq('release')
-    end
-
-    it 'returns gprd-cny when the --production and --canary options are set' do
-      command = described_class.new([], production: true, canary: true)
-
-      expect(command.environment).to eq('gprd-cny')
-    end
-
-    it 'returns gstg-cny when the --canary option is set' do
-      command = described_class.new([], production: false, canary: true)
-
-      expect(command.environment).to eq('gstg-cny')
-    end
-  end
-
-  describe '#version' do
-    it 'returns the version' do
-      command = described_class.new(%w[foo])
-
-      expect(command.version).to eq('foo')
-    end
-  end
-
-  describe 'version?' do
-    it 'returns true if a version is given' do
-      command = described_class.new(%w[foo])
-
-      expect(command.version?).to eq(true)
-    end
-
-    it 'returns false when the version is empty' do
-      command = described_class.new([''])
-
-      expect(command.version?).to eq(false)
-    end
-
-    it 'returns false when the version is not given' do
-      command = described_class.new([])
-
-      expect(command.version?).to eq(false)
-    end
-  end
-
   describe 'protects release environment' do
     it 'allows packaged releases to be deployed' do
       version = '13.0.1-ee.0'
-      command = described_class.new([version], release: true)
+      command = described_class.new(['release', version])
 
-      expect(command.environment).to eq('release')
-      expect(command)
-        .to receive(:schedule_deploy)
-        .with(version)
+      expect(command).to receive(:schedule_deploy).with(version, 'release')
 
       command.perform
     end
 
     it 'does not allow RCs to be deployed' do
       version = '11.3.0-rc1.ee.0'
-      command = described_class.new([version], release: true)
+      command = described_class.new(['release', version])
 
-      expect(command.environment).to eq('release')
-      expect(command)
-        .not_to receive(:schedule_deploy)
-        .with(version)
+      expect(command).not_to receive(:schedule_deploy)
 
       command.perform
     end
+
     it 'does not allow auto-deploys to be deployed' do
       version = '12.0.201906051128-30e31e4afb1.bd6aadb8c50'
-      command = described_class.new([version], release: true)
+      command = described_class.new(['release', version])
 
-      expect(command.environment).to eq('release')
-      expect(command)
-        .not_to receive(:schedule_deploy)
-        .with(version)
+      expect(command).not_to receive(:schedule_deploy)
 
       command.perform
     end
@@ -702,8 +594,8 @@ describe Chatops::Commands::Deploy do
   describe '#inc_rollbacks_metric' do
     subject(:command) do
       described_class.new(
-        %w[12.0.201906051128-30e31e4afb1.bd6aadb8c50],
-        { canary: true, staging: true },
+        %w[gstg-cny 12.0.201906051128-30e31e4afb1.bd6aadb8c50],
+        {},
         'DELIVERY_METRICS_TOKEN' => token,
         'DELIVERY_METRICS_URL' => url
       )
@@ -717,14 +609,14 @@ describe Chatops::Commands::Deploy do
         .with("X-Private-Token": token)
         .and_return(instance_spy('HTTP::Client'))
 
-      command.inc_rollbacks_metric
+      command.inc_rollbacks_metric('foo')
     end
 
     it 'makes a POST requests' do
       client = instance_spy('HTTP::Client')
       expect(HTTP).to receive(:headers).and_return(client)
 
-      command.inc_rollbacks_metric
+      command.inc_rollbacks_metric('gstg-cny')
 
       expect(client).to have_received(:post)
         .with("#{url}/api/deployment_rollbacks_started_total/inc",
