@@ -22,7 +22,7 @@ module Chatops
 
       # The URL to the Gates documentation, to be displayed when retrieving a
       # single feature.
-      GATES_DOCUMENTATION = 'https://github.com/jnunemaker/flipper/blob/master/docs/Gates.md'
+      GATES_DOCUMENTATION = 'https://www.flippercloud.io/docs/features'
 
       # The project name to use for logging the toggling of feature flags.
       LOG_PROJECT = 'gitlab-com/gl-infra/feature-flag-log'
@@ -290,7 +290,7 @@ module Chatops
           staging_opts = options.dup
           staging_opts[:staging] = true
 
-          # If staging is disabled, we shouldnt turn on for production
+          # If staging is disabled, we shouldn't turn on for production
           feature_enabled_with_opts?(staging_opts)
         else
           true
