@@ -6,6 +6,7 @@ gem 'chef'
 gem 'gitlab'
 gem 'http'
 gem 'pg'
+gem 'semantic_logger'
 gem 'slack-ruby-block-kit', '~> 0.14.0'
 gem 'slop'
 
