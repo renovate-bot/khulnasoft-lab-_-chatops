@@ -5,6 +5,7 @@ module Chatops
     # HTTP client for the GitLab API.
     class Client
       extend Forwardable
+      include ::SemanticLogger::Loggable
 
       DEFAULT_HOST = 'gitlab.com'
 
@@ -17,7 +18,11 @@ module Chatops
 
         @host = host
         @internal_client = ::Gitlab::Client
-          .new(endpoint: endpoint, private_token: token, httparty: httparty)
+          .new(
+            endpoint: endpoint,
+            private_token: token,
+            httparty: { logger: logger, log_level: :debug }.merge(httparty)
+          )
       end
 
       def features

@@ -7,8 +7,12 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require 'chatops'
 
-Chatops.with_trace_section do
-  if (output = Chatops.run(ARGV, ENV))
+if (output = Chatops.run(ARGV, ENV))
+  # If log lines get interleaved with the output, they will appear in Slack as well.
+  # So flush SemanticLogger before printing the output.
+  ::SemanticLogger.flush
+
+  Chatops.with_trace_section do
     puts(output)
   end
 end
