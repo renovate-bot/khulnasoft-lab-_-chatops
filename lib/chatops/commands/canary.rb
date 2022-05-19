@@ -30,7 +30,7 @@ module Chatops
                 'do not use this option unless you know what you are doing!')
       end
 
-      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/AbcSize
       def perform
         unless staging? ^ production?
           return '_You need to specify the environment with ' \
@@ -45,7 +45,7 @@ module Chatops
              canary_active_deployment?
             return [
               'Unable to set canary state because there is a ' \
-                "<#{chef_client.canary_pipeline_url(env: env_name)}|" \
+                "<#{chef_client.canary_pipeline_url(env: environment.env_name)}|" \
                 'canary deploy in progress>.',
               'Draining canary while there is a deploy will cause errors for ' \
                 'users connecting to canary hosts.',
@@ -70,7 +70,7 @@ module Chatops
           backend_stats_disp(servers: canary_servers) +
           server_disp(servers: canary_servers, hide_healthy: false)).join("\n")
       end
-      # rubocop: enable Metrics/CyclomaticComplexity
+      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/AbcSize
 
       def chef_client
         @chef_client ||= Chatops::Chef::Client.new
@@ -137,25 +137,29 @@ module Chatops
       end
 
       def lb_ips
-        @lb_ips ||= chef_client.ips_from_role("#{env_name}-base-lb")
+        @lb_ips ||= chef_client.ips_from_role("#{environment.env_name}-base-lb")
       end
 
       def send_event(message)
         return unless staging? || production?
 
         Chatops::Events::Client
-          .new(env_name)
+          .new(environment.env_name)
           .send_event(
             message
           )
       end
 
       def canary_active_deployment?
-        @canary_active_deployment ||= chef_client.canary_active_deployment?(env: env_name)
+        @canary_active_deployment ||= chef_client.canary_active_deployment?(env: environment.env_name)
+      end
+
+      def staging?
+        options[:staging] && environment.staging?
       end
 
       def production?
-        options[:production]
+        options[:production] && environment.production?
       end
     end
   end

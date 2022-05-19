@@ -29,6 +29,7 @@ describe Chatops::Commands::Feature do
         'GITLAB_USER_LOGIN' => 'alice'
       }
       command = described_class.new(command_args, command_opts_this_env, command_envs)
+      environment = command.environments.first
 
       other_env_feature_command = instance_double('Chatops::Commands::Feature')
 
@@ -42,7 +43,7 @@ describe Chatops::Commands::Feature do
         .and_return(true)
 
       expect(other_env_feature_command)
-        .to receive(:get_feature).with('foo')
+        .to receive(:get_feature).with('foo', environment)
         .and_return(feature)
 
       expect(command.set).to match(error_message)
@@ -67,6 +68,7 @@ describe Chatops::Commands::Feature do
       }
       command = described_class.new(command_args, command_opts, command_envs)
 
+      environment = command.environments.first
       client = instance_double('Chatops::Gitlab::Client')
       staging_feature_command = instance_double('Chatops::Commands::Feature')
       feature = instance_double(
@@ -92,7 +94,7 @@ describe Chatops::Commands::Feature do
         .and_return(feature)
 
       allow(staging_feature_command)
-        .to receive(:get_feature).with('foo')
+        .to receive(:get_feature).with('foo', environment)
         .and_return(feature)
 
       allow(feature)
@@ -107,7 +109,7 @@ describe Chatops::Commands::Feature do
 
       expect(command)
         .to receive(:log_feature_toggle)
-        .with(log_feature_toggle_fields[:feature_name], log_feature_toggle_fields[:feature_value])
+        .with(log_feature_toggle_fields[:feature_name], log_feature_toggle_fields[:feature_value], environment)
         .and_return(issue)
 
       events_client = instance_double('Chatops::Events::Client')
@@ -154,12 +156,13 @@ describe Chatops::Commands::Feature do
         .to receive(:send_feature_details)
         .with(
           feature: an_instance_of(Chatops::Gitlab::Feature),
-          text: 'The feature flag value has been updated!'
+          text: 'The feature flag value has been updated!',
+          environment: environment
         )
 
       expect(command)
         .to receive(:send_feature_toggling_to_qa_channel)
-        .with(issue, :ops_pipeline)
+        .with(issue, environment, :ops_pipeline)
 
       command.set
     end
@@ -388,6 +391,7 @@ describe Chatops::Commands::Feature do
         command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
         collection = instance_double('collection')
         feature = instance_double('feature')
+        environment = command.environments.first
 
         expect(Chatops::Gitlab::FeatureCollection)
           .to receive(:new)
@@ -401,7 +405,7 @@ describe Chatops::Commands::Feature do
 
         expect(command)
           .to receive(:send_feature_details)
-          .with(feature: feature)
+          .with(feature: feature, environment: environment)
 
         command.get
       end
@@ -834,6 +838,44 @@ describe Chatops::Commands::Feature do
       end
     end
 
+    context 'with multiple environments' do
+      let(:log_feature_toggle_params) { %w[foo deleted] }
+      let(:issue) { instance_double('GitLab::Issue') }
+      let(:client) { instance_double('client') }
+      let(:message) { instance_double('message') }
+
+      let(:command) do
+        described_class.new(
+          %w[delete foo],
+          { dev: true, staging: true, production: true },
+          'GITLAB_TOKEN' => '123',
+          'GITLAB_USER_LOGIN' => 'alice',
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654',
+          'SLACK_TOKEN' => '456',
+          'CHAT_CHANNEL' => 'foo'
+        )
+      end
+
+      before do
+        allow(Chatops::Gitlab::Client).to receive(:new).and_return(client)
+        allow(client).to receive(:delete_feature)
+        allow(Chatops::Slack::Message).to receive(:new).and_return(message)
+        allow(message).to receive(:send)
+        allow(command).to receive(:log_feature_toggle)
+        allow(command).to receive(:send_feature_toggle_event)
+      end
+
+      it 'executes the same command to each environment' do
+        expect(client).to receive(:delete_feature).exactly(3).times
+        expect(command).to receive(:send_feature_toggle_event).with('foo', 'deleted', anything).exactly(3).times
+        expect(message).to receive(:send).exactly(3).times
+        expect(command).to receive(:log_feature_toggle).with(*log_feature_toggle_params, anything).and_return(issue).exactly(3).times
+
+        command.delete
+      end
+    end
+
     context 'when the feature flag does not exist in production' do
       let(:command_opts) { default_opts.merge(user: 'myuser', staging: true) }
 
@@ -898,6 +940,7 @@ describe Chatops::Commands::Feature do
     let(:issue) { instance_double('GitLab::Issue') }
     let(:client) { instance_double('client') }
     let(:message) { instance_double('message') }
+    let(:environment) { command.environments.first }
 
     let(:command) do
       described_class.new(
@@ -929,7 +972,7 @@ describe Chatops::Commands::Feature do
     end
 
     it 'logs the deletion of the feature flag to chatops' do
-      expect(command).to receive(:send_feature_toggle_event).with('foo', 'deleted')
+      expect(command).to receive(:send_feature_toggle_event).with('foo', 'deleted', environment)
 
       command.delete
     end
@@ -942,7 +985,7 @@ describe Chatops::Commands::Feature do
     end
 
     it 'sends the deleted flag to create an issue' do
-      expect(command).to receive(:log_feature_toggle).with(*log_feature_toggle_params).and_return(issue)
+      expect(command).to receive(:log_feature_toggle).with(*log_feature_toggle_params, environment).and_return(issue)
 
       command.delete
     end
@@ -970,7 +1013,8 @@ describe Chatops::Commands::Feature do
         .to receive(:send)
         .with(a_hash_including(text: 'Hello'))
 
-      command.send_feature_details(feature: feature, text: 'Hello')
+      environment = command.environments.find(&:production?)
+      command.send_feature_details(feature: feature, text: 'Hello', environment: environment)
     end
   end
 
@@ -991,13 +1035,15 @@ describe Chatops::Commands::Feature do
           .with(token: '123', channel: channel)
           .and_return(message)
 
-        command.send_feature_toggling_to_qa_channel(issue)
+        environment = command.environments.first
+        command.send_feature_toggling_to_qa_channel(issue, environment)
       end
 
       it 'sends a relevant Slack message' do
         expect_slack_message(blocks: QaMessageBlockMatcher.new(issue, command))
 
-        command.send_feature_toggling_to_qa_channel(issue)
+        environment = command.environments.first
+        command.send_feature_toggling_to_qa_channel(issue, environment)
       end
     end
 
@@ -1011,13 +1057,15 @@ describe Chatops::Commands::Feature do
           .with(token: '123', channel: channel)
           .and_return(message)
 
-        command.send_feature_toggling_to_qa_channel(issue, ops_pipeline)
+        environment = command.environments.first
+        command.send_feature_toggling_to_qa_channel(issue, environment, ops_pipeline)
       end
 
       it 'sends a relevant Slack message' do
         expect_slack_message(blocks: QaMessageBlockMatcher.new(issue, command, ops_pipeline))
 
-        command.send_feature_toggling_to_qa_channel(issue, ops_pipeline)
+        environment = command.environments.first
+        command.send_feature_toggling_to_qa_channel(issue, environment, ops_pipeline)
       end
     end
 
@@ -1118,7 +1166,8 @@ describe Chatops::Commands::Feature do
         expect(Chatops::Slack::Message)
           .not_to receive(:new)
 
-        command.send_feature_toggling_to_qa_channel(issue)
+        environment = command.environments.find(&:dev?)
+        command.send_feature_toggling_to_qa_channel(issue, environment)
       end
     end
   end
@@ -1141,7 +1190,9 @@ describe Chatops::Commands::Feature do
         .with(token: '123', match: 'foo', host: 'gitlab.com')
         .and_return(collection)
 
-      expect(command.attachment_fields_per_state)
+      environment = command.environments.find(&:production?)
+
+      expect(command.attachment_fields_per_state(environment))
         .to eq([[], [feature.to_attachment_field]])
     end
   end
@@ -1158,7 +1209,9 @@ describe Chatops::Commands::Feature do
           'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
-        expect(command.gitlab_token).to eq('123')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first).to be_dev
+        expect(command.environments.first.gitlab_token).to eq('123')
       end
     end
 
@@ -1173,7 +1226,9 @@ describe Chatops::Commands::Feature do
           'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
-        expect(command.gitlab_token).to eq('123')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first).to be_pre
+        expect(command.environments.first.gitlab_token).to eq('123')
       end
     end
 
@@ -1187,7 +1242,9 @@ describe Chatops::Commands::Feature do
           'GITLAB_TOKEN' => '456'
         )
 
-        expect(command.gitlab_token).to eq('654')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first).to be_staging_ref
+        expect(command.environments.first.gitlab_token).to eq('654')
       end
     end
 
@@ -1201,7 +1258,9 @@ describe Chatops::Commands::Feature do
           'GITLAB_TOKEN' => '456'
         )
 
-        expect(command.gitlab_token).to eq('123')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first).to be_staging
+        expect(command.environments.first.gitlab_token).to eq('123')
       end
     end
 
@@ -1218,6 +1277,28 @@ describe Chatops::Commands::Feature do
         expect(command.gitlab_token).to eq('456')
       end
     end
+
+    context 'when using multi-environments' do
+      # rubocop:disable RSpec/MultipleExpectations
+      it 'returns the value of GITLAB_DEV_TOKEN' do
+        command = described_class.new(
+          [],
+          { dev: true, staging: true, production: true },
+          'GITLAB_DEV_TOKEN' => '123',
+          'GITLAB_TOKEN' => '456',
+          'GITLAB_STAGING_TOKEN' => '321'
+        )
+
+        expect(command.environments.count).to eq(3)
+        expect(command.environments[0]).to be_dev
+        expect(command.environments[0].gitlab_token).to eq('123')
+        expect(command.environments[1]).to be_staging
+        expect(command.environments[1].gitlab_token).to eq('321')
+        expect(command.environments[2]).to be_production
+        expect(command.environments[2].gitlab_token).to eq('456')
+      end
+      # rubocop:enable RSpec/MultipleExpectations
+    end
   end
 
   describe '#gitlab_host' do
@@ -1225,7 +1306,8 @@ describe Chatops::Commands::Feature do
       it 'returns dev.gitlab.org' do
         command = described_class.new([], dev: true)
 
-        expect(command.gitlab_host).to eq('dev.gitlab.org')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first.gitlab_host).to eq('dev.gitlab.org')
       end
     end
 
@@ -1233,7 +1315,8 @@ describe Chatops::Commands::Feature do
       it 'returns pre.gitlab.com' do
         command = described_class.new([], pre: true)
 
-        expect(command.gitlab_host).to eq('pre.gitlab.com')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first.gitlab_host).to eq('pre.gitlab.com')
       end
     end
 
@@ -1241,7 +1324,8 @@ describe Chatops::Commands::Feature do
       it 'returns staging-ref.gitlab.com' do
         command = described_class.new([], staging_ref: true)
 
-        expect(command.gitlab_host).to eq('staging-ref.gitlab.com')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first.gitlab_host).to eq('staging-ref.gitlab.com')
       end
     end
 
@@ -1249,7 +1333,8 @@ describe Chatops::Commands::Feature do
       it 'returns staging.gitlab.com' do
         command = described_class.new([], staging: true)
 
-        expect(command.gitlab_host).to eq('staging.gitlab.com')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first.gitlab_host).to eq('staging.gitlab.com')
       end
     end
 
@@ -1257,7 +1342,8 @@ describe Chatops::Commands::Feature do
       it 'returns gitlab.com' do
         command = described_class.new
 
-        expect(command.gitlab_host).to eq('gitlab.com')
+        expect(command.environments.count).to eq(1)
+        expect(command.environments.first.gitlab_host).to eq('gitlab.com')
       end
     end
   end
@@ -1266,8 +1352,9 @@ describe Chatops::Commands::Feature do
     context 'without the GITLAB_USER_LOGIN variable' do
       it 'raises KeyError' do
         command = described_class.new
+        environment = command.environments.find(&:production?)
 
-        expect { command.log_feature_toggle('foo', 'bar') }
+        expect { command.log_feature_toggle('foo', 'bar', environment) }
           .to raise_error(KeyError)
       end
     end
@@ -1275,8 +1362,9 @@ describe Chatops::Commands::Feature do
     context 'without the GITLAB_TOKEN variable' do
       it 'raises KeyError' do
         command = described_class.new([], {}, 'GITLAB_USER_LOGIN' => 'alice')
+        environment = command.environments.find(&:production?)
 
-        expect { command.log_feature_toggle('foo', 'bar') }
+        expect { command.log_feature_toggle('foo', 'bar', environment) }
           .to raise_error(KeyError)
       end
     end
@@ -1312,7 +1400,8 @@ describe Chatops::Commands::Feature do
 
         expect(client).to receive(:close_issue).with(1, 2)
 
-        expect(command.log_feature_toggle('foo', 'bar')).to eq(issue)
+        environment = command.environments.find(&:production?)
+        expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
       end
 
       it 'adds a label when incidents are ignored' do
@@ -1345,7 +1434,8 @@ describe Chatops::Commands::Feature do
 
         expect(client).to receive(:close_issue).with(1, 2)
 
-        expect(command.log_feature_toggle('foo', 'bar')).to eq(issue)
+        environment = command.environments.find(&:production?)
+        expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
       end
     end
   end
@@ -1385,7 +1475,8 @@ describe Chatops::Commands::Feature do
         expect(command).to receive(:pipeline_status).with('123')
           .and_return(pipeline_status)
 
-        expect(command.production_check?).to eq(result)
+        environment = command.environments.first
+        expect(command.production_check?(environment)).to eq(result)
       end
     end
 
@@ -1415,7 +1506,8 @@ describe Chatops::Commands::Feature do
       it 'returns true when the environment is staging' do
         expect(command).not_to receive(:run_trigger)
 
-        expect(command.production_check?).to eq(true)
+        environment = command.environments.find(&:staging?)
+        expect(command.production_check?(environment)).to eq(true)
       end
     end
   end

@@ -9,6 +9,10 @@ module Chatops
     PRE_HOST = 'pre.gitlab.com'
     PRODUCTION_HOST = 'gitlab.com'
 
+    def self.included(mod)
+      mod.extend(ClassMethods)
+    end
+
     ICONS = {
       'gprd' => 'party-tanuki',
       'gprd-cny' => 'canary',
@@ -24,85 +28,49 @@ module Chatops
       options.boolean('--staging-ref', "Use #{STAGING_REF_HOST}")
       options.boolean('--ops', "Use #{OPS_HOST}")
       options.boolean('--pre', "Use #{PRE_HOST}")
+      options.boolean('--production', "Use #{PRODUCTION_HOST}")
     end
 
     def env_icon(environment)
       ICONS.fetch(environment, 'question')
     end
 
-    def gitlab_host
-      if dev?
-        DEV_HOST
-      elsif staging?
-        STAGING_HOST
-      elsif staging_ref?
-        STAGING_REF_HOST
-      elsif ops?
-        OPS_HOST
-      elsif pre?
-        PRE_HOST
-      else
-        PRODUCTION_HOST
+    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+    def environments
+      return @environments if defined?(@environments)
+
+      Environment.initialize_all!(env)
+
+      @environments = []
+      @environments << Environment.dev if options[:dev]
+      @environments << Environment.staging if options[:staging]
+      @environments << Environment.staging_ref if options[:staging_ref]
+      @environments << Environment.ops if options[:ops]
+      @environments << Environment.pre if options[:pre]
+      @environments << Environment.production if environments.empty? || options[:production]
+
+      if @environments.count > 1 && !self.class.instance_variable_get('@multi_environments_enabled')
+        raise 'this chatops command does not support multiple environments'
       end
+
+      @environments
+    end
+    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+
+    def environment
+      raise "You expected a single environment but we've got multiple defined" unless environments.count == 1
+
+      environments.first
     end
 
-    def env_name
-      if dev?
-        'dev'
-      elsif staging?
-        'gstg'
-      elsif staging_ref?
-        'gstg-ref'
-      elsif ops?
-        'ops'
-      elsif pre?
-        'pre'
-      else
-        'gprd'
+    module ClassMethods
+      ##
+      # Enable multi-environments arguments in a chatops command class.
+      # Before enabling it, you have to make sure that the internal logic in the command class
+      # is compatible with multi-environments.
+      def enable_multi_environments
+        @multi_environments_enabled = true
       end
-    end
-
-    def gitlab_token
-      name =
-        if dev?
-          'GITLAB_DEV_TOKEN'
-        elsif staging?
-          'GITLAB_STAGING_TOKEN'
-        elsif staging_ref?
-          'GITLAB_STAGING_REF_TOKEN'
-        elsif ops?
-          'GITLAB_OPS_TOKEN'
-        elsif pre?
-          'GITLAB_PRE_TOKEN'
-        else
-          'GITLAB_TOKEN'
-        end
-
-      env.fetch(name)
-    end
-
-    def dev?
-      options[:dev]
-    end
-
-    def staging?
-      options[:staging]
-    end
-
-    def staging_ref?
-      options[:staging_ref]
-    end
-
-    def ops?
-      options[:ops]
-    end
-
-    def pre?
-      options[:pre]
-    end
-
-    def production?
-      gitlab_host == PRODUCTION_HOST
     end
   end
 end

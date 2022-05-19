@@ -58,6 +58,15 @@ describe Chatops::Commands::Canary do
       end
     end
 
+    context 'when multiple environments are set' do
+      it 'raises an error' do
+        command = described_class.new([], production: true, staging: true)
+
+        expect { command.perform }
+          .to raise_error('this chatops command does not support multiple environments')
+      end
+    end
+
     context 'when there is a single cny server' do
       it 'describes a single server with only the environment option' do
         command = described_class.new(
@@ -267,8 +276,7 @@ describe Chatops::Commands::Canary do
       end
 
       before do
-        allow(command).to receive(:canary_active_deployment?).twice
-          .and_return(false)
+        allow(command.chef_client).to receive(:canary_active_deployment?).and_return(false)
         allow(ha_proxy_client)
           .to receive(:server_stats)
           .and_return(
@@ -290,8 +298,7 @@ describe Chatops::Commands::Canary do
       end
 
       before do
-        allow(command).to receive(:canary_active_deployment?).twice
-          .and_return(true)
+        allow(command.chef_client).to receive(:canary_active_deployment?).and_return(true)
         allow(ha_proxy_client)
           .to receive(:server_stats)
           .and_return(

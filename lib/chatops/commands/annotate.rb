@@ -36,7 +36,7 @@ module Chatops
         dashboard_ids.each do |id|
           annotate.annotate!(
             annotation_text,
-            tags: ['user-annotation', env_name],
+            tags: ['user-annotation', environment.env_name],
             dashboard_id: id
           )
         end

@@ -43,6 +43,7 @@ module Chatops
       }.freeze
 
       description 'Managing of GitLab feature flags.'
+      enable_multi_environments
 
       # rubocop: disable Metrics/BlockLength
       options do |o|
@@ -156,6 +157,18 @@ module Chatops
 
       # Retrieves details of a single feature flag.
       def get
+        errors = []
+
+        environments.each do |environment|
+          if (error = get_on(environment))
+            errors << error
+          end
+        end
+
+        errors.join("\n") unless errors.empty?
+      end
+
+      def get_on(environment)
         name = arguments[1]
 
         unless name
@@ -163,22 +176,35 @@ module Chatops
             'For example: `feature get gitaly_tags`'
         end
 
-        feature = get_feature(name)
+        feature = get_feature(name, environment)
 
-        return "The feature #{name.inspect} does not exist." unless feature
+        return "The feature #{name.inspect} does not exist on #{environment.env_name}." unless feature
 
-        send_feature_details(feature: feature)
+        send_feature_details(feature: feature, environment: environment)
       end
 
-      def get_feature(name)
+      def get_feature(name, environment)
         Gitlab::FeatureCollection
-          .new(token: gitlab_token, host: gitlab_host)
+          .new(token: environment.gitlab_token, host: environment.gitlab_host)
           .find_by_name(name)
       end
 
       # rubocop: disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       # Updates the value of a single feature flag.
       def set
+        errors = []
+
+        environments.each do |environment|
+          if (error = set_on(environment))
+            errors << error
+          end
+        end
+
+        errors.join("\n") unless errors.empty?
+      end
+
+      # rubocop:disable Naming/AccessorMethodName
+      def set_on(environment)
         prod_check_failure_resp =
           'Unable to proceed due to production check failure. ' \
           'If you absolutely must change ' \
@@ -217,11 +243,11 @@ module Chatops
           unless valid_actors_random_setting?(options)
         # rubocop: enable Metrics/LineLength
 
-        return prod_check_failure_resp unless production_check?
-        return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value)
+        return prod_check_failure_resp unless production_check?(environment)
+        return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value, environment)
 
         response = Gitlab::Client
-          .new(token: gitlab_token, host: gitlab_host)
+          .new(token: environment.gitlab_token, host: environment.gitlab_host)
           .set_feature(name, value, project: options[:project],
                                     group: options[:group],
                                     namespace: options[:namespace],
@@ -229,14 +255,14 @@ module Chatops
                                     actors: options[:actors])
 
         feature = Gitlab::Feature.from_api_response(response)
-        perform_side_effects(name, value, feature, options)
+        perform_side_effects(name, value, feature, environment, options)
       rescue ProductionCheckTimeout => e
         e.message + ' ' + check_failure_resp
       end
       # rubocop: enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
-      def production_check?
-        return true unless production?
+      def production_check?(environment)
+        return true unless environment.production?
         return true if options[:ignore_production_check]
 
         send_slack_message_safely(
@@ -277,48 +303,57 @@ module Chatops
           sleep(PRODUCTION_CHECK_INTERVAL)
         end
       end
+      # rubocop:enable Naming/AccessorMethodName
 
-      def feature_flag_consistency_check?(value)
+      def feature_flag_consistency_check?(value, environment)
         return true if options[:ignore_feature_flag_consistency_check]
 
-        if staging? && disable_feature_value?(value)
+        if environment.staging? && disable_feature_value?(value)
           prod_options = options.dup
           prod_options.delete(:staging)
 
           # If production is enabled, we should not turn it off for staging
-          !feature_enabled_with_opts?(prod_options)
-        elsif production? && enable_feature_value?(value)
+          !feature_enabled_with_opts?(prod_options, environment)
+        elsif environment.production? && enable_feature_value?(value)
           staging_opts = options.dup
           staging_opts[:staging] = true
 
           # If staging is disabled, we shouldn't turn on for production
-          feature_enabled_with_opts?(staging_opts)
+          feature_enabled_with_opts?(staging_opts, environment)
         else
           true
         end
       end
 
-      def perform_side_effects(name, value, feature, options)
-        annotate_feature_toggle(name, value)
-        send_feature_toggle_event(name, value, options)
-        issue = log_feature_toggle(name, value)
+      def perform_side_effects(name, value, feature, environment, options)
+        annotate_feature_toggle(name, value, environment)
+        send_feature_toggle_event(name, value, environment, options)
+        issue = log_feature_toggle(name, value, environment)
 
         output = []
         output << send_feature_details(
           feature: feature,
-          text: 'The feature flag value has been updated!'
+          text: 'The feature flag value has been updated!',
+          environment: environment
         )
 
-        trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(env_name, options, name, value).trigger_end_to_end
+        trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(environment.env_name, options, name, value)
+          .trigger_end_to_end
 
-        output << send_feature_toggling_to_qa_channel(issue, trigger_tests_response)
+        output << send_feature_toggling_to_qa_channel(issue, environment, trigger_tests_response)
 
         output.compact.join("\n")
       end
 
       # Lists all the available feature flags per state.
       def list
-        enabled, disabled = attachment_fields_per_state
+        environments.each do |environment|
+          list_on(environment)
+        end
+      end
+
+      def list_on(environment)
+        enabled, disabled = attachment_fields_per_state(environment)
 
         send_slack_message_safely(
           slack_token: slack_token,
@@ -330,14 +365,14 @@ module Chatops
                 text: 'These features are enabled:',
                 fields: enabled,
                 color: ENABLED_COLOR,
-                footer: "#{enabled.length} enabled features on #{gitlab_host}"
+                footer: "#{enabled.length} enabled features on #{environment.gitlab_host}"
               },
               {
                 title: 'Disabled Features',
                 text: 'These features are disabled:',
                 fields: disabled,
                 color: DISABLED_COLOR,
-                footer: "#{disabled.length} disabled features on #{gitlab_host}"
+                footer: "#{disabled.length} disabled features on #{environment.gitlab_host}"
               }
             ]
           }
@@ -348,20 +383,26 @@ module Chatops
       #
       # Idempotent request, deleting non existing flags seems successful
       def delete
+        environments.each do |environment|
+          delete_on(environment)
+        end
+      end
+
+      def delete_on(environment)
         name = arguments[1]
 
         Gitlab::Client
-          .new(token: gitlab_token, host: gitlab_host)
+          .new(token: environment.gitlab_token, host: environment.gitlab_host)
           .delete_feature(name)
 
-        send_feature_toggle_event(name, 'deleted')
-        log_feature_toggle(name, 'deleted')
+        send_feature_toggle_event(name, 'deleted', environment)
+        log_feature_toggle(name, 'deleted', environment)
 
         send_slack_message_safely(
           slack_token: slack_token,
           channel: channel,
           slack_args: {
-            text: "Feature flag #{name} has been removed from #{gitlab_host}!"
+            text: "Feature flag #{name} has been removed from #{environment.gitlab_host}!"
           }
         )
       end
@@ -371,7 +412,7 @@ module Chatops
       # feature - A `Chatops::Gitlab::Feature` instance containing the details
       #           we want to send back.
       # text - Optional text to include in the message.
-      def send_feature_details(feature:, text: nil)
+      def send_feature_details(feature:, text: nil, environment:)
         send_slack_message_safely(
           slack_token: slack_token,
           channel: channel,
@@ -393,15 +434,15 @@ module Chatops
                   },
                   *feature.attachment_fields_for_gates
                 ],
-                footer: "Host: #{gitlab_host}"
+                footer: "Host: #{environment.gitlab_host}"
               }
             ]
           }
         )
       end
 
-      def send_feature_toggling_to_qa_channel(issue, trigger_tests_response = nil)
-        channel = QA_CHANNELS[gitlab_host]
+      def send_feature_toggling_to_qa_channel(issue, environment, trigger_tests_response = nil)
+        channel = QA_CHANNELS[environment.gitlab_host]
         return unless channel
 
         blocks = [{
@@ -441,15 +482,15 @@ module Chatops
         "'#{channel}': #{slack_args}\n\nError: #{error.message}"
       end
 
-      def attachment_fields_per_state
+      def attachment_fields_per_state(environment)
         Gitlab::FeatureCollection
-          .new(token: gitlab_token, match: options[:match], host: gitlab_host)
+          .new(token: environment.gitlab_token, match: options[:match], host: environment.gitlab_host)
           .per_state
           .map { |vals| vals.map(&:to_attachment_field) }
       end
 
-      def send_feature_toggle_event(name, value, options = {})
-        return unless staging? || staging_ref? || production?
+      def send_feature_toggle_event(name, value, environment, options = {})
+        return unless environment.staging? || environment.staging_ref? || environment.production?
 
         message = "feature '#{name}' updated to '#{value}'"
 
@@ -462,7 +503,7 @@ module Chatops
         }.compact
 
         Chatops::Events::Client
-          .new(env_name)
+          .new(environment.env_name)
           .send_event(
             message,
             fields: {
@@ -472,14 +513,14 @@ module Chatops
           )
       end
 
-      def log_feature_toggle(name, value)
+      def log_feature_toggle(name, value, environment)
         client = Gitlab::Client
           .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
 
-        host = gitlab_host
+        host = environment.gitlab_host
         labels = "host::#{host}, change"
 
-        description = issue_description(name, value)
+        description = issue_description(name, value, environment)
 
         if options[:ignore_production_check]
           labels += ', Production check ignored'
@@ -501,11 +542,11 @@ module Chatops
         issue
       end
 
-      def annotate_feature_toggle(name, value)
+      def annotate_feature_toggle(name, value, environment)
         Grafana::Annotate.new(token: grafana_token)
           .annotate!(
             "#{username} set feature flag #{name} to #{value}",
-            tags: [env_name, 'feature-flag', name]
+            tags: [environment.env_name, 'feature-flag', name]
           )
       end
 
@@ -515,14 +556,14 @@ module Chatops
 
       private
 
-      def issue_description(name, value)
+      def issue_description(name, value, environment)
         <<~DESC
           * Feature flag: `#{name}`
           * New value: `#{value}`
           * Percentage of actors: `#{options[:actors]}`
           * Changed by: [`@#{username}`](https://gitlab.com/#{username})
           * Changed on (in UTC): `#{Time.now.utc.iso8601}`
-          * Host: https://#{gitlab_host}
+          * Host: https://#{environment.gitlab_host}
 
           ## Feature flag scopes
 
@@ -559,9 +600,9 @@ module Chatops
         %w[false 0].include?(value)
       end
 
-      def feature_enabled_with_opts?(options)
+      def feature_enabled_with_opts?(options, environment)
         feature_check = Chatops::Commands::Feature.new(['get', arguments[1]], options, env)
-        feature = feature_check.get_feature(arguments[1])
+        feature = feature_check.get_feature(arguments[1], environment)
         feature&.enabled?
       end
 

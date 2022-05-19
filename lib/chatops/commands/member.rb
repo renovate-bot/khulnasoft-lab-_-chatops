@@ -126,7 +126,7 @@ module Chatops
       end
 
       def client
-        @client ||= Gitlab::Client.new(token: gitlab_token, host: gitlab_host)
+        @client ||= Gitlab::Client.new(token: environment.gitlab_token, host: environment.gitlab_host)
       end
     end
   end
