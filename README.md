@@ -143,6 +143,25 @@ You can run the chatops command locally if you specify the proper environment va
 env SLACK_TOKEN='SLACK_XXX' GITLAB_TOKEN='GITLAB_XXX' CHAT_INPUT='find cmcfarland' CHAT_CHANNEL='SLACK_CHANNEL_ID' bundle exec ./bin/chatops user
 ```
 
+## Logging
+
+This project uses the [SemanticLogger](https://logger.rocketjob.io/) library.
+
+All requests to the GitLab API will have the request URL, request method
+and response status logged automatically.
+
+Developers can choose to log any other information as well. To use the logger
+in a class, include `::SemanticLogger::Loggable`, and then use the `logger` variable
+that is made available.
+
+```ruby
+class Deploy
+   include ::SemanticLogger::Loggable
+
+   logger.info("About to perform edit action", relevant_data: data)
+end
+```
+
 ## Examples
 
 You can use the following existing commands as examples/reference material when
