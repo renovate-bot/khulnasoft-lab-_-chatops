@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module Chatops
+  extend ::SemanticLogger::Loggable
+
   CommandError = Class.new(StandardError)
 
   # The name of the trace section to wrap output in.
@@ -36,7 +38,11 @@ module Chatops
 
     raise CommandError, "The command #{name.inspect} does not exist" unless command_class
 
-    command_class.perform(split_input(chat_input), env)
+    split_chat_input = split_input(chat_input)
+
+    logger.info('Command to be executed', name: name, chat_input: chat_input, split_chat_input: split_chat_input)
+
+    command_class.perform(split_chat_input, env)
   end
 
   # Wraps the output of the block in a custom trace section. This allows us to

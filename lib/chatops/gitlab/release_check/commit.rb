@@ -4,6 +4,8 @@ module Chatops
   module Gitlab
     module ReleaseCheck
       class Commit
+        include ::SemanticLogger::Loggable
+
         # 14-8-auto-deploy-2022020906
         GITLAB_AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
 
@@ -38,7 +40,7 @@ module Chatops
             .new(client, project)
             .upcoming_and_current('gprd')
 
-          deployments.map do |ee|
+          result = deployments.map do |ee|
             {
               role: 'gprd',
               revision: (ee&.short_sha || 'unknown'),
@@ -46,12 +48,20 @@ module Chatops
               status: (ee&.status || 'unknown')
             }
           end
+
+          logger.info('Deployments to gprd', deployments: result)
+
+          result
         end
 
         def auto_deploy_refs_containing_commit(sha)
-          client
+          refs = client
             .refs_containing_commit(project: project, type: ref_type, sha: sha)
             .select { |ref| ref.name.match?(auto_deploy_regex) }
+
+          logger.info('Auto deploy refs containing SHA', sha: sha, ref_type: ref_type, refs_containing_sha: refs)
+
+          refs
         end
 
         def auto_deploy_regex
