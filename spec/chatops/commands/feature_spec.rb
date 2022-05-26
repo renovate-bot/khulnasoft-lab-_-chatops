@@ -1379,7 +1379,8 @@ describe Chatops::Commands::Feature do
         expect(command).to receive(:run_trigger).with(
           CHECK_PRODUCTION: 'true',
           FAIL_IF_NOT_SAFE: 'true',
-          SKIP_DEPLOYMENT_CHECK: 'true'
+          SKIP_DEPLOYMENT_CHECK: 'true',
+          PRODUCTION_CHECK_PURPOSE: 'feature_flag'
         ).and_return(trigger_resp)
         expect(command).to receive(:pipeline_status).with('123')
           .and_return(pipeline_status)

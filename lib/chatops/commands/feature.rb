@@ -252,7 +252,8 @@ module Chatops
         resp = run_trigger(
           CHECK_PRODUCTION: 'true',
           FAIL_IF_NOT_SAFE: 'true',
-          SKIP_DEPLOYMENT_CHECK: 'true'
+          SKIP_DEPLOYMENT_CHECK: 'true',
+          PRODUCTION_CHECK_PURPOSE: 'feature_flag'
         )
 
         loop do
