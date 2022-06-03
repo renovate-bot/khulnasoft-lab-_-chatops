@@ -102,7 +102,7 @@ describe Chatops::Commands::Namespace do
           .to receive(:submit_namespace_details)
           .with(namespace1)
 
-        command.find('1234567')
+        expect(command.find('1234567')).to eq(nil)
       end
     end
 
@@ -116,7 +116,7 @@ describe Chatops::Commands::Namespace do
           'SLACK_TOKEN' => '123'
         )
 
-        expect(Chatops::Gitlab::Client)
+        allow(Chatops::Gitlab::Client)
           .to receive(:new)
           .with(token: '1234')
           .and_return(client)
@@ -139,7 +139,7 @@ describe Chatops::Commands::Namespace do
           .to receive(:submit_namespace_details)
           .with(namespace2)
 
-        command.find('1234567', '1234568')
+        expect(command.find('1234567', '1234568')).to eq(nil)
       end
     end
 
@@ -153,7 +153,7 @@ describe Chatops::Commands::Namespace do
           'SLACK_TOKEN' => '123'
         )
 
-        expect(Chatops::Gitlab::Client)
+        allow(Chatops::Gitlab::Client)
           .to receive(:new)
           .with(token: '1234')
           .and_return(client)
@@ -166,13 +166,21 @@ describe Chatops::Commands::Namespace do
         expect(client)
           .to receive(:find_namespace)
           .with('1234569')
-          .and_return(nil)
+          .and_raise(gitlab_error(:NotFound))
+
+        expect(client)
+          .to receive(:find_namespace)
+          .with('invalid2')
+          .and_raise(gitlab_error(:NotFound))
 
         expect(command)
           .to receive(:submit_namespace_details)
           .with(namespace1)
 
-        command.find('1234567', '1234569')
+        expect(command.find('1234567', '1234569', 'invalid2')).to eq(
+          "No namespace could be found for \"1234569\".\n" \
+          'No namespace could be found for "invalid2".'
+        )
       end
     end
 

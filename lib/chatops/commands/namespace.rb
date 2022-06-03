@@ -54,13 +54,23 @@ module Chatops
 
         client = Gitlab::Client.new(token: gitlab_token)
 
-        namespaces_info = names.map { |n| client.find_namespace(n) }.compact
+        errors = []
+        namespaces_info = names.map do |n|
+          namespace_info, err = find_namespace(client, n)
 
-        return 'The namespace could not be found.' if namespaces_info.empty?
+          if err
+            errors << err
+            next
+          end
+
+          namespace_info
+        end.compact
 
         namespaces_info.each do |namespace_info|
           submit_namespace_details(namespace_info)
         end
+
+        errors.join("\n") unless errors.empty?
       end
 
       def minutes(name = nil, minutes = nil)
@@ -134,6 +144,13 @@ module Chatops
 
           For more information run `namespace --help`.
         HELP
+      end
+
+      def find_namespace(client, namespace)
+        result = client.find_namespace(namespace)
+        [result, nil]
+      rescue ::Gitlab::Error::NotFound
+        [nil, namespace_not_found_error(namespace)]
       end
 
       def namespace_not_found_error(name)
