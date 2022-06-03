@@ -169,7 +169,7 @@ describe Chatops::Commands::AutoDeploy do
 
         allow(command).to receive(:environment_status).and_return([production_status])
         expect_slack_message(blocks: StatusBlockMatcher.new(production_status))
-        expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_PURPOSE: 'deployment')
+        expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_SCOPE: 'deployment')
 
         command.perform
       end
@@ -330,7 +330,7 @@ describe Chatops::Commands::AutoDeploy do
     let(:command) { described_class.new([], *env) }
 
     it 'triggers a release-tools production check' do
-      expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_PURPOSE: 'deployment')
+      expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_SCOPE: 'deployment')
 
       expect(command.blockers)
         .to eq('Production checks triggered, the results will appear shortly.')

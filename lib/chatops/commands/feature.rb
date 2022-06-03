@@ -253,7 +253,7 @@ module Chatops
           CHECK_PRODUCTION: 'true',
           FAIL_IF_NOT_SAFE: 'true',
           SKIP_DEPLOYMENT_CHECK: 'true',
-          PRODUCTION_CHECK_PURPOSE: 'feature_flag'
+          PRODUCTION_CHECK_SCOPE: 'feature_flag'
         )
 
         loop do

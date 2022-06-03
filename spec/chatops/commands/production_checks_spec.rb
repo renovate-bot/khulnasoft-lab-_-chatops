@@ -15,7 +15,7 @@ describe Chatops::Commands::ProductionChecks do
     let(:slack_msg) { instance_spy(Chatops::Slack::Message) }
 
     it 'performs a production check' do
-      expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_PURPOSE: 'deployment')
+      expect(command).to receive(:run_trigger).with(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_SCOPE: 'deployment')
       expect(command.perform)
         .to eq('Production checks triggered, the results will appear shortly.')
     end

@@ -9,7 +9,7 @@ module Chatops
       description 'Performs a production check and displays the result'
 
       def perform
-        run_trigger(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_PURPOSE: 'deployment')
+        run_trigger(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_SCOPE: 'deployment')
 
         'Production checks triggered, the results will appear shortly.'
       end
