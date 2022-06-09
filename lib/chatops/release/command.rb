@@ -76,15 +76,17 @@ module Chatops
 
       def run_trigger(params = {})
         params[:TEST] = 'true' if options[:dry_run]
+        params[:CHAT_CHANNEL] = channel
+        params[:RELEASE_USER] = env.fetch('GITLAB_USER_LOGIN', '')
+
+        logger = SemanticLogger[self.class.to_s]
+        logger.info('Calling release tools trigger API', params: params)
 
         client.run_trigger(
           TARGET_PROJECT,
           env.fetch('RELEASE_TRIGGER_TOKEN') { env.fetch('CI_JOB_TOKEN') },
           TARGET_REF,
-          params.merge(
-            CHAT_CHANNEL: channel,
-            RELEASE_USER: env.fetch('GITLAB_USER_LOGIN', '')
-          )
+          params
         )
       end
 

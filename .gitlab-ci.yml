@@ -117,6 +117,9 @@ namespace:
 auto_deploy:
   <<: *chatops
 
+post_deploy_migrations:
+  <<: *chatops
+
 helm:
   <<: *chatops
 
