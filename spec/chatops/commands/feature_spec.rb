@@ -29,7 +29,9 @@ describe Chatops::Commands::Feature do
         'GITLAB_USER_LOGIN' => 'alice'
       }
       command = described_class.new(command_args, command_opts_this_env, command_envs)
-      environment = command.environments.first
+
+      # needed to initialize environments
+      _ = command.environments
 
       other_env_feature_command = instance_double('Chatops::Commands::Feature')
 
@@ -43,7 +45,7 @@ describe Chatops::Commands::Feature do
         .and_return(true)
 
       expect(other_env_feature_command)
-        .to receive(:get_feature).with('foo', environment)
+        .to receive(:get_feature).with('foo', Chatops::GitlabEnvironments::Environment.staging)
         .and_return(feature)
 
       expect(command.set).to match(error_message)
@@ -94,7 +96,7 @@ describe Chatops::Commands::Feature do
         .and_return(feature)
 
       allow(staging_feature_command)
-        .to receive(:get_feature).with('foo', environment)
+        .to receive(:get_feature).with('foo', Chatops::GitlabEnvironments::Environment.staging)
         .and_return(feature)
 
       allow(feature)
