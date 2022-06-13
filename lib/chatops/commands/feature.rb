@@ -313,13 +313,13 @@ module Chatops
           prod_options.delete(:staging)
 
           # If production is enabled, we should not turn it off for staging
-          !feature_enabled_with_opts?(prod_options, environment)
+          !feature_enabled_with_opts?(prod_options, Environment.production)
         elsif environment.production? && enable_feature_value?(value)
           staging_opts = options.dup
           staging_opts[:staging] = true
 
           # If staging is disabled, we shouldn't turn on for production
-          feature_enabled_with_opts?(staging_opts, environment)
+          feature_enabled_with_opts?(staging_opts, Environment.staging)
         else
           true
         end
