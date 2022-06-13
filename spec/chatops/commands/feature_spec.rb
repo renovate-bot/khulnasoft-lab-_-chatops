@@ -931,7 +931,7 @@ describe Chatops::Commands::Feature do
 
       expect(message).to receive(:send)
 
-      command.list
+      expect(command.list).to be_nil # returns nil to avoid unnecessary response message
     end
   end
 
@@ -969,6 +969,10 @@ describe Chatops::Commands::Feature do
       expect(client).to receive(:delete_feature).with('foo')
 
       command.delete
+    end
+
+    it 'returns nil to avoid unnecessary response message' do
+      expect(command.delete).to be_nil
     end
 
     it 'logs the deletion of the feature flag to chatops' do

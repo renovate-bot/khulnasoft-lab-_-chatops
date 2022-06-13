@@ -350,6 +350,8 @@ module Chatops
         environments.each do |environment|
           list_on(environment)
         end
+
+        nil
       end
 
       def list_on(environment)
@@ -386,6 +388,8 @@ module Chatops
         environments.each do |environment|
           delete_on(environment)
         end
+
+        nil
       end
 
       def delete_on(environment)
