@@ -1,6 +1,5 @@
 .DS_Store
 coverage
-Gemfile.lock
 .bundle
 .idea
 /vendor

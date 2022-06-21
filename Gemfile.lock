@@ -61,6 +61,7 @@ GEM
       mixlib-log (>= 2.0, < 4.0)
       rack (~> 2.0, >= 2.0.6)
       uuidtools (~> 2.1)
+    chronic (0.10.2)
     climate_control (0.2.0)
     coderay (1.1.2)
     concord (0.1.6)
@@ -313,6 +314,7 @@ PLATFORMS
 DEPENDENCIES
   byebug
   chef
+  chronic
   climate_control
   gitlab
   http
