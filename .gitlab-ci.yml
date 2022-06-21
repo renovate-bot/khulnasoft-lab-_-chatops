@@ -146,3 +146,6 @@ notify:
 
 production_checks:
   <<: *chatops
+
+pager:
+  <<: *chatops

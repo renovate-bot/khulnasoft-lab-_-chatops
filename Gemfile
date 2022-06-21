@@ -3,6 +3,7 @@
 source 'https://rubygems.org'
 
 gem 'chef'
+gem 'chronic'
 gem 'gitlab'
 gem 'http'
 gem 'pg'
