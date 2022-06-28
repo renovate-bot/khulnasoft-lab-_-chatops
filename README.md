@@ -18,6 +18,53 @@ in Slack and the chatops bot posts a response, which is exactly how slash comman
 
 You also have the option of [executing the chatops executable from the command line](#local-testing).
 
+## Using GitPod
+
+1. Use this link to create a Gitpod already containing GDK (with a working docker runner) and Chatops:
+<https://gitpod.io#snapshot/ea79d2bb-00ad-4728-9e09-71aa86c7359e>. The username & password for the GDK in this
+snapshot is available in the engineering vault in 1password. The entry is named "GitPod Chatops GDK".
+
+   - Community contributors can use the following snapshot instead, which has the GDK username and password set to `root`/`5iveL!fe`:
+<https://gitpod.io#snapshot/b7017335-876d-4390-b458-9e2487b876ad>.
+
+2. Once GDK (in the GitPod) is up and running, you need to click on "ports" on the bottom right and set port 3000 to public. This is so
+that Slack is able to connect to GDK. The GitPod sleeps after some period of
+inactivity. You'll need to make the port public whenever you start the pod up again.
+
+3. Login to GDK using the username and password that is available in the engineering vault in 1password. It is named "GitPod Chatops GDK".
+
+4. Follow https://slack.com/intl/en-in/help/articles/206845317-Create-a-Slack-workspace to create your own Slack workspace.
+
+5. Follow https://docs.gitlab.com/ee/user/project/integrations/slack_slash_commands.html to setup the slash commands configuration.
+
+6. Then try running a command in Slack: `/chatops run help`. It should ask you to "Connect your GitLab account". After you do
+that, you can run the chatops command again, and it should create a CI job under the chatops project in the GDK.
+
+7. You can pull the latest Chatops code from https://gitlab.com/gitlab-com/chatops into the local Chatops repository by
+running the following in a GitPod terminal:
+
+   1. `cd /workspace/chatops`
+   2. `git fetch origin master`
+   3. `git rebase origin/master`
+   4. `git push local master`  
+      This will push the changes to the Chatops project in GDK. It will ask for username and password. You can use
+      the username and password you used to login to GDK.
+
+8. After making changes to the Chatops project under `/workspace/chatops` (on the GitPod disk, not in GDK), or pulling
+the latest code from gitlab.com, you need to upload a new chatops image to the Container Registry of the chatops project in
+GDK. Execute the following commands on the GitPod terminal:
+
+   1. `docker build -t localhost:5000/root/chatops:latest -f docker/chatops.Dockerfile .`
+   2. `docker push localhost:5000/root/chatops:latest`
+
+Notes:
+1. Chatops is already imported into the GDK, and it is also cloned onto the GitPod disk under `/workspace/chatops`.
+2. Whenever you start the GitPod, make sure to set port 3000 to public.
+3. The GDK password has been changed from the default because using Chatops often requires the use of tokens as CI/CD environment
+variables. Since GitPod is publicly accessible, it could result in token leakage if anyone can login to the GDK.
+
+## Using GDK/GCK
+
 1. To use this repository with GitLab Chatops you need to have a GitLab EE Ultimate
 instance (like [GDK](https://gitlab.com/gitlab-org/gitlab-development-kit) or [GCK](https://gitlab.com/gitlab-org/gitlab-compose-kit))
 that is somehow publicly reachable. If you're using a development
@@ -44,10 +91,12 @@ of your local chatops project.
    and your chatops project is at `root/chatops`. You should be in your local
    chatops project folder when running these commands:
 
-   1. `docker build -t gdk.test:5000/root/chatops -f docker/Dockerfile.chatops .`
-   1. `docker push gdk.test:5000/root/chatops`
+   1. `docker build -t gdk.test:5000/root/chatops:latest -f docker/chatops.Dockerfile .`
+   1. `docker push gdk.test:5000/root/chatops:latest`
 
       If asked for username and password, you can enter your GDK username and password.
+
+## After setup
 
 With everything set up (and running) you can then run chatops commands by typing
 the following into a Slack channel:
