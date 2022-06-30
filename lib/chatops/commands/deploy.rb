@@ -276,7 +276,8 @@ module Chatops
 
         error_message = "Invalid intent! #{env} is already in state #{intent}"
 
-        raise error_message if intent == 'unlock' && unlocked || intent == 'lock' && !unlocked
+        error_message if intent == 'unlock' && unlocked || intent == 'lock' && !unlocked
+        exit
       end
 
       def inc_rollbacks_metric(environment)

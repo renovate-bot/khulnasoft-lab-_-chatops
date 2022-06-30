@@ -27,7 +27,7 @@ describe Chatops::Commands::Deploy do
 
       expect do
         command.assert_intent!('foo-environment', 'lock')
-      end.to raise_error(/Invalid intent/)
+      end.to raise_error(SystemExit)
     end
   end
 
