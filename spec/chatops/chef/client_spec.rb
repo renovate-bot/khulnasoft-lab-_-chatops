@@ -134,6 +134,32 @@ describe Chatops::Chef::Client do
     end
   end
 
+  describe '#environment_unlock' do
+    context 'when an environment is unlocked' do
+      it 'returns true' do
+        expect(Chef::Role)
+          .to receive(:load)
+          .with('some-env-omnibus-version')
+          .and_return(omnibus_role_enabled)
+
+        expect(client.environment_unlocked?('some-env'))
+          .to eq(true)
+      end
+    end
+
+    context 'when an environment is locked' do
+      it 'returns false' do
+        expect(Chef::Role)
+          .to receive(:load)
+          .with('some-env-omnibus-version')
+          .and_return(omnibus_role_disabled)
+
+        expect(client.environment_unlocked?('some-env'))
+          .to eq(false)
+      end
+    end
+  end
+
   describe '#lock_environment' do
     it 'locks the role for the given environment' do
       expect(Chef::Role)

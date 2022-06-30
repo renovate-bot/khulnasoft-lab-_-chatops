@@ -126,6 +126,7 @@ module Chatops
       def lock(env)
         env = normalize_chef_environment(env)
         assert_environment!(env)
+        assert_intent!(env, 'lock')
 
         Chef::Client.new.lock_environment(env)
 
@@ -136,6 +137,7 @@ module Chatops
       def unlock(env)
         env = normalize_chef_environment(env)
         assert_environment!(env)
+        assert_intent!(env, 'unlock')
 
         Chef::Client.new.unlock_environment(env)
 
@@ -263,6 +265,18 @@ module Chatops
         return if ENVIRONMENTS.include?(env)
 
         raise "Invalid environment `#{env}`, must be one of #{ENVIRONMENTS.join(', ')}"
+      end
+
+      ##
+      # Validates that the state we intend is not already the case, if so raise an error
+      #
+      # This is to signal to the requester that something may be amiss
+      def assert_intent!(env, intent)
+        unlocked = Chef::Client.new.environment_unlocked?(env)
+
+        error_message = "Invalid intent! #{env} is already in state #{intent}"
+
+        raise error_message if intent == 'unlock' && unlocked || intent == 'lock' && !unlocked
       end
 
       def inc_rollbacks_metric(environment)

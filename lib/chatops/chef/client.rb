@@ -77,6 +77,14 @@ module Chatops
         role.save
       end
 
+      ##
+      # Returns the current state of whether or not an environment is unlocked
+      def environment_unlocked?(name)
+        role = omnibus_version_role(name)
+
+        role.default_attributes['omnibus-gitlab']['package']['enable']
+      end
+
       private
 
       def omnibus_version_role(environment)

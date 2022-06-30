@@ -3,6 +3,34 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Deploy do
+  describe '#assert_intent!' do
+    it 'returns if our intent does match current state' do
+      command = described_class.new(%w[lock foo-environment])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      allow(client)
+        .to receive(:environment_unlocked?)
+        .and_return(true)
+
+      expect do
+        command.assert_intent!('foo-environment', 'lock')
+      end.not_to raise_error
+    end
+
+    it 'raises if our intent is the same as current state' do
+      command = described_class.new(%w[unlock foo-environment])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      allow(client)
+        .to receive(:environment_unlocked?)
+        .and_return(false)
+
+      expect do
+        command.assert_intent!('foo-environment', 'lock')
+      end.to raise_error(/Invalid intent/)
+    end
+  end
+
   describe '.perform' do
     it 'supports a --allow-precheck-failure option' do
       instance = instance_double('instance')
@@ -264,6 +292,10 @@ describe Chatops::Commands::Deploy do
       instance = described_class.new(%w[unlock release])
       client = stub_const('Chatops::Chef::Client', spy)
 
+      allow(client)
+        .to receive(:environment_unlocked?)
+        .and_return(false)
+
       instance.perform
 
       expect(client).to have_received(:unlock_environment).with('release-gitlab')
@@ -272,6 +304,10 @@ describe Chatops::Commands::Deploy do
     it 'unlocks the given environment' do
       instance = described_class.new(%w[unlock gprd])
       client = stub_const('Chatops::Chef::Client', spy)
+
+      allow(client)
+        .to receive(:environment_unlocked?)
+        .and_return(false)
 
       instance.perform
 
