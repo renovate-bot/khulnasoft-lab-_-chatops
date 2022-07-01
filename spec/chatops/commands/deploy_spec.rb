@@ -3,8 +3,8 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Deploy do
-  describe '#assert_intent!' do
-    it 'returns if our intent does match current state' do
+  describe '#valid_intent?' do
+    it 'is true if our intent does not match current state' do
       command = described_class.new(%w[lock foo-environment])
       client = stub_const('Chatops::Chef::Client', spy)
 
@@ -12,12 +12,11 @@ describe Chatops::Commands::Deploy do
         .to receive(:environment_unlocked?)
         .and_return(true)
 
-      expect do
-        command.assert_intent!('foo-environment', 'lock')
-      end.not_to raise_error
+      expect(command.valid_intent?('foo-environment', 'lock'))
+        .to be(true)
     end
 
-    it 'raises if our intent is the same as current state' do
+    it 'is false if our intent and current state are equal' do
       command = described_class.new(%w[unlock foo-environment])
       client = stub_const('Chatops::Chef::Client', spy)
 
@@ -25,9 +24,8 @@ describe Chatops::Commands::Deploy do
         .to receive(:environment_unlocked?)
         .and_return(false)
 
-      expect do
-        command.assert_intent!('foo-environment', 'lock')
-      end.to raise_error(SystemExit)
+      expect(command.valid_intent?('foo-environment', 'lock'))
+        .to be(false)
     end
   end
 
@@ -279,6 +277,19 @@ describe Chatops::Commands::Deploy do
 
       expect(client).to have_received(:lock_environment).with('gprd')
     end
+
+    it 'fails to lock when intent is invalid' do
+      instance = described_class.new(%w[lock gprd])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      allow(client)
+        .to receive(:valid_intent?)
+        .and_return(false)
+
+      instance.perform
+
+      expect(client).to match(/Invalid intent!/)
+    end
   end
 
   describe '#unlock' do
@@ -312,6 +323,23 @@ describe Chatops::Commands::Deploy do
       instance.perform
 
       expect(client).to have_received(:unlock_environment).with('gprd')
+    end
+
+    it 'fails to unlock when intent is invalid' do
+      instance = described_class.new(%w[unlock gprd])
+      client = stub_const('Chatops::Chef::Client', spy)
+
+      allow(client)
+        .to receive(:environment_unlocked?)
+        .and_return(false)
+
+      allow(client)
+        .to receive(:valid_intent?)
+        .and_return(false)
+
+      instance.perform
+
+      expect(client).to match(/Invalid intent!/)
     end
   end
 

@@ -124,9 +124,13 @@ module Chatops
 
       # Lock an environment and prevent it from being deployed
       def lock(env)
+        intent = 'lock'
         env = normalize_chef_environment(env)
         assert_environment!(env)
-        assert_intent!(env, 'lock')
+
+        error_message = "Invalid intent! #{env} is already in state #{intent}"
+
+        return error_message unless valid_intent?(env, intent)
 
         Chef::Client.new.lock_environment(env)
 
@@ -135,9 +139,14 @@ module Chatops
 
       # Unlock an environment and allow it to be deployed
       def unlock(env)
+        intent = 'unlock'
         env = normalize_chef_environment(env)
         assert_environment!(env)
-        assert_intent!(env, 'unlock')
+        valid_intent?(env, intent)
+
+        error_message = "Invalid intent! #{env} is already in state #{intent}"
+
+        return error_message unless valid_intent?(env, intent)
 
         Chef::Client.new.unlock_environment(env)
 
@@ -268,16 +277,13 @@ module Chatops
       end
 
       ##
-      # Validates that the state we intend is not already the case, if so raise an error
+      # Validates that the state we intend is not already the case, if so return false
       #
       # This is to signal to the requester that something may be amiss
-      def assert_intent!(env, intent)
+      def valid_intent?(env, intent)
         unlocked = Chef::Client.new.environment_unlocked?(env)
 
-        error_message = "Invalid intent! #{env} is already in state #{intent}"
-
-        error_message if intent == 'unlock' && unlocked || intent == 'lock' && !unlocked
-        exit
+        intent == 'unlock' && !unlocked || intent == 'lock' && unlocked
       end
 
       def inc_rollbacks_metric(environment)
