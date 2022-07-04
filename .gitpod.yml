@@ -125,7 +125,7 @@ tasks:
         -v gitlab-runner-config:/etc/gitlab-runner \
         gitlab/gitlab-runner:latest
 
-      printf "Waiting for GDK to be ready..."
+      printf "\nWaiting for GDK to be ready..."
 
       # Wait until GDK is ready before registering the runner
       gp sync-await gdk-ready && cd /workspace/gitlab-development-kit/gitlab
