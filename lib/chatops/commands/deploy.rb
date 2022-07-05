@@ -126,7 +126,6 @@ module Chatops
       def lock(env)
         env = normalize_chef_environment(env)
         assert_environment!(env)
-        valid_intent?(env, 'lock')
 
         error_message = "Invalid intent! #{env} is already in state lock"
 
@@ -141,7 +140,6 @@ module Chatops
       def unlock(env)
         env = normalize_chef_environment(env)
         assert_environment!(env)
-        valid_intent?(env, 'unlock')
 
         error_message = "Invalid intent! #{env} is already in state unlock"
 
