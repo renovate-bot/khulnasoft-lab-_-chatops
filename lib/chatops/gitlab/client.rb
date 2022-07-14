@@ -158,6 +158,7 @@ module Chatops
 
       def_delegator :internal_client, :version
       def_delegator :internal_client, :commit
+      def_delegator :internal_client, :commits
       def_delegator :internal_client, :commit_refs
       def_delegator :internal_client, :compare
       def_delegator :internal_client, :tree, :repository_tree

@@ -6,6 +6,7 @@ module Chatops
       include Command
       include GitlabEnvironments
       include ::Chatops::Release::Command
+      include ::SemanticLogger::Loggable
 
       COMMANDS =
         Set.new(%w[pause prepare status security_status tag unpause blockers lock unlock])
@@ -121,7 +122,13 @@ module Chatops
           auto_deploy_branches = auto_deploy_branches(sha)
 
           deployed = envs.select do |env|
-            auto_deploy_branches.any? { |b| env[:branch] == b.name && env[:status] == 'success' }
+            logger.info('Deployment environment details', env: env[:role], branch: env[:branch], sha: env[:sha])
+
+            auto_deploy_branches.any? do |b|
+              env[:branch] == b.name &&
+                env[:status] == 'success' &&
+                commit_deployed?(b.name, env[:sha], sha)
+            end
           end
 
           post_commit_status(sha, deployed)
@@ -225,6 +232,7 @@ module Chatops
         rails.zip(omnibus).map do |ee, ob|
           {
             role: role,
+            sha: (ee&.sha || 'unknown'),
             revision: (ee&.short_sha || 'unknown'),
             branch: (ee&.ref || 'unknown'),
             package: (ob&.package || 'unknown'),
@@ -234,12 +242,43 @@ module Chatops
       end
 
       def auto_deploy_branches(ref)
-        production_client
+        res = production_client
           .commit_refs(RAILS_PROJECT, ref, type: 'branch', per_page: 100)
           .auto_paginate
           .select { |b| b.name.match?(/^\d+-\d+-auto-deploy-\d+$/) }
+
+        logger.info('Auto deploy branches', branches: res)
+
+        res
       rescue ::Gitlab::Error::NotFound
         []
+      end
+
+      # `auto_deploy_branch` should be an auto-deploy branch that is known to contain both `deployed_sha` and `sha`.
+      def commit_deployed?(auto_deploy_branch, deployed_sha, sha)
+        # The commits returned by the API are in descending chronological order.
+        # This will return the top 20 commits in the auto_deploy_branch.
+        commits =
+          production_client
+            .commits(RAILS_PROJECT, ref_name: auto_deploy_branch)
+            .map(&:id)
+
+        # We assume that `deployed_sha` is in the top 20 commits on the auto_deploy_branch. This is a reasonable
+        # assumption since auto deploy branches are short-lived branches, and the only way for commits to be added to
+        # the branch is cherry-picking. We are unlikely to cherry-pick more than 20 commits into an auto-deploy branch.
+        deployed_sha_index = commits.index(deployed_sha)
+        logger.info('Deployed SHA index in commit list', deployed_sha_index: deployed_sha_index)
+
+        # If `deployed_sha` is the latest in the auto_deploy_branch, it means that all commits in the branch have been
+        # deployed.
+        return true if deployed_sha_index.zero?
+
+        commits_not_deployed = commits[0...deployed_sha_index]
+        logger.info('Commits not deployed', commits_not_deployed: commits_not_deployed, sha: sha)
+
+        # If `sha` is absent in the commits that were not deployed, and we assume that `sha` is present on the
+        # auto_deploy_branch, it means that `sha` must be present further down the commit list, and has been deployed.
+        !commits_not_deployed.include?(sha)
       end
 
       def post_commit_status(commit_sha, envs)

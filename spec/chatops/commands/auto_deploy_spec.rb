@@ -144,6 +144,7 @@ describe Chatops::Commands::AutoDeploy do
         role: 'gprd',
         version: '12.2.0-pre',
         revision: '0874a8d346c',
+        sha: '0874a8d346c2c91fc78151a6bab004dd71d6bfba',
         branch: '12-2-auto-deploy-20190804',
         package: '12.2.201908042020-0874a8d346c.2ee9f1d280d',
         status: production_deployment_status
@@ -180,13 +181,22 @@ describe Chatops::Commands::AutoDeploy do
         described_class.new(%w[status abcdefg], *env)
       end
 
-      it 'posts a message with deployed environments' do
+      before do
         allow(command).to receive(:environment_status)
           .and_return([production_status])
         allow(command).to receive(:auto_deploy_branches).with('abcdefg')
           .and_return([instance_double(
             'Branch', name: production_status[:branch]
           )])
+      end
+
+      it 'posts a message with deployed environments' do
+        commits = [
+          instance_double('Commit', id: '0874a8d346c2c91fc78151a6bab004dd71d6bfba'),
+          instance_double('Commit', id: 'abcdefg')
+        ]
+        allow(fake_client).to receive(:commits)
+          .and_return(commits)
 
         fake_commit = instance_double(
           'Commit',
@@ -195,6 +205,66 @@ describe Chatops::Commands::AutoDeploy do
         )
         expect(fake_client).to receive(:commit).and_return(fake_commit)
 
+        expect_slack_message(
+          blocks: DeployedCommitBlockMatcher.new(production_status, fake_commit)
+        )
+
+        command.perform
+      end
+
+      it 'displays no deployed branch message if SHA is chronologically after the deployed commit' do
+        commits = [
+          instance_double('Commit', id: 'sha1'),
+          instance_double('Commit', id: 'abcdefg'),
+          instance_double('Commit', id: '0874a8d346c2c91fc78151a6bab004dd71d6bfba'),
+          instance_double('Commit', id: 'sha3')
+        ]
+        allow(fake_client).to receive(:commits)
+          .and_return(commits)
+
+        expect_slack_message(blocks: NoDeployedBlockMatcher.new)
+
+        command.perform
+      end
+
+      it 'displays deployed envs if SHA is chronologically before the deployed commit' do
+        commits = [
+          instance_double('Commit', id: 'sha1'),
+          instance_double('Commit', id: 'sha2'),
+          instance_double('Commit', id: '0874a8d346c2c91fc78151a6bab004dd71d6bfba'),
+          instance_double('Commit', id: 'abcdefg')
+        ]
+        allow(fake_client).to receive(:commits)
+          .and_return(commits)
+
+        fake_commit = instance_double(
+          'Commit',
+          short_id: 'abcd',
+          title: 'Commit title'
+        )
+        expect(fake_client).to receive(:commit).and_return(fake_commit)
+        expect_slack_message(
+          blocks: DeployedCommitBlockMatcher.new(production_status, fake_commit)
+        )
+
+        command.perform
+      end
+
+      it 'displays deployed envs if SHA is not in first page of commits in branch' do
+        commits = [
+          instance_double('Commit', id: 'sha1'),
+          instance_double('Commit', id: 'sha2'),
+          instance_double('Commit', id: '0874a8d346c2c91fc78151a6bab004dd71d6bfba')
+        ]
+        allow(fake_client).to receive(:commits)
+          .and_return(commits)
+
+        fake_commit = instance_double(
+          'Commit',
+          short_id: 'abcd',
+          title: 'Commit title'
+        )
+        expect(fake_client).to receive(:commit).and_return(fake_commit)
         expect_slack_message(
           blocks: DeployedCommitBlockMatcher.new(production_status, fake_commit)
         )
@@ -463,16 +533,18 @@ class SecurityStatusBlockMatcher
 end
 
 class DeployedCommitBlockMatcher
-  def initialize(status, commit)
+  def initialize(status, commit, deployed_envs = ['gprd'])
     @status = status
     @commit = commit
+    @deployed_envs = deployed_envs
   end
 
   def ===(other)
     json = other.to_json
 
     json.include?("`#{@commit.short_id}`") &&
-      json.include?(@commit.title)
+      json.include?(@commit.title) &&
+      @deployed_envs.all? { |env| json.include?(env) }
   end
 end
 
