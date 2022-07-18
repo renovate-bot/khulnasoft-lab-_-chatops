@@ -3,4 +3,4 @@ coverage
 .bundle
 .idea
 /vendor
-
+/log/*.log*
