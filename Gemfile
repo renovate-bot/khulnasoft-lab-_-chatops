@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 
 gem 'chef'
 gem 'chronic'
-gem 'gitlab'
+gem 'gitlab', '~> 4.19'
 gem 'http'
 gem 'pg'
 gem 'semantic_logger'
