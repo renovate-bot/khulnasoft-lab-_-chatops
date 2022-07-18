@@ -52,6 +52,7 @@ else
       url: ENV['ELASTIC_URL'],
       index: 'chatops',
       host: ENV['CI_JOB_URL'],
+      user: ENV.fetch('GITLAB_USER_LOGIN', nil),
       type: '_doc',
 
       # Give ES more time to respond over HTTP
