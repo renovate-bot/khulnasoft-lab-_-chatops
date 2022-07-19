@@ -52,9 +52,9 @@ module Chatops
 
               status
 
-            Check the deploy status of a specific commit
+            Check the deploy status of one or more commits
 
-              status 6dc9ffbaa4a4e77facec1f2a1573bbbac2252066
+              status 6dc9ffbaa4a4e77facec1f2a1573bbbac2252066 738f386d1c850607904fd9672e0ac3b5a32d1063
 
             Check if there are any ongoing issues that may block a deploy
 
@@ -109,7 +109,7 @@ module Chatops
         post_task_status(tasks)
       end
 
-      def status(sha = nil)
+      def status(*shas)
         envs = [
           *environment_status('gprd'),
           *environment_status('gprd-cny'),
@@ -120,23 +120,13 @@ module Chatops
           *environment_status('db/gprd')
         ]
 
-        if sha
-          auto_deploy_branches = auto_deploy_branches(sha)
-
-          deployed = envs.select do |env|
-            logger.info('Deployment environment details', env: env[:role], branch: env[:branch], sha: env[:sha])
-
-            auto_deploy_branches.any? do |b|
-              env[:branch] == b.name &&
-                env[:status] == 'success' &&
-                commit_deployed?(b.name, env[:sha], sha)
-            end
-          end
-
-          post_commit_status(sha, deployed)
-        else
+        if shas.empty?
           post_environment_status(envs)
           production_checks if options[:checks]
+        else
+          shas.each { |sha| sha_status(envs, sha) }
+
+          nil
         end
       end
 
@@ -190,6 +180,22 @@ module Chatops
       end
 
       private
+
+      def sha_status(envs, sha)
+        auto_deploy_branches = auto_deploy_branches(sha)
+
+        deployed = envs.select do |env|
+          logger.info('Deployment environment details', env: env[:role], branch: env[:branch], sha: env[:sha])
+
+          auto_deploy_branches.any? do |b|
+            env[:branch] == b.name &&
+              env[:status] == 'success' &&
+              commit_deployed?(b.name, env[:sha], sha)
+          end
+        end
+
+        post_commit_status(sha, deployed)
+      end
 
       def production_checks
         run_trigger(CHECK_PRODUCTION: 'true', PRODUCTION_CHECK_SCOPE: 'deployment')

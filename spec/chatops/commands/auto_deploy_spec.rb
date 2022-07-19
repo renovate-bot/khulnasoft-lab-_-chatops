@@ -282,6 +282,57 @@ describe Chatops::Commands::AutoDeploy do
       end
     end
 
+    context 'with multiple SHAs' do
+      let(:command) { described_class.new(%w[status abcdefg hijkl], *env) }
+
+      before do
+        allow(command).to receive(:environment_status)
+          .and_return([production_status])
+
+        %w[abcdefg hijkl].each do |sha|
+          allow(command).to receive(:auto_deploy_branches).with(sha)
+            .and_return([instance_double(
+              'Branch', name: production_status[:branch]
+            )])
+        end
+
+        commits = [
+          instance_double('Commit', id: '0874a8d346c2c91fc78151a6bab004dd71d6bfba'),
+          instance_double('Commit', id: 'abcdefg'),
+          instance_double('Commit', id: 'hijkl')
+        ]
+        allow(fake_client).to receive(:commits)
+          .and_return(commits)
+      end
+
+      it 'checks each SHA' do
+        fake_commit1 = instance_double(
+          'Commit',
+          short_id: 'abcd',
+          title: 'Commit title 1'
+        )
+        fake_commit2 = instance_double(
+          'Commit',
+          short_id: 'hijk',
+          title: 'Commit title 2'
+        )
+        expect(fake_client).to receive(:commit).and_return(fake_commit1, fake_commit2)
+
+        message = instance_double('Chatops::Slack::Message')
+        expect(Chatops::Slack::Message)
+          .to receive(:new)
+          .and_return(message)
+
+        [fake_commit1, fake_commit2].each do |fake_commit|
+          expect(message)
+            .to receive(:send)
+            .with(blocks: DeployedCommitBlockMatcher.new(production_status, fake_commit))
+        end
+
+        command.perform
+      end
+    end
+
     context 'with a running deployment' do
       let(:production_deployment_status) { 'running' }
       let(:command) do
