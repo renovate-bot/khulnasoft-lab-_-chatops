@@ -19,7 +19,9 @@ module Chatops
       'gstg' => 'building_construction',
       'gstg-cny' => 'hatching_chick',
       'gstg-ref' => 'construction',
-      'pre' => 'pretzel'
+      'pre' => 'pretzel',
+      'db/gstg' => 'database',
+      'db/gprd' => 'database'
     }.freeze
 
     def self.define_environment_options(options)

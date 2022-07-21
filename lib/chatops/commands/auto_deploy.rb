@@ -115,7 +115,9 @@ module Chatops
           *environment_status('gprd-cny'),
           *environment_status('gstg'),
           *environment_status('gstg-cny'),
-          *environment_status('gstg-ref')
+          *environment_status('gstg-ref'),
+          *environment_status('db/gstg'),
+          *environment_status('db/gprd')
         ]
 
         if sha
