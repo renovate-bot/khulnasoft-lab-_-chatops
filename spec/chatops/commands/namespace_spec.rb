@@ -52,7 +52,10 @@ describe Chatops::Commands::Namespace do
         kind: 'group',
         path: 'foobar',
         billable_members_count: 42,
+        seats_in_use: 2,
         plan: 'default',
+        trial: false,
+        trial_ends_on: '',
         extra_shared_runners_minutes_limit: 2000
       )
     end
@@ -65,7 +68,10 @@ describe Chatops::Commands::Namespace do
         kind: 'group',
         path: 'foobar',
         billable_members_count: 42,
+        seats_in_use: 2,
         plan: 'default',
+        trial: false,
+        trial_ends_on: '',
         extra_shared_runners_minutes_limit: 2000
       )
     end

@@ -85,7 +85,7 @@ module Chatops
         minutes_updated(name, minutes)
       end
 
-      def submit_namespace_details(namespace)
+      def submit_namespace_details(namespace) # rubocop:disable Metrics/MethodLength
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(
@@ -118,8 +118,23 @@ module Chatops
                     short: true
                   },
                   {
+                    title: 'Seats in Use',
+                    value: namespace.seats_in_use,
+                    short: true
+                  },
+                  {
                     title: 'Plan',
                     value: namespace.plan,
+                    short: true
+                  },
+                  {
+                    title: 'Trial',
+                    value: namespace.trial,
+                    short: true
+                  },
+                  {
+                    title: 'Trial Ends On',
+                    value: namespace.trial_ends_on,
                     short: true
                   },
                   {
