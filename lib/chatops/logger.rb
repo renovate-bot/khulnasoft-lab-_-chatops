@@ -33,6 +33,7 @@ end
 
 SemanticLogger.application = 'chatops'
 SemanticLogger.default_level = ENV.fetch('LOG_LEVEL', 'debug').to_sym
+SemanticLogger.push_tags(user: ENV.fetch('GITLAB_USER_LOGIN', nil))
 
 if File.basename($PROGRAM_NAME) == 'rspec'
   # Overwrite each test run; meaningless in CI but nice for development
@@ -52,7 +53,6 @@ else
       url: ENV['ELASTIC_URL'],
       index: 'chatops',
       host: ENV['CI_JOB_URL'],
-      user: ENV.fetch('GITLAB_USER_LOGIN', nil),
       type: '_doc',
 
       # Give ES more time to respond over HTTP
