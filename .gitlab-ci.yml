@@ -69,6 +69,9 @@ rubocop:
   script:
     - bundle exec rubocop
 
+batched_background_migrations:
+  <<: *chatops
+
 broadcast:
   <<: *chatops
 

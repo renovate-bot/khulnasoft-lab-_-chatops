@@ -25,6 +25,10 @@ module Chatops
           )
       end
 
+      def batched_background_migrations
+        internal_client.get('/admin/batched_background_migrations')
+      end
+
       def features
         internal_client.get('/features').auto_paginate
       end

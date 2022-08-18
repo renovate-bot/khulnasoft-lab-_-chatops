@@ -53,6 +53,7 @@ require 'chatops/slack/message'
 require 'chatops/yaml_cmd'
 
 require 'chatops/commands/annotate'
+require 'chatops/commands/batched_background_migrations'
 require 'chatops/commands/broadcast'
 require 'chatops/commands/explain'
 require 'chatops/commands/feature'

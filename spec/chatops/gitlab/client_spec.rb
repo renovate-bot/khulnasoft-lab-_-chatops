@@ -27,6 +27,19 @@ describe Chatops::Gitlab::Client do
     end
   end
 
+  describe '#batched_background_migrations' do
+    it 'returns the batched background migrations' do
+      migrations = instance_double('migrations')
+
+      expect(client.internal_client)
+        .to receive(:get)
+        .with('/admin/batched_background_migrations')
+        .and_return(migrations)
+
+      client.batched_background_migrations
+    end
+  end
+
   describe '#find_user' do
     context 'when a user could be found' do
       it 'returns the user' do
