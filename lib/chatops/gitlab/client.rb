@@ -25,6 +25,10 @@ module Chatops
           )
       end
 
+      def resume_batched_background_migration(id)
+        internal_client.put("/admin/batched_background_migrations/#{id}/resume")
+      end
+
       def batched_background_migrations
         internal_client.get('/admin/batched_background_migrations')
       end
