@@ -44,7 +44,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
       end
     end
 
-    context 'when the command is pause' do
+    describe '#pause' do
       let(:subcommand) { %w[pause] }
       let(:gitlab_client) { instance_double('gitlab_client') }
       let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
