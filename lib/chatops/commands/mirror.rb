@@ -54,6 +54,7 @@ module Chatops
       def security_mirrors
         @security_mirrors ||= client
           .group_projects('gitlab-org/security', include_subgroups: true)
+          .auto_paginate
           .map(&:to_h)
           .select { |p| p.key?('forked_from_project') }
           .sort_by { |p| p['path'] }
