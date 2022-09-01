@@ -615,11 +615,11 @@ module Chatops
       end
 
       def valid_numeric_value?(value)
-        value.match?(/^\d+$/)
+        value.match?(/^\d+|\.$/)
       end
 
       def percentage_value?(value)
-        valid_numeric_value?(value) && (1..99).cover?(value.to_i)
+        valid_numeric_value?(value) && (0.0001..99).cover?(value.to_f)
       end
 
       def valid_setting_for_percentage_value?(value, options)

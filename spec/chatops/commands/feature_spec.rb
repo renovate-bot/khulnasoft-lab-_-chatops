@@ -623,6 +623,26 @@ describe Chatops::Commands::Feature do
           ]
         end
       end
+
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo 0.001] }
+        let(:command_opts) { default_opts.merge(random: true) }
+        let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 0.001 }] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '0.001', feature_scope_actors: 'false' } }
+        let(:set_feature_params) do
+          [
+            'foo',
+            '0.001',
+            {
+              project: nil,
+              group: nil,
+              namespace: nil,
+              user: nil,
+              actors: false
+            }
+          ]
+        end
+      end
     end
 
     context 'when using a project feature gate' do

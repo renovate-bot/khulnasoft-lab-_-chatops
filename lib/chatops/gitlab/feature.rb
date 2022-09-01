@@ -17,6 +17,8 @@ module Chatops
 
       # Returns `true` if the given value is a valid feature value.
       def self.valid_value?(value)
+        return true if value.match?(/^\d+|\.$/)
+
         case value
         when 'true', 'false', '0'..'100'
           true
