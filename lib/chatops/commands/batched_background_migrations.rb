@@ -38,6 +38,8 @@ module Chatops
       def pause
         id = arguments[1]
 
+        return 'Please provide a migration ID to the status command.' unless id
+
         migration = gitlab_client.pause_batched_background_migration(id)
 
         submit_batched_background_migration_details(migration)
