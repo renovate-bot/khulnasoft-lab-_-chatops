@@ -33,6 +33,10 @@ module Chatops
         internal_client.get('/admin/batched_background_migrations')
       end
 
+      def batched_background_migration(id)
+        internal_client.get("/admin/batched_background_migrations/#{id}")
+      end
+
       def features
         internal_client.get('/features').auto_paginate
       end

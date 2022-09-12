@@ -7,7 +7,7 @@ module Chatops
       include Command
       include GitlabEnvironments
 
-      COMMANDS = Set.new(%w[list resume])
+      COMMANDS = Set.new(%w[list resume status])
 
       description 'Managing Batched Background Migrations'
 
@@ -31,6 +31,16 @@ module Chatops
         id = arguments[1]
 
         migration = gitlab_client.resume_batched_background_migration(id)
+
+        submit_batched_background_migration_details(migration)
+
+        nil
+      end
+
+      def status
+        id = arguments[1]
+
+        migration = gitlab_client.batched_background_migration(id)
 
         submit_batched_background_migration_details(migration)
 
