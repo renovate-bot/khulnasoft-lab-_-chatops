@@ -89,7 +89,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
     end
 
     let(:gitlab_client) { instance_double('gitlab_client') }
-    let(:slack_client) { instance_double('slack_client') }
+    let(:slack_client) { instance_double(Chatops::Slack::Message) }
     let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
 
     it 'returns the migration' do
