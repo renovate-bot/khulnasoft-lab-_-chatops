@@ -88,7 +88,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
       described_class.new(%w[status], {}, 'GITLAB_TOKEN' => '123', 'SLACK_TOKEN' => '456', 'CHAT_CHANNEL' => 'foo').perform
     end
 
-    let(:gitlab_client) { instance_double('gitlab_client') }
+    let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
     let(:slack_client) { instance_double(Chatops::Slack::Message) }
     let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
 
