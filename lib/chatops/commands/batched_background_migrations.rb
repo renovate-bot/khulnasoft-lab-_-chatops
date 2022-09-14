@@ -33,6 +33,8 @@ module Chatops
         migration = gitlab_client.resume_batched_background_migration(id)
 
         submit_batched_background_migration_details(migration)
+
+        nil
       end
 
       def pause

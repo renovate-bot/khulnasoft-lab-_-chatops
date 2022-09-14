@@ -45,10 +45,19 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
     end
 
     describe '#pause' do
-      let(:subcommand) { %w[pause] }
+      let(:subcommand) { %w[pause 123] }
       let(:gitlab_client) { instance_double('gitlab_client') }
       let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
       let(:slack_client) { instance_double('slack_client') }
+
+      context 'when the migration id is not present' do
+        let(:subcommand) { %w[pause] }
+        let(:message) { 'Please provide a migration ID to the pause command.' }
+
+        it 'returns a message' do
+          expect(perform).to eql(message)
+        end
+      end
 
       it 'pauses the migration' do
         expect(Chatops::Gitlab::Client)
