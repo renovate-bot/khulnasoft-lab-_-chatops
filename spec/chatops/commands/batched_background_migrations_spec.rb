@@ -44,42 +44,6 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
       end
     end
 
-    describe '#pause' do
-      let(:subcommand) { %w[pause 123] }
-      let(:gitlab_client) { instance_double('gitlab_client') }
-      let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
-      let(:slack_client) { instance_double('slack_client') }
-
-      context 'when the migration id is not present' do
-        let(:subcommand) { %w[pause] }
-        let(:message) { 'Please provide a migration ID to the pause command.' }
-
-        it 'returns a message' do
-          expect(perform).to eql(message)
-        end
-      end
-
-      it 'pauses the migration' do
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123', host: 'gitlab.com')
-          .and_return(gitlab_client)
-
-        expect(gitlab_client)
-          .to receive(:pause_batched_background_migration)
-          .and_return(migration)
-
-        expect(Chatops::Slack::Message)
-          .to receive(:new)
-          .with(token: '456', channel: 'foo')
-          .and_return(slack_client)
-
-        expect(slack_client).to receive(:send)
-
-        perform
-      end
-    end
-
     context 'when the command does not exist' do
       let(:subcommand) { %w[wrong] }
 
@@ -156,6 +120,46 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
       expect(slack_client).to receive(:send)
 
       status
+    end
+  end
+
+  describe '#pause' do
+    subject(:pause) do
+      described_class.new(subcommand, {}, 'GITLAB_TOKEN' => '123', 'SLACK_TOKEN' => '456', 'CHAT_CHANNEL' => 'foo').perform
+    end
+
+    let(:subcommand) { %w[pause 1] }
+    let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
+    let(:slack_client) { instance_double(Chatops::Slack::Message) }
+    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+
+    context 'when the migration id is not present' do
+      let(:subcommand) { %w[pause] }
+      let(:message) { 'Please provide a migration ID to the pause command.' }
+
+      it 'returns a message' do
+        expect(pause).to eql(message)
+      end
+    end
+
+    it 'pauses the migration' do
+      expect(Chatops::Gitlab::Client)
+        .to receive(:new)
+        .with(token: '123', host: 'gitlab.com')
+        .and_return(gitlab_client)
+
+      expect(gitlab_client)
+        .to receive(:pause_batched_background_migration)
+        .and_return(migration)
+
+      expect(Chatops::Slack::Message)
+        .to receive(:new)
+        .with(token: '456', channel: 'foo')
+        .and_return(slack_client)
+
+      expect(slack_client).to receive(:send)
+
+      pause
     end
   end
 end

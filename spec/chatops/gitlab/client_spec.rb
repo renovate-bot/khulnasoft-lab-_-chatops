@@ -79,6 +79,19 @@ describe Chatops::Gitlab::Client do
     end
   end
 
+  describe '#pause_batched_background_migration' do
+    it 'pauses a batched background migration' do
+      migration = instance_double('migration', id: 10)
+
+      expect(client.internal_client)
+        .to receive(:put)
+        .with("/admin/batched_background_migrations/#{migration.id}/pause")
+        .and_return(migration)
+
+      client.pause_batched_background_migration(migration.id)
+    end
+  end
+
   describe '#find_namespace' do
     it 'returns the namespace' do
       namespace = instance_double('namespace')
