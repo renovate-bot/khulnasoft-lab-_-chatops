@@ -22,26 +22,6 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
         instance.perform
       end
-
-      it 'sends a slack message' do
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: '123', host: 'gitlab.com')
-          .and_return(gitlab_client)
-
-        expect(gitlab_client)
-          .to receive(:batched_background_migrations)
-          .and_return([migration])
-
-        expect(Chatops::Slack::Message)
-          .to receive(:new)
-          .with(token: '456', channel: 'foo')
-          .and_return(slack_client)
-
-        expect(slack_client).to receive(:send)
-
-        perform
-      end
     end
 
     context 'when the command does not exist' do
@@ -50,6 +30,37 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
       it 'returns an error message' do
         expect(perform).to include('The batched background migration subcommand is invalid')
       end
+    end
+  end
+
+  describe '#list' do
+    subject(:list) do
+      described_class.new(command, {}, 'GITLAB_TOKEN' => '123', 'SLACK_TOKEN' => '456', 'CHAT_CHANNEL' => 'foo').perform
+    end
+
+    let(:command) { %w[list] }
+    let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
+    let(:slack_client) { instance_double(Chatops::Slack::Message) }
+    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+
+    it 'list migrations' do
+      expect(Chatops::Gitlab::Client)
+        .to receive(:new)
+        .with(token: '123', host: 'gitlab.com')
+        .and_return(gitlab_client)
+
+      expect(gitlab_client)
+        .to receive(:batched_background_migrations)
+        .and_return([migration])
+
+      expect(Chatops::Slack::Message)
+        .to receive(:new)
+        .with(token: '456', channel: 'foo')
+        .and_return(slack_client)
+
+      expect(slack_client).to receive(:send)
+
+      list
     end
   end
 
