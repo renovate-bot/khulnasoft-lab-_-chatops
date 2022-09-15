@@ -30,6 +30,8 @@ module Chatops
       def resume
         id = arguments[1]
 
+        return 'Please provide a migration ID to the resume command.' unless id
+
         migration = gitlab_client.resume_batched_background_migration(id)
 
         submit_batched_background_migration_details(migration)

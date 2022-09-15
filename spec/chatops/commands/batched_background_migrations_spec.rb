@@ -55,12 +55,22 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
   describe '#resume' do
     subject(:resume) do
-      described_class.new(%w[resume], {}, 'GITLAB_TOKEN' => '123', 'SLACK_TOKEN' => '456', 'CHAT_CHANNEL' => 'foo').perform
+      described_class.new(command, {}, 'GITLAB_TOKEN' => '123', 'SLACK_TOKEN' => '456', 'CHAT_CHANNEL' => 'foo').perform
     end
 
-    let(:gitlab_client) { instance_double('gitlab_client') }
-    let(:slack_client) { instance_double('slack_client') }
+    let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
+    let(:slack_client) { instance_double(Chatops::Slack::Message) }
     let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+    let(:command) { %w[resume 1] }
+
+    context 'when the migration id is not present' do
+      let(:command) { %w[resume] }
+      let(:message) { 'Please provide a migration ID to the resume command.' }
+
+      it 'returns a message' do
+        expect(resume).to eql(message)
+      end
+    end
 
     it 'resumes the migration' do
       expect(Chatops::Gitlab::Client)
