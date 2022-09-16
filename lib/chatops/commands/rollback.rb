@@ -64,7 +64,8 @@ module Chatops
           nil,
           'auto_deploy:rollback_check',
           ROLLBACK_CURRENT: env_name,
-          ROLLBACK_TARGET: env_name
+          ROLLBACK_TARGET: env_name,
+          ROLLBACK_ENV: env_name
         )
       end
     end

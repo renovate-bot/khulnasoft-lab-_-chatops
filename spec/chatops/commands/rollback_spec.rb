@@ -68,7 +68,7 @@ describe Chatops::Commands::Rollback, :release_command do
       instance = stubbed_instance('check', 'gprd')
 
       expect(instance).to receive(:trigger_release)
-        .with(nil, 'auto_deploy:rollback_check', ROLLBACK_CURRENT: 'gprd', ROLLBACK_TARGET: 'gprd')
+        .with(nil, 'auto_deploy:rollback_check', ROLLBACK_CURRENT: 'gprd', ROLLBACK_TARGET: 'gprd', ROLLBACK_ENV: 'gprd')
 
       instance.perform
     end
