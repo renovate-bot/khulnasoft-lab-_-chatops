@@ -74,6 +74,21 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
     let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
     let(:command) { %w[resume 1] }
 
+    context 'when the migration does not exist' do
+      it 'returns a message' do
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123', host: 'gitlab.com')
+          .and_return(gitlab_client)
+
+        expect(gitlab_client)
+          .to receive(:resume_batched_background_migration)
+          .and_return(nil)
+
+        expect(resume).to eql('Migration not found')
+      end
+    end
+
     context 'when the migration id is not present' do
       let(:command) { %w[resume] }
       let(:message) { 'Please provide a migration ID to the resume command.' }
@@ -114,6 +129,21 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
     let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
     let(:command) { %w[status 1] }
 
+    context 'when the migration does not exist' do
+      it 'returns a message' do
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123', host: 'gitlab.com')
+          .and_return(gitlab_client)
+
+        expect(gitlab_client)
+          .to receive(:batched_background_migration)
+          .and_return(nil)
+
+        expect(status).to eql('Migration not found')
+      end
+    end
+
     context 'when the migration id is not present' do
       let(:command) { %w[status] }
       let(:message) { 'Please provide a migration ID to the status command.' }
@@ -153,6 +183,21 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
     let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
     let(:slack_client) { instance_double(Chatops::Slack::Message) }
     let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+
+    context 'when the migration does not exist' do
+      it 'returns a message' do
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123', host: 'gitlab.com')
+          .and_return(gitlab_client)
+
+        expect(gitlab_client)
+          .to receive(:pause_batched_background_migration)
+          .and_return(nil)
+
+        expect(pause).to eql('Migration not found')
+      end
+    end
 
     context 'when the migration id is not present' do
       let(:subcommand) { %w[pause] }

@@ -36,6 +36,8 @@ module Chatops
 
         migration = gitlab_client.resume_batched_background_migration(id)
 
+        return 'Migration not found' unless migration
+
         submit_batched_background_migration_details(migration)
 
         nil
@@ -48,6 +50,8 @@ module Chatops
 
         migration = gitlab_client.pause_batched_background_migration(id)
 
+        return 'Migration not found' unless migration
+
         submit_batched_background_migration_details(migration)
 
         nil
@@ -59,6 +63,8 @@ module Chatops
         return 'Please provide a migration ID to the status command.' unless id
 
         migration = gitlab_client.batched_background_migration(id)
+
+        return 'Migration not found' unless migration
 
         submit_batched_background_migration_details(migration)
 

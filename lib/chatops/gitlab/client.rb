@@ -27,6 +27,8 @@ module Chatops
 
       def resume_batched_background_migration(id)
         internal_client.put("/admin/batched_background_migrations/#{id}/resume")
+      rescue ::Gitlab::Error::NotFound
+        nil
       end
 
       def batched_background_migrations
@@ -35,10 +37,14 @@ module Chatops
 
       def batched_background_migration(id)
         internal_client.get("/admin/batched_background_migrations/#{id}")
+      rescue ::Gitlab::Error::NotFound
+        nil
       end
 
       def pause_batched_background_migration(id)
         internal_client.put("/admin/batched_background_migrations/#{id}/pause")
+      rescue ::Gitlab::Error::NotFound
+        nil
       end
 
       def features

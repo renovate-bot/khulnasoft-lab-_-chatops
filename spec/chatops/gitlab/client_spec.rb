@@ -51,6 +51,28 @@ describe Chatops::Gitlab::Client do
 
       client.batched_background_migration(migration.id)
     end
+
+    context 'when the migration does not exist' do
+      let(:url) { '/admin/batched_background_migrations/1' }
+
+      let(:missing_response) do
+        instance_double(
+          'response',
+          code: 404,
+          request: instance_double('request', base_uri: 'foo', path: url),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+        )
+      end
+
+      it 'returns nil' do
+        allow(client.internal_client)
+          .to receive(:get)
+          .with(url)
+          .and_raise(Gitlab::Error::NotFound.new(missing_response))
+
+        expect(client.batched_background_migration(1)).to be_nil
+      end
+    end
   end
 
   describe '#find_user' do
@@ -80,6 +102,63 @@ describe Chatops::Gitlab::Client do
   end
 
   describe '#pause_batched_background_migration' do
+    context 'when the migration does not exist' do
+      let(:url) { '/admin/batched_background_migrations/1/pause' }
+
+      let(:missing_response) do
+        instance_double(
+          'response',
+          code: 404,
+          request: instance_double('request', base_uri: 'foo', path: url),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+        )
+      end
+
+      it 'returns nil' do
+        allow(client.internal_client)
+          .to receive(:put)
+          .with(url)
+          .and_raise(Gitlab::Error::NotFound.new(missing_response))
+
+        expect(client.pause_batched_background_migration(1)).to be_nil
+      end
+    end
+
+    it 'pauses a batched background migration' do
+      migration = instance_double('migration', id: 10)
+
+      expect(client.internal_client)
+        .to receive(:put)
+        .with("/admin/batched_background_migrations/#{migration.id}/pause")
+        .and_return(migration)
+
+      client.pause_batched_background_migration(migration.id)
+    end
+  end
+
+  describe '#resume_batched_background_migration' do
+    context 'when the migration does not exist' do
+      let(:url) { '/admin/batched_background_migrations/1/resume' }
+
+      let(:missing_response) do
+        instance_double(
+          'response',
+          code: 404,
+          request: instance_double('request', base_uri: 'foo', path: url),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+        )
+      end
+
+      it 'returns nil' do
+        allow(client.internal_client)
+          .to receive(:put)
+          .with(url)
+          .and_raise(Gitlab::Error::NotFound.new(missing_response))
+
+        expect(client.resume_batched_background_migration(1)).to be_nil
+      end
+    end
+
     it 'pauses a batched background migration' do
       migration = instance_double('migration', id: 10)
 
