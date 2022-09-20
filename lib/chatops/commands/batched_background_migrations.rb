@@ -25,8 +25,6 @@ module Chatops
         migrations.each do |migration|
           submit_batched_background_migration_details(migration)
         end
-
-        nil
       end
 
       def resume
@@ -36,11 +34,7 @@ module Chatops
 
         migration = gitlab_client.resume_batched_background_migration(id)
 
-        return 'Migration not found' unless migration
-
         submit_batched_background_migration_details(migration)
-
-        nil
       end
 
       def pause
@@ -50,11 +44,7 @@ module Chatops
 
         migration = gitlab_client.pause_batched_background_migration(id)
 
-        return 'Migration not found' unless migration
-
         submit_batched_background_migration_details(migration)
-
-        nil
       end
 
       def status
@@ -64,16 +54,14 @@ module Chatops
 
         migration = gitlab_client.batched_background_migration(id)
 
-        return 'Migration not found' unless migration
-
         submit_batched_background_migration_details(migration)
-
-        nil
       end
 
       private
 
       def submit_batched_background_migration_details(batched_background_migration)
+        return 'Migration not found' unless batched_background_migration
+
         slack_client
           .send(
             attachments: [
@@ -113,6 +101,8 @@ module Chatops
               }
             ]
           )
+
+        nil
       end
 
       def unsupported_command
