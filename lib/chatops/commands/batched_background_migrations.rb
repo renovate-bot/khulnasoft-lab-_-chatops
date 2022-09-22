@@ -11,6 +11,13 @@ module Chatops
 
       description 'Managing Batched Background Migrations'
 
+      options do |o|
+        o.string(
+          '--database',
+          'Connects to the given database instead of the default one'
+        )
+      end
+
       def perform
         command = arguments.first
 
@@ -32,7 +39,7 @@ module Chatops
 
         return 'Please provide a migration ID to the resume command.' unless id
 
-        migration = gitlab_client.resume_batched_background_migration(id)
+        migration = gitlab_client.resume_batched_background_migration(id, database: database)
 
         submit_batched_background_migration_details(migration)
       end
@@ -42,7 +49,7 @@ module Chatops
 
         return 'Please provide a migration ID to the pause command.' unless id
 
-        migration = gitlab_client.pause_batched_background_migration(id)
+        migration = gitlab_client.pause_batched_background_migration(id, database: database)
 
         submit_batched_background_migration_details(migration)
       end
@@ -52,12 +59,16 @@ module Chatops
 
         return 'Please provide a migration ID to the status command.' unless id
 
-        migration = gitlab_client.batched_background_migration(id)
+        migration = gitlab_client.batched_background_migration(id, database: database)
 
         submit_batched_background_migration_details(migration)
       end
 
       private
+
+      def database
+        options[:database] || 'main'
+      end
 
       def submit_batched_background_migration_details(batched_background_migration)
         return 'Migration not found' unless batched_background_migration
@@ -89,7 +100,7 @@ module Chatops
                   },
                   {
                     title: 'Progress',
-                    value: batched_background_migration.progress,
+                    value: "#{batched_background_migration.progress}%",
                     short: true
                   },
                   {
@@ -119,11 +130,20 @@ module Chatops
           ```
           # Listing all batched background migrations:
           batched_background_migration list
+
+          # Resume a batched background migration:
+          batched_background_migration resume MIGRATION_ID
+
+          # Pause a batched background migration:
+          batched_background_migration pause MIGRATION_ID
+
+          # Get a status of a background migration:
+          batched_background_migration status MIGRATION_ID
         MESSAGE
       end
 
       def migrations
-        @migrations ||= gitlab_client.batched_background_migrations
+        @migrations ||= gitlab_client.batched_background_migrations(database: database)
       end
 
       def slack_client

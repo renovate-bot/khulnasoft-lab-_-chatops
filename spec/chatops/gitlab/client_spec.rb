@@ -28,28 +28,34 @@ describe Chatops::Gitlab::Client do
   end
 
   describe '#batched_background_migrations' do
+    let(:database) { 'main' }
+    let(:params) { { database: 'main' } }
+
     it 'returns the batched background migrations' do
       migrations = instance_double('migrations')
 
       expect(client.internal_client)
         .to receive(:get)
-        .with('/admin/batched_background_migrations')
+        .with('/admin/batched_background_migrations', params: params)
         .and_return(migrations)
 
-      client.batched_background_migrations
+      client.batched_background_migrations(database: 'main')
     end
   end
 
   describe '#batched_background_migration' do
+    let(:database) { 'main' }
+    let(:params) { { database: database } }
+
     it 'returns a batched background migration' do
       migration = instance_double('migration', id: 10)
 
       expect(client.internal_client)
         .to receive(:get)
-        .with("/admin/batched_background_migrations/#{migration.id}")
+        .with("/admin/batched_background_migrations/#{migration.id}", params: params)
         .and_return(migration)
 
-      client.batched_background_migration(migration.id)
+      client.batched_background_migration(migration.id, database: database)
     end
 
     context 'when the migration does not exist' do
@@ -59,7 +65,7 @@ describe Chatops::Gitlab::Client do
         instance_double(
           'response',
           code: 404,
-          request: instance_double('request', base_uri: 'foo', path: url),
+          request: instance_double('request', base_uri: 'foo', path: url, params: params),
           parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
         )
       end
@@ -67,10 +73,10 @@ describe Chatops::Gitlab::Client do
       it 'returns nil' do
         allow(client.internal_client)
           .to receive(:get)
-          .with(url)
+          .with(url, params: params)
           .and_raise(Gitlab::Error::NotFound.new(missing_response))
 
-        expect(client.batched_background_migration(1)).to be_nil
+        expect(client.batched_background_migration(1, database: database)).to be_nil
       end
     end
   end
@@ -102,6 +108,9 @@ describe Chatops::Gitlab::Client do
   end
 
   describe '#pause_batched_background_migration' do
+    let(:database) { 'main' }
+    let(:params) { { database: database } }
+
     context 'when the migration does not exist' do
       let(:url) { '/admin/batched_background_migrations/1/pause' }
 
@@ -117,10 +126,10 @@ describe Chatops::Gitlab::Client do
       it 'returns nil' do
         allow(client.internal_client)
           .to receive(:put)
-          .with(url)
+          .with(url, params: params)
           .and_raise(Gitlab::Error::NotFound.new(missing_response))
 
-        expect(client.pause_batched_background_migration(1)).to be_nil
+        expect(client.pause_batched_background_migration(1, database: database)).to be_nil
       end
     end
 
@@ -129,14 +138,17 @@ describe Chatops::Gitlab::Client do
 
       expect(client.internal_client)
         .to receive(:put)
-        .with("/admin/batched_background_migrations/#{migration.id}/pause")
+        .with("/admin/batched_background_migrations/#{migration.id}/pause", params: params)
         .and_return(migration)
 
-      client.pause_batched_background_migration(migration.id)
+      client.pause_batched_background_migration(migration.id, database: database)
     end
   end
 
   describe '#resume_batched_background_migration' do
+    let(:database) { 'main' }
+    let(:params) { { database: 'main' } }
+
     context 'when the migration does not exist' do
       let(:url) { '/admin/batched_background_migrations/1/resume' }
 
@@ -152,22 +164,22 @@ describe Chatops::Gitlab::Client do
       it 'returns nil' do
         allow(client.internal_client)
           .to receive(:put)
-          .with(url)
+          .with(url, params: params)
           .and_raise(Gitlab::Error::NotFound.new(missing_response))
 
-        expect(client.resume_batched_background_migration(1)).to be_nil
+        expect(client.resume_batched_background_migration(1, database: database)).to be_nil
       end
     end
 
-    it 'pauses a batched background migration' do
+    it 'resumes a batched background migration' do
       migration = instance_double('migration', id: 10)
 
       expect(client.internal_client)
         .to receive(:put)
-        .with("/admin/batched_background_migrations/#{migration.id}/pause")
+        .with("/admin/batched_background_migrations/#{migration.id}/resume", params: params)
         .and_return(migration)
 
-      client.pause_batched_background_migration(migration.id)
+      client.resume_batched_background_migration(migration.id, database: database)
     end
   end
 

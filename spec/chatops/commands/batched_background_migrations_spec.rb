@@ -31,6 +31,20 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
         expect(perform).to include('The batched background migration subcommand is invalid')
       end
     end
+
+    it 'supports --database option' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(%w[list], { database: 'main' }, {})
+        .and_return(instance)
+
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(%w[list --database main])
+    end
   end
 
   describe '#list' do

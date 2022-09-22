@@ -25,24 +25,32 @@ module Chatops
           )
       end
 
-      def resume_batched_background_migration(id)
-        internal_client.put("/admin/batched_background_migrations/#{id}/resume")
+      def resume_batched_background_migration(id, database:)
+        params = { database: database }
+
+        internal_client.put("/admin/batched_background_migrations/#{id}/resume", params: params)
       rescue ::Gitlab::Error::NotFound
         nil
       end
 
-      def batched_background_migrations
-        internal_client.get('/admin/batched_background_migrations')
+      def batched_background_migrations(database:)
+        params = { database: database }
+
+        internal_client.get('/admin/batched_background_migrations', params: params)
       end
 
-      def batched_background_migration(id)
-        internal_client.get("/admin/batched_background_migrations/#{id}")
+      def batched_background_migration(id, database:)
+        params = { database: database }
+
+        internal_client.get("/admin/batched_background_migrations/#{id}", params: params)
       rescue ::Gitlab::Error::NotFound
         nil
       end
 
-      def pause_batched_background_migration(id)
-        internal_client.put("/admin/batched_background_migrations/#{id}/pause")
+      def pause_batched_background_migration(id, database:)
+        params = { database: database }
+
+        internal_client.put("/admin/batched_background_migrations/#{id}/pause", params: params)
       rescue ::Gitlab::Error::NotFound
         nil
       end
