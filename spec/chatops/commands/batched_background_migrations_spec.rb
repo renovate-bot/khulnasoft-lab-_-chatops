@@ -88,7 +88,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
       expect(slack_client).to receive(:send)
 
-      list
+      expect(list).to be_nil
     end
   end
 

@@ -34,6 +34,8 @@ module Chatops
         migrations.each do |migration|
           submit_batched_background_migration_details(migration)
         end
+
+        nil
       end
 
       def resume
