@@ -10,6 +10,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
     let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
     let(:subcommand) { %w[list] }
+    let(:env_options) { { dev: false, ops: false, pre: false, production: false, staging: false, staging_ref: false } }
 
     context 'when it is a valid instruction' do
       let(:gitlab_client) { instance_double('gitlab_client') }
@@ -32,12 +33,25 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
       end
     end
 
+    it 'supports environment options' do
+      instance = instance_double('instance')
+
+      expect(described_class)
+        .to receive(:new)
+        .with(subcommand, { database: nil }.merge(env_options), {})
+        .and_return(instance)
+      expect(instance)
+        .to receive(:perform)
+
+      described_class.perform(subcommand)
+    end
+
     it 'supports --database option' do
       instance = instance_double('instance')
 
       expect(described_class)
         .to receive(:new)
-        .with(%w[list], { database: 'main' }, {})
+        .with(subcommand, { database: 'main' }.merge(env_options), {})
         .and_return(instance)
 
       expect(instance)

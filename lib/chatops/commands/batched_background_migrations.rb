@@ -16,6 +16,8 @@ module Chatops
           '--database',
           'Connects to the given database instead of the default one'
         )
+
+        GitlabEnvironments.define_environment_options(o)
       end
 
       def perform
