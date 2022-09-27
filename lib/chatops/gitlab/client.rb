@@ -26,7 +26,7 @@ module Chatops
       end
 
       def resume_batched_background_migration(id, database:)
-        params = { database: database }
+        params = { query: { database: database } }
 
         internal_client.put("/admin/batched_background_migrations/#{id}/resume", params: params)
       rescue ::Gitlab::Error::NotFound
@@ -34,7 +34,7 @@ module Chatops
       end
 
       def batched_background_migrations(database:)
-        params = { database: database }
+        params = { query: { database: database } }
 
         logger.info('Database params', params: params)
 
@@ -42,7 +42,7 @@ module Chatops
       end
 
       def batched_background_migration(id, database:)
-        params = { database: database }
+        params = { query: { database: database } }
 
         internal_client.get("/admin/batched_background_migrations/#{id}", params: params)
       rescue ::Gitlab::Error::NotFound
@@ -50,7 +50,7 @@ module Chatops
       end
 
       def pause_batched_background_migration(id, database:)
-        params = { database: database }
+        params = { query: { database: database } }
 
         internal_client.put("/admin/batched_background_migrations/#{id}/pause", params: params)
       rescue ::Gitlab::Error::NotFound

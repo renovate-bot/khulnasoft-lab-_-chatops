@@ -29,7 +29,7 @@ describe Chatops::Gitlab::Client do
 
   describe '#batched_background_migrations' do
     let(:database) { 'main' }
-    let(:params) { { database: 'main' } }
+    let(:params) { { query: { database: database } } }
 
     it 'returns the batched background migrations' do
       migrations = instance_double('migrations')
@@ -39,13 +39,13 @@ describe Chatops::Gitlab::Client do
         .with('/admin/batched_background_migrations', params: params)
         .and_return(migrations)
 
-      client.batched_background_migrations(database: 'main')
+      client.batched_background_migrations(database: database)
     end
   end
 
   describe '#batched_background_migration' do
     let(:database) { 'main' }
-    let(:params) { { database: database } }
+    let(:params) { { query: { database: database } } }
 
     it 'returns a batched background migration' do
       migration = instance_double('migration', id: 10)
@@ -109,7 +109,7 @@ describe Chatops::Gitlab::Client do
 
   describe '#pause_batched_background_migration' do
     let(:database) { 'main' }
-    let(:params) { { database: database } }
+    let(:params) { { query: { database: database } } }
 
     context 'when the migration does not exist' do
       let(:url) { '/admin/batched_background_migrations/1/pause' }
@@ -147,7 +147,7 @@ describe Chatops::Gitlab::Client do
 
   describe '#resume_batched_background_migration' do
     let(:database) { 'main' }
-    let(:params) { { database: 'main' } }
+    let(:params) { { query: { database: database } } }
 
     context 'when the migration does not exist' do
       let(:url) { '/admin/batched_background_migrations/1/resume' }
