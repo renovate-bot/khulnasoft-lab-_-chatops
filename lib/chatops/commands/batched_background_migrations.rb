@@ -6,6 +6,7 @@ module Chatops
     class BatchedBackgroundMigrations
       include Command
       include GitlabEnvironments
+      include ::SemanticLogger::Loggable
 
       COMMANDS = Set.new(%w[list resume status pause])
 
@@ -71,6 +72,8 @@ module Chatops
       private
 
       def database
+        logger.info('Database name', database: options[:database])
+
         options[:database] || 'main'
       end
 

@@ -36,6 +36,8 @@ module Chatops
       def batched_background_migrations(database:)
         params = { database: database }
 
+        logger.info('Database params', params: params)
+
         internal_client.get('/admin/batched_background_migrations', params: params)
       end
 
