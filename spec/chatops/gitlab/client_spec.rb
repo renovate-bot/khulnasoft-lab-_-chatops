@@ -29,17 +29,25 @@ describe Chatops::Gitlab::Client do
 
   describe '#batched_background_migrations' do
     let(:database) { 'main' }
-    let(:params) { { query: { database: database } } }
+    let(:query) { { query: { database: database } } }
 
     it 'returns the batched background migrations' do
       migrations = instance_double('migrations')
 
       expect(client.internal_client)
         .to receive(:get)
-        .with('/admin/batched_background_migrations', params: params)
+        .with('/admin/batched_background_migrations', query)
         .and_return(migrations)
 
       client.batched_background_migrations(database: database)
+    end
+
+    it 'sends a request to the correct url' do
+      admin_api = stub_request(:get, 'https://localhost/api/v4/admin/batched_background_migrations?database=main')
+
+      client.batched_background_migrations(database: database)
+
+      expect(admin_api).to have_been_requested
     end
   end
 
