@@ -152,3 +152,6 @@ production_checks:
 
 pager:
   <<: *chatops
+
+quality:
+  <<: *chatops

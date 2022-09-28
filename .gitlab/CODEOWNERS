@@ -6,4 +6,5 @@ lib/chatops/commands/post_deploy_migrations.rb @gitlab-org/delivery
 lib/chatops/commands/production_checks.rb @gitlab-org/delivery
 lib/chatops/commands/release.rb @gitlab-org/delivery
 lib/chatops/commands/rollback.rb @gitlab-org/delivery
+lib/chatops/commands/quality.rb @gitlab-org/quality
 lib/chatops/release/ @gitlab-org/delivery

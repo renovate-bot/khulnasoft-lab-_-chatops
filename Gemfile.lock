@@ -272,6 +272,12 @@ GEM
       tty-screen (~> 0.7)
       wisper (~> 2.0.0)
     tty-screen (0.8.0)
+    tty-table (0.11.0)
+      equatable (~> 0.6)
+      necromancer (~> 0.5)
+      pastel (~> 0.7.2)
+      strings (~> 0.1.5)
+      tty-screen (~> 0.7)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.7)
@@ -331,6 +337,7 @@ DEPENDENCIES
   slack-ruby-block-kit (~> 0.14.0)
   slop
   timecop
+  tty-table
   vcr (~> 4.0.0)
   webmock (~> 3.5.0)
 

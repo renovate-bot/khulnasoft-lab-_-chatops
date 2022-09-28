@@ -10,6 +10,7 @@ gem 'pg'
 gem 'semantic_logger'
 gem 'slack-ruby-block-kit', '~> 0.14.0'
 gem 'slop'
+gem 'tty-table'
 
 group :development do
   gem 'byebug'
