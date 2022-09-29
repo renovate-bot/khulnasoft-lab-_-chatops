@@ -87,7 +87,7 @@ describe Chatops::Commands::Quality do
       it_behaves_like 'sub command', expected_response: <<~DESC.delete(' ').strip
         ```
         +------------+-----------------+----------------+-------------+
-        | Week of    | AMER            | EMEA           | APAC        |
+        | Week of    | APAC            | EMEA           | AMER        |
         +------------+-----------------+----------------+-------------+
         | 2022-10-03 | Careem Ahamed   | Will Meek      | Tiffany Rea |
         | 2022-10-10 | Carlo Catimbang | Alex Lyubenkov | Chloe Liu   |
@@ -109,7 +109,7 @@ describe Chatops::Commands::Quality do
       it_behaves_like 'sub command', expected_response: <<~DESC.delete(' ').strip
         ```
         +------------+---------------+-----------+-------------+
-        | Week of    | AMER          | EMEA      | APAC        |
+        | Week of    | APAC          | EMEA      | AMER        |
         +------------+---------------+-----------+-------------+
         | 2022-10-03 | Careem Ahamed | Will Meek | Tiffany Rea |
         +------------+---------------+-----------+-------------+

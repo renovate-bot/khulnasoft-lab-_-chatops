@@ -170,7 +170,7 @@ module Chatops
       end
 
       def schedule_headers
-        ['Week of', 'AMER', 'EMEA', 'APAC']
+        ['Week of', 'APAC', 'EMEA', 'AMER']
       end
     end
   end
