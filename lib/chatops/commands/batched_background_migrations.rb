@@ -72,8 +72,6 @@ module Chatops
       end
 
       def database
-        logger.info('Database name', database: options[:database])
-
         options[:database] || 'main'
       end
 

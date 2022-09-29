@@ -36,8 +36,6 @@ module Chatops
       def batched_background_migrations(database:)
         query = { query: { database: database } }
 
-        logger.info('Database query', query: query)
-
         internal_client.get('/admin/batched_background_migrations', query)
       end
 
