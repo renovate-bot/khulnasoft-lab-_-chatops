@@ -32,6 +32,8 @@ module Chatops
       end
 
       def list
+        return 'There are no migrations in the system' if migrations.empty?
+
         migrations.each do |migration|
           submit_batched_background_migration_details(migration)
         end
@@ -40,36 +42,34 @@ module Chatops
       end
 
       def resume
-        id = arguments[1]
+        return 'Please provide a migration ID to the resume command.' unless migration_id
 
-        return 'Please provide a migration ID to the resume command.' unless id
-
-        migration = gitlab_client.resume_batched_background_migration(id, database: database)
+        migration = gitlab_client.resume_batched_background_migration(migration_id, database: database)
 
         submit_batched_background_migration_details(migration)
       end
 
       def pause
-        id = arguments[1]
+        return 'Please provide a migration ID to the pause command.' unless migration_id
 
-        return 'Please provide a migration ID to the pause command.' unless id
-
-        migration = gitlab_client.pause_batched_background_migration(id, database: database)
+        migration = gitlab_client.pause_batched_background_migration(migration_id, database: database)
 
         submit_batched_background_migration_details(migration)
       end
 
       def status
-        id = arguments[1]
+        return 'Please provide a migration ID to the status command.' unless migration_id
 
-        return 'Please provide a migration ID to the status command.' unless id
-
-        migration = gitlab_client.batched_background_migration(id, database: database)
+        migration = gitlab_client.batched_background_migration(migration_id, database: database)
 
         submit_batched_background_migration_details(migration)
       end
 
       private
+
+      def migration_id
+        arguments[1]
+      end
 
       def database
         logger.info('Database name', database: options[:database])
@@ -136,16 +136,16 @@ module Chatops
 
           ```
           # Listing all batched background migrations:
-          batched_background_migration list
+          batched_background_migrations list
 
           # Resume a batched background migration:
-          batched_background_migration resume MIGRATION_ID
+          batched_background_migrations resume MIGRATION_ID
 
           # Pause a batched background migration:
-          batched_background_migration pause MIGRATION_ID
+          batched_background_migrations pause MIGRATION_ID
 
           # Get a status of a background migration:
-          batched_background_migration status MIGRATION_ID
+          batched_background_migrations status MIGRATION_ID
         MESSAGE
       end
 

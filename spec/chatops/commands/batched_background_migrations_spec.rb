@@ -90,6 +90,27 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
       expect(list).to be_nil
     end
+
+    context 'when there are no migrations' do
+      let(:message) { 'There are no migrations in the system' }
+
+      it 'returns a message' do
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: '123', host: 'gitlab.com')
+          .and_return(gitlab_client)
+
+        expect(gitlab_client)
+          .to receive(:batched_background_migrations)
+          .and_return([])
+
+        expect(Chatops::Slack::Message)
+          .not_to receive(:new)
+          .with(token: '456', channel: 'foo')
+
+        expect(list).to eql message
+      end
+    end
   end
 
   describe '#resume' do
