@@ -53,14 +53,15 @@ describe Chatops::Gitlab::Client do
 
   describe '#batched_background_migration' do
     let(:database) { 'main' }
-    let(:params) { { query: { database: database } } }
+    let(:query) { { query: { database: database } } }
+    let(:migration) { instance_double('migration', id: 10) }
 
     it 'returns a batched background migration' do
       migration = instance_double('migration', id: 10)
 
       expect(client.internal_client)
         .to receive(:get)
-        .with("/admin/batched_background_migrations/#{migration.id}", params: params)
+        .with("/admin/batched_background_migrations/#{migration.id}", query)
         .and_return(migration)
 
       client.batched_background_migration(migration.id, database: database)
@@ -73,7 +74,7 @@ describe Chatops::Gitlab::Client do
         instance_double(
           'response',
           code: 404,
-          request: instance_double('request', base_uri: 'foo', path: url, params: params),
+          request: instance_double('request', base_uri: 'foo', path: url, query: query),
           parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
         )
       end
@@ -81,11 +82,19 @@ describe Chatops::Gitlab::Client do
       it 'returns nil' do
         allow(client.internal_client)
           .to receive(:get)
-          .with(url, params: params)
+          .with(url, query)
           .and_raise(Gitlab::Error::NotFound.new(missing_response))
 
         expect(client.batched_background_migration(1, database: database)).to be_nil
       end
+    end
+
+    it 'sends a request to the correct url' do
+      admin_api = stub_request(:get, "https://localhost/api/v4/admin/batched_background_migrations/#{migration.id}?database=main")
+
+      client.batched_background_migration(migration.id, database: database)
+
+      expect(admin_api).to have_been_requested
     end
   end
 
@@ -117,7 +126,8 @@ describe Chatops::Gitlab::Client do
 
   describe '#pause_batched_background_migration' do
     let(:database) { 'main' }
-    let(:params) { { query: { database: database } } }
+    let(:query) { { query: { database: database } } }
+    let(:migration) { instance_double('migration', id: 10) }
 
     context 'when the migration does not exist' do
       let(:url) { '/admin/batched_background_migrations/1/pause' }
@@ -134,7 +144,7 @@ describe Chatops::Gitlab::Client do
       it 'returns nil' do
         allow(client.internal_client)
           .to receive(:put)
-          .with(url, params: params)
+          .with(url, query)
           .and_raise(Gitlab::Error::NotFound.new(missing_response))
 
         expect(client.pause_batched_background_migration(1, database: database)).to be_nil
@@ -142,20 +152,27 @@ describe Chatops::Gitlab::Client do
     end
 
     it 'pauses a batched background migration' do
-      migration = instance_double('migration', id: 10)
-
       expect(client.internal_client)
         .to receive(:put)
-        .with("/admin/batched_background_migrations/#{migration.id}/pause", params: params)
+        .with("/admin/batched_background_migrations/#{migration.id}/pause", query)
         .and_return(migration)
 
       client.pause_batched_background_migration(migration.id, database: database)
+    end
+
+    it 'sends a request to the correct url' do
+      admin_api = stub_request(:put, "https://localhost/api/v4/admin/batched_background_migrations/#{migration.id}/pause?database=main")
+
+      client.pause_batched_background_migration(migration.id, database: database)
+
+      expect(admin_api).to have_been_requested
     end
   end
 
   describe '#resume_batched_background_migration' do
     let(:database) { 'main' }
-    let(:params) { { query: { database: database } } }
+    let(:query) { { query: { database: database } } }
+    let(:migration) { instance_double('migration', id: 10) }
 
     context 'when the migration does not exist' do
       let(:url) { '/admin/batched_background_migrations/1/resume' }
@@ -172,7 +189,7 @@ describe Chatops::Gitlab::Client do
       it 'returns nil' do
         allow(client.internal_client)
           .to receive(:put)
-          .with(url, params: params)
+          .with(url, query)
           .and_raise(Gitlab::Error::NotFound.new(missing_response))
 
         expect(client.resume_batched_background_migration(1, database: database)).to be_nil
@@ -180,14 +197,20 @@ describe Chatops::Gitlab::Client do
     end
 
     it 'resumes a batched background migration' do
-      migration = instance_double('migration', id: 10)
-
       expect(client.internal_client)
         .to receive(:put)
-        .with("/admin/batched_background_migrations/#{migration.id}/resume", params: params)
+        .with("/admin/batched_background_migrations/#{migration.id}/resume", query)
         .and_return(migration)
 
       client.resume_batched_background_migration(migration.id, database: database)
+    end
+
+    it 'sends a request to the correct url' do
+      admin_api = stub_request(:put, "https://localhost/api/v4/admin/batched_background_migrations/#{migration.id}/resume?database=main")
+
+      client.resume_batched_background_migration(migration.id, database: database)
+
+      expect(admin_api).to have_been_requested
     end
   end
 
