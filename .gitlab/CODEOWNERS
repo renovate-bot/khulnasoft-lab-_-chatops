@@ -1,3 +1,9 @@
+# https://docs.gitlab.com/ee/user/project/code_owners.html
+# default for the project for approvals. 
+# Files or directories specified after this will overwrite, not append.
+
+* @gitlab-com/gl-infra
+
 [Delivery]
 
 lib/chatops/commands/auto_deploy.rb @gitlab-org/delivery
