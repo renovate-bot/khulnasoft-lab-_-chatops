@@ -22,6 +22,7 @@ describe Chatops::Commands::Feature do
 
     it 'does not set the feature flag' do
       command_envs = {
+        'CHAT_CHANNEL' => '456',
         'GITLAB_TOKEN' => '123',
         'GRAFANA_TOKEN' => 'some-grafana-token',
         'GITLAB_STAGING_TOKEN' => '321',
@@ -44,6 +45,10 @@ describe Chatops::Commands::Feature do
         .to receive(:production_check?)
         .and_return(true)
 
+      allow(command)
+        .to receive(:production_channel_id)
+        .and_return(command.env['CHAT_CHANNEL'])
+
       expect(other_env_feature_command)
         .to receive(:get_feature).with('foo', Chatops::GitlabEnvironments::Environment.staging)
         .and_return(feature)
@@ -62,6 +67,7 @@ describe Chatops::Commands::Feature do
 
     it 'sets the feature flag' do
       command_envs = {
+        'CHAT_CHANNEL' => 'chan',
         'GITLAB_TOKEN' => '123',
         'GRAFANA_TOKEN' => 'some-grafana-token',
         'GITLAB_STAGING_TOKEN' => '321',
@@ -102,6 +108,10 @@ describe Chatops::Commands::Feature do
       allow(feature)
         .to receive(:enabled?)
         .and_return(feature_enabled)
+
+      allow(command)
+        .to receive(:production_channel_id)
+        .and_return(command.env['CHAT_CHANNEL'])
 
       expect(command)
         .to receive(:production_check?)
@@ -886,6 +896,7 @@ describe Chatops::Commands::Feature do
         allow(message).to receive(:send)
         allow(command).to receive(:log_feature_toggle)
         allow(command).to receive(:send_feature_toggle_event)
+        allow(command).to receive(:production_channel_id).and_return(command.env['CHAT_CHANNEL'])
       end
 
       it 'executes the same command to each environment' do
@@ -919,14 +930,105 @@ describe Chatops::Commands::Feature do
       it 'does not allow changing the feature flag state' do
         opts = default_opts.merge(random: true)
         command =
-          described_class.new(%w[set foo 10], opts, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
+          described_class.new(%w[set foo 10], opts, 'CHAT_CHANNEL' => '456', 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
+        allow(command).to receive(:production_channel_id).and_return(command.env['CHAT_CHANNEL'])
 
         expect(command).to receive(:production_check?).and_return(false)
 
         expect(command.set).to match(/production check failure/)
       end
     end
+
+    context 'when the target environment is production' do
+      let(:options) { { production: true } }
+      let(:env_vars) do
+        {
+          'CHAT_CHANNEL' => slack_channel,
+          'GITLAB_TOKEN' => '123',
+          'GITLAB_USER_LOGIN' => 'alice',
+          'GRAFANA_TOKEN' => 'some-grafana-token',
+          'SLACK_TOKEN' => '456'
+        }
+      end
+      let(:client) { instance_double('client') }
+      let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+      let(:feature) { instance_double('feature', name: 'foo', state: 'conditional', gates: gates) }
+
+      before do
+        allow(Chatops::Gitlab::Client).to receive(:new).and_return(client)
+        allow(client).to receive(:set_feature).and_return(feature)
+        allow(described_class).to receive(:valid_value?).and_return(true)
+      end
+
+      # rubocop: disable RSpec/NestedGroups
+      context 'when the channel is production' do
+        let(:slack_channel) { 'production' }
+
+        # rubocop: disable RSpec/MultipleExpectations
+        it 'sends the set flag to Slack' do
+          args = %w[set foo 10]
+          command = described_class.new(args, options, env_vars)
+          expect(command).to receive(:production_channel_id).and_return('production')
+          expect(command).to receive(:valid_setting_for_percentage_value?).and_return(true)
+          expect(command).to receive(:valid_actors_random_setting?).and_return(true)
+          expect(command).to receive(:feature_flag_consistency_check?).and_return(true)
+          expect(command).to receive(:production_check?).and_return(true)
+          expect(client).to receive(:set_feature)
+          expect(command).to receive(:perform_side_effects).with('foo', '10', anything, anything, options)
+
+          command.set
+        end
+        # rubocop: enable RSpec/MultipleExpectations
+      end
+
+      context 'when the channel is not production' do
+        let(:slack_channel) { 'not production' }
+
+        it 'aborts with an error explanation response' do
+          args = %w[set foo 10]
+          command = described_class.new(args, options, env_vars)
+          expect(client).not_to receive(:set_feature)
+
+          command.set
+        end
+      end
+      # rubocop: enable RSpec/NestedGroups
+    end
+
+    context 'when the channel is not production and the target environment is not production' do
+      let(:client) { instance_double('client') }
+      let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+      let(:feature) { instance_double('feature', name: 'foo', state: 'conditional', gates: gates) }
+      let(:options) { { staging: true } }
+      let(:env_vars) do
+        {
+          'CHAT_CHANNEL' => 'not production',
+          'GITLAB_TOKEN' => '123',
+          'GITLAB_USER_LOGIN' => 'alice',
+          'GRAFANA_TOKEN' => 'some-grafana-token',
+          'SLACK_TOKEN' => '456'
+        }
+      end
+
+      before do
+        allow(Chatops::Gitlab::Client).to receive(:new).and_return(client)
+        allow(client).to receive(:set_feature).and_return(feature)
+      end
+
+      it 'sends the set flag to non-production Slack' do
+        args = %w[set foo 10]
+        command = described_class.new(args, options, env_vars)
+        expect(command).to receive(:valid_setting_for_percentage_value?).and_return(true)
+        expect(command).to receive(:valid_actors_random_setting?).and_return(true)
+        expect(command).to receive(:production_check?).and_return(true)
+        expect(client).to receive(:set_feature)
+        expect(command).to receive(:perform_side_effects).with('foo', '10', anything, anything, options)
+
+        command.set
+      end
+    end
   end
+  # describe '#set'
 
   describe '#list' do
     it 'sends the enabled and disabled features to Slack' do
@@ -984,6 +1086,7 @@ describe Chatops::Commands::Feature do
       allow(message).to receive(:send)
       allow(command).to receive(:log_feature_toggle)
       allow(command).to receive(:send_feature_toggle_event)
+      allow(command).to receive(:production_channel_id).and_return(command.env['CHAT_CHANNEL'])
     end
 
     it 'tells the client to delete the feature flag' do
@@ -1014,6 +1117,38 @@ describe Chatops::Commands::Feature do
       expect(command).to receive(:log_feature_toggle).with(*log_feature_toggle_params, environment).and_return(issue)
 
       command.delete
+    end
+
+    context 'when the channel is production and the target environment is production' do
+      it 'sends the deleted flag to Slack' do
+        command.env['CHAT_CHANNEL'] = 'production'
+        expect(environment).to receive(:production?).and_return(true)
+        expect(command).to receive(:production_channel_id).at_least(:once).and_return('production')
+        expect(command).not_to receive(:wrong_channel_resp)
+
+        command.delete
+      end
+    end
+
+    context 'when the channel is not production and the target environment is not production' do
+      it 'sends the deleted flag to non-production Slack' do
+        expect(environment).to receive(:production?).and_return(false)
+        expect(command).not_to receive(:production_channel_id)
+        expect(command).not_to receive(:wrong_channel_resp)
+
+        command.delete
+      end
+    end
+
+    context 'when the channel is not production but the target environment is production' do
+      it 'aborts with an error explanation response' do
+        expect(environment).to receive(:production?).and_return(true)
+        expect(command).to receive(:production_channel_id).at_least(:once).and_return('production')
+        expect(command).to receive(:wrong_channel_resp).once
+        expect(client).not_to receive(:delete_feature)
+
+        command.delete
+      end
     end
   end
 
@@ -1523,6 +1658,7 @@ describe Chatops::Commands::Feature do
         described_class.new(
           [],
           { staging: true },
+          'CHAT_CHANNEL' => '456',
           'GITLAB_TOKEN' => 'foo',
           'GITLAB_STAGING_TOKEN' => '321',
           'GITLAB_STAGING_REF_TOKEN' => '654'

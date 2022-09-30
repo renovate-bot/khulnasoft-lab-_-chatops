@@ -8,6 +8,7 @@ module Chatops
       include ::Chatops::Release::Command
 
       ProductionCheckTimeout = Class.new(StandardError)
+      PRODUCTION_SLACK_CHANNEL_ID = 'C101F3796'
       PRODUCTION_CHECK_DURATION = 300
       PRODUCTION_CHECK_INTERVAL = 2
 
@@ -40,6 +41,12 @@ module Chatops
         STAGING_REF_HOST => 'C02JGFF2EAZ', # `#qa-staging-ref`
         PRODUCTION_HOST => 'CCNNKFP8B',    # `#qa-production`
         PRE_HOST => 'CR7QH0RV1'            # `#qa-preprod`
+      }.freeze
+
+      RESPONSES = {
+        production_ff_requires_production_channel:
+          'Unable to proceed because a production feature flag change ' \
+          'may only be invoked in the #production Slack channel.'
       }.freeze
 
       description 'Managing of GitLab feature flags.'
@@ -243,6 +250,7 @@ module Chatops
           unless valid_actors_random_setting?(options)
         # rubocop: enable Metrics/LineLength
 
+        return wrong_channel_resp if environment.production? && channel != production_channel_id
         return prod_check_failure_resp unless production_check?(environment)
         return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value, environment)
 
@@ -260,6 +268,10 @@ module Chatops
         e.message + ' ' + check_failure_resp
       end
       # rubocop: enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+
+      def wrong_channel_resp
+        RESPONSES[:production_ff_requires_production_channel]
+      end
 
       def production_check?(environment)
         return true unless environment.production?
@@ -394,6 +406,8 @@ module Chatops
 
       def delete_on(environment)
         name = arguments[1]
+
+        return wrong_channel_resp if environment.production? && channel != production_channel_id
 
         Gitlab::Client
           .new(token: environment.gitlab_token, host: environment.gitlab_host)
@@ -559,6 +573,10 @@ module Chatops
       end
 
       private
+
+      def production_channel_id
+        ENV.fetch('PRODUCTION_SLACK_CHANNEL_ID', PRODUCTION_SLACK_CHANNEL_ID)
+      end
 
       def issue_description(name, value, environment)
         <<~DESC
