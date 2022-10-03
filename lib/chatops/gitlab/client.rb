@@ -172,6 +172,7 @@ module Chatops
       def_delegator :internal_client, :pipeline_jobs
       def_delegator :internal_client, :pipeline_schedules
       def_delegator :internal_client, :edit_pipeline_schedule
+      def_delegator :internal_client, :pipeline_schedule_take_ownership
       def_delegator :internal_client, :pipelines
 
       def_delegator :internal_client, :add_group_member

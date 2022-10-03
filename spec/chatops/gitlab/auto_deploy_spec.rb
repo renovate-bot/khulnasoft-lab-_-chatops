@@ -28,18 +28,59 @@ describe Chatops::Gitlab::AutoDeploy do
 
     it 'updates all tasks with the specified attributes' do
       tasks = [
-        instance_double('task', id: 1, description: 'auto_deploy:foo'),
-        instance_double('task', id: 2, description: 'auto_deploy:bar')
+        instance_double(
+          'task',
+          id: 1,
+          description: 'auto_deploy:foo',
+          owner: instance_double('user', username: 'jim')
+        ),
+        instance_double(
+          'task',
+          id: 2,
+          description: 'auto_deploy:bar',
+          owner: instance_double('user', username: 'jim')
+        )
       ]
       attrs = {
         active: false
       }
 
       allow(fake_client).to receive(:pipeline_schedules).and_return(tasks)
+
+      expect(fake_client).to receive(:pipeline_schedule_take_ownership)
+        .with(described_class::TASK_PROJECT, tasks.first.id)
+        .with(described_class::TASK_PROJECT, tasks.last.id)
+
       expect(fake_client).to receive(:edit_pipeline_schedule)
         .with(described_class::TASK_PROJECT, tasks.first.id, **attrs)
       expect(fake_client).to receive(:edit_pipeline_schedule)
         .with(described_class::TASK_PROJECT, tasks.last.id, **attrs)
+
+      auto_deploy.update_tasks(attrs)
+    end
+
+    it 'does not call pipeline_schedule_take_ownership if owner is release tools bot' do
+      tasks = [
+        instance_double(
+          'task',
+          id: 1,
+          description: 'auto_deploy:foo',
+          owner: instance_double('user', username: 'gitlab-release-tools-bot')
+        ),
+        instance_double(
+          'task',
+          id: 2,
+          description: 'auto_deploy:bar',
+          owner: instance_double('user', username: 'gitlab-release-tools-bot')
+        )
+      ]
+      attrs = {
+        active: false
+      }
+
+      allow(fake_client).to receive(:pipeline_schedules).and_return(tasks)
+
+      expect(fake_client).not_to receive(:pipeline_schedule_take_ownership)
 
       auto_deploy.update_tasks(attrs)
     end
@@ -58,7 +99,12 @@ describe Chatops::Gitlab::AutoDeploy do
 
   describe '#unpause_prepare' do
     it 'resumes the prepare task' do
-      task = instance_double('task', id: 42, description: 'auto_deploy:prepare')
+      task = instance_double(
+        'task',
+        id: 42,
+        description: 'auto_deploy:prepare',
+        owner: instance_double('user', username: 'jim')
+      )
 
       allow(fake_client)
         .to receive(:edit_pipeline_schedule)
@@ -68,9 +114,34 @@ describe Chatops::Gitlab::AutoDeploy do
         .to receive(:pipeline_schedules)
         .and_return([task])
 
+      expect(fake_client)
+        .to receive(:pipeline_schedule_take_ownership)
+        .with(described_class::TASK_PROJECT, 42)
+
       auto_deploy.unpause_prepare
 
       expect(fake_client).to have_received(:edit_pipeline_schedule)
+    end
+
+    it 'does not call pipeline_schedule_take_ownership if owner is release tools bot' do
+      task = instance_double(
+        'task',
+        id: 42,
+        description: 'auto_deploy:prepare',
+        owner: instance_double('user', username: 'gitlab-release-tools-bot')
+      )
+
+      allow(fake_client)
+        .to receive(:edit_pipeline_schedule)
+        .with(described_class::TASK_PROJECT, 42, active: true)
+
+      allow(fake_client)
+        .to receive(:pipeline_schedules)
+        .and_return([task])
+
+      expect(fake_client).not_to receive(:pipeline_schedule_take_ownership)
+
+      auto_deploy.unpause_prepare
     end
 
     it 'raises when there is no prepare task' do
@@ -84,7 +155,12 @@ describe Chatops::Gitlab::AutoDeploy do
 
   describe '#pause_prepare' do
     it 'pauses the prepare task' do
-      task = instance_double('task', id: 42, description: 'auto_deploy:prepare')
+      task = instance_double(
+        'task',
+        id: 42,
+        description: 'auto_deploy:prepare',
+        owner: instance_double('user', username: 'jim')
+      )
 
       allow(fake_client)
         .to receive(:edit_pipeline_schedule)
@@ -94,9 +170,34 @@ describe Chatops::Gitlab::AutoDeploy do
         .to receive(:pipeline_schedules)
         .and_return([task])
 
+      expect(fake_client)
+        .to receive(:pipeline_schedule_take_ownership)
+        .with(described_class::TASK_PROJECT, 42)
+
       auto_deploy.pause_prepare
 
       expect(fake_client).to have_received(:edit_pipeline_schedule)
+    end
+
+    it 'does not call pipeline_schedule_take_ownership if owner is release tools bot' do
+      task = instance_double(
+        'task',
+        id: 42,
+        description: 'auto_deploy:prepare',
+        owner: instance_double('user', username: 'gitlab-release-tools-bot')
+      )
+
+      allow(fake_client)
+        .to receive(:edit_pipeline_schedule)
+        .with(described_class::TASK_PROJECT, 42, active: false)
+
+      allow(fake_client)
+        .to receive(:pipeline_schedules)
+        .and_return([task])
+
+      expect(fake_client).not_to receive(:pipeline_schedule_take_ownership)
+
+      auto_deploy.pause_prepare
     end
 
     it 'raises when there is no prepare task' do

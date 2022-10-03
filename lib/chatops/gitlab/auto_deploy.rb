@@ -4,6 +4,7 @@ module Chatops
   module Gitlab
     class AutoDeploy
       TASK_PROJECT = 'gitlab-org/release/tools'
+      RELEASE_TOOLS_BOT_USERNAME = 'gitlab-release-tools-bot'
 
       def initialize(client = nil)
         @client = client
@@ -20,11 +21,15 @@ module Chatops
       end
 
       def unpause_prepare
+        pipeline_schedule_take_ownership(prepare_task)
+
         @client
           .edit_pipeline_schedule(TASK_PROJECT, prepare_task.id, active: true)
       end
 
       def pause_prepare
+        pipeline_schedule_take_ownership(prepare_task)
+
         @client
           .edit_pipeline_schedule(TASK_PROJECT, prepare_task.id, active: false)
       end
@@ -37,11 +42,19 @@ module Chatops
         ensure_tasks!
 
         tasks.map! do |task|
+          pipeline_schedule_take_ownership(task)
+
           @client.edit_pipeline_schedule(TASK_PROJECT, task.id, **attrs)
         end
       end
 
       private
+
+      def pipeline_schedule_take_ownership(task)
+        return if task.owner.username == RELEASE_TOOLS_BOT_USERNAME
+
+        @client.pipeline_schedule_take_ownership(TASK_PROJECT, task.id)
+      end
 
       def prepare_task
         ensure_tasks!
