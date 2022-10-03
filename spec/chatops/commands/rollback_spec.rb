@@ -72,5 +72,20 @@ describe Chatops::Commands::Rollback, :release_command do
 
       instance.perform
     end
+
+    it 'triggers a check for the specified target' do
+      instance = stubbed_instance('check', 'gprd', target: '42.1.2021121314+f7e5665fa11.3fb2052b8b6')
+
+      expect(instance).to receive(:trigger_release)
+        .with(
+          nil,
+          'auto_deploy:rollback_check',
+          ROLLBACK_CURRENT: 'gprd',
+          ROLLBACK_TARGET: '42.1.2021121314+f7e5665fa11.3fb2052b8b6',
+          ROLLBACK_ENV: 'gprd'
+        )
+
+      instance.perform
+    end
   end
 end

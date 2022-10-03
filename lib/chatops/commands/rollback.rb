@@ -10,6 +10,8 @@ module Chatops
       ENVIRONMENTS = %w[gprd gprd-cny gstg gstg-cny].freeze
 
       options do |o|
+        o.string '--target', 'The target version that we want to rollback to'
+
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
@@ -64,7 +66,7 @@ module Chatops
           nil,
           'auto_deploy:rollback_check',
           ROLLBACK_CURRENT: env_name,
-          ROLLBACK_TARGET: env_name,
+          ROLLBACK_TARGET: options[:target] || env_name,
           ROLLBACK_ENV: env_name
         )
       end
