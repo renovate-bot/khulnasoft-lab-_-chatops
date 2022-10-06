@@ -59,6 +59,13 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
       described_class.perform(%w[list --database main])
     end
+
+    it 'includes examples in the --help output' do
+      output = described_class.perform(%w[--help])
+
+      expect(output).to include('Available subcommands:')
+      expect(output).to include('Examples:')
+    end
   end
 
   describe '#list' do

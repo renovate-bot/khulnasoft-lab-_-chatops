@@ -18,6 +18,34 @@ module Chatops
           'Connects to the given database instead of the default one'
         )
 
+        o.separator <<~AVAIL.chomp
+
+          Available subcommands:
+
+          #{available_subcommands}
+        AVAIL
+
+        o.separator <<~HELP.chomp
+
+          Examples:
+
+            Listing 20 batched background migrations order by created_at (DESC)
+
+              list
+
+            Resume a batched background migration
+
+              resume MIGRATION_ID
+
+            Pause a batched background migration
+
+              pause MIGRATION_ID
+
+            Get a status of a background migration
+
+              status MIGRATION_ID
+        HELP
+
         GitlabEnvironments.define_environment_options(o)
       end
 
@@ -63,6 +91,10 @@ module Chatops
         migration = gitlab_client.batched_background_migration(migration_id, database: database)
 
         submit_batched_background_migration_details(migration)
+      end
+
+      def self.available_subcommands
+        Markdown::List.new(COMMANDS.to_a.sort).to_s
       end
 
       private
@@ -133,7 +165,7 @@ module Chatops
           Some examples:
 
           ```
-          # Listing all batched background migrations:
+          # Listing 20 batched background migrations order by created_at (DESC):
           batched_background_migrations list
 
           # Resume a batched background migration:
