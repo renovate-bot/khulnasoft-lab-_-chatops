@@ -83,26 +83,25 @@ module Chatops
       #
       # name - The name of the flag.
       # value - The value to set for the flag.
-      # project - A project actor
-      # group - A group actor
-      # user - A user actor
-      # value - The value to set for the flag.
-      # actors - Use a percentage of actors rollout
-      def set_feature(name,
-                      value,
-                      project: nil,
-                      group: nil,
-                      user: nil,
-                      namespace: nil,
-                      actors: false)
-
+      # targets - A hash containing targets to set the flag for
+      # - If this hash is empty, rollout the flag for a percentage of time
+      # - If targets[:actors] is available, rollout the flag for a percentage of actors
+      # - Otherwise, set the flag for a particular actor. Recently, we support:
+      #   + actors - Use a percentage of actors rollout
+      #   + project - A project actor
+      #   + group - A group actor
+      #   + user - A user actor
+      #   + repository - A repository actor
+      def set_feature(name, value, **targets)
         body = { value: value }
 
-        body[:project] = project if project
-        body[:group] = group if group
-        body[:namespace] = namespace if namespace
-        body[:user] = user if user
-        body[:key] = 'percentage_of_actors' if actors
+        if targets[:actors]
+          body[:key] = 'percentage_of_actors'
+        else
+          %i[project group namespace user repository].each do |actor_type|
+            body[actor_type] = targets[actor_type] if targets[actor_type]
+          end
+        end
 
         internal_client.post("/features/#{name}", body: body)
       end

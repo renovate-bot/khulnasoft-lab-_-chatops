@@ -75,6 +75,11 @@ module Chatops
           '--user',
           'The username of a user to set a feature flag for, e.g. someuser'
         )
+        o.string(
+          '--repository',
+          'The fullpath of a repository to set a feature flag for, e.g. gitlab-org/gitlab.git. This is essentially ' \
+          'the path to clone that repository. This actor is typically used when passing the flags to Gitaly.'
+        )
         o.bool('--actors',
                'Modifier to roll out a feature flag to a percentage of actors')
 
@@ -153,6 +158,10 @@ module Chatops
 
           # To enable a feature for a user
           feature set --user=someuser gitaly_tags
+
+          # To enable a feature for a repository
+          feature set --repository=snippets/2427310.git gitaly_tags
+          feature set --repository=gitlab-org.wiki.git gitaly_tags
 
           # To delete a feature flag and return to default behaviour:
           feature delete gitaly_tags
@@ -246,7 +255,7 @@ module Chatops
           unless valid_setting_for_percentage_value?(value, options)
 
         # rubocop: disable Metrics/LineLength
-        return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace` or `--user`.' \
+        return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`.' \
           unless valid_actors_random_setting?(options)
         # rubocop: enable Metrics/LineLength
 
@@ -260,6 +269,7 @@ module Chatops
                                     group: options[:group],
                                     namespace: options[:namespace],
                                     user: options[:user],
+                                    repository: options[:repository],
                                     actors: options[:actors])
 
         feature = Gitlab::Feature.from_api_response(response)
@@ -517,6 +527,7 @@ module Chatops
           feature_scope_group: options[:group],
           feature_scope_namespace: options[:namespace],
           feature_scope_user: options[:user],
+          feature_scope_repository: options[:repository],
           feature_scope_actors: options[:actors]&.to_s
         }.compact
 
@@ -591,9 +602,9 @@ module Chatops
 
           This feature flag applies the following scopes (if any):
 
-          | User                        | Project                        | Group                        | Namespace                        |
-          |-----------------------------|--------------------------------|------------------------------|----------------------------------|
-          | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}` | `#{options[:namespace].inspect}` |
+          | User                        | Project                        | Group                        | Namespace                        | Repository                        |
+          |-----------------------------|--------------------------------|------------------------------|----------------------------------| ----------------------------------|
+          | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}` | `#{options[:namespace].inspect}` | `#{options[:repository].inspect}` |
 
           When a value is set to `nil` it means the scope does not apply. If
           none of these scopes are set it means the feature flag applies to
@@ -649,7 +660,7 @@ module Chatops
       def valid_actors_random_setting?(options)
         return true unless actors_or_random?(options)
 
-        options.slice(:project, :group, :namespace, :user).compact.none?
+        options.slice(:project, :group, :namespace, :user, :repository).compact.none?
       end
     end
   end
