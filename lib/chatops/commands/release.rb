@@ -189,7 +189,7 @@ module Chatops
       end
 
       def prepare(version = nil)
-        validate_version!(version) unless options[:security]
+        validate_version!(version) unless options[:security] || version.nil?
 
         trigger_release(version, "#{namespace}:#{__method__}")
       end

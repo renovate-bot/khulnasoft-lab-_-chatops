@@ -133,12 +133,22 @@ describe Chatops::Commands::Release, :release_command do
     end
 
     describe '#prepare' do
-      it 'triggers a normal release' do
+      it 'triggers a single version release' do
         instance = stubbed_instance('prepare', version)
 
         expect(instance).to receive(:validate_version!).with(version)
         expect(instance).to receive(:trigger_release)
           .with(version, 'release:prepare')
+
+        instance.perform
+      end
+
+      it 'triggers a normal release' do
+        instance = stubbed_instance('prepare', nil)
+
+        expect(instance).not_to receive(:validate_version!)
+        expect(instance).to receive(:trigger_release)
+          .with(nil, 'release:prepare')
 
         instance.perform
       end
