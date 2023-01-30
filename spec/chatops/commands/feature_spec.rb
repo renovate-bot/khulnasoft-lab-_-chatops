@@ -466,6 +466,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                feature_group: nil,
                 namespace: nil,
                 user: nil,
                 repository: nil,
@@ -489,6 +490,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                feature_group: nil,
                 namespace: nil,
                 user: nil,
                 repository: nil,
@@ -530,7 +532,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(random: true, project: 'gitlab-org/gitaly')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -539,7 +541,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(actors: true, project: 'gitlab-org/gitaly')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -548,7 +550,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(random: true, group: 'gitlab-org')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -557,7 +559,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(actors: true, group: 'gitlab-org')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -566,7 +568,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(random: true, namespace: 'gitlab-org')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -575,7 +577,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(actors: true, namespace: 'gitlab-org')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -584,7 +586,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(random: true, namespace: 'myuser')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -593,7 +595,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(actors: true, namespace: 'myuser')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -602,7 +604,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(random: true, user: 'myuser')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -611,7 +613,7 @@ describe Chatops::Commands::Feature do
         opts = default_opts.merge(actors: true, user: 'myuser')
         command = described_class.new(%w[set foo true], **opts)
 
-        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`/)
+        expect(command.set).to match(/`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`/)
       end
     end
 
@@ -628,6 +630,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              feature_group: nil,
               namespace: nil,
               user: nil,
               repository: nil,
@@ -649,6 +652,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              feature_group: nil,
               namespace: nil,
               user: nil,
               repository: nil,
@@ -672,6 +676,7 @@ describe Chatops::Commands::Feature do
             {
               project: 'gitlab-org/gitaly',
               group: nil,
+              feature_group: nil,
               namespace: nil,
               user: nil,
               repository: nil,
@@ -695,6 +700,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: 'gitlab-org',
+              feature_group: nil,
               namespace: nil,
               user: nil,
               repository: nil,
@@ -718,6 +724,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              feature_group: nil,
               namespace: 'gitlab-org',
               user: nil,
               repository: nil,
@@ -741,6 +748,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              feature_group: nil,
               namespace: 'myuser',
               user: nil,
               repository: nil,
@@ -764,6 +772,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              feature_group: nil,
               namespace: nil,
               user: 'myuser',
               repository: nil,
@@ -771,31 +780,6 @@ describe Chatops::Commands::Feature do
             }
           ]
         end
-      end
-    end
-
-    context 'when using a feature-group feature gate' do
-      include_examples 'valid feature flag update' do
-        let(:command_args) { %w[set foo true] }
-        let(:command_opts) { default_opts.merge(featureGroup: 'gitlab-org') }
-        # TODO: Work out how to test this
-        # 
-        # let(:gates) { [{ 'groupmembers' => 'gitlab-org', 'value' => true }] }
-        # let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser', feature_scope_actors: 'false' } }
-        # let(:set_feature_params) do
-        #   [
-        #     'foo',
-        #     'true',
-        #     {
-        #       project: nil,
-        #       group: nil,
-        #       namespace: nil,
-        #       user: 'myuser',
-        #       repository: nil,
-        #       actors: false
-        #     }
-        #   ]
-        # end
       end
     end
 
@@ -812,6 +796,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
+              feature_group: nil,
               namespace: nil,
               user: nil,
               repository: 'gitlab-org/gitlab.wiki.git',
@@ -853,6 +838,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                feature_group: nil,
                 namespace: nil,
                 user: 'myuser',
                 repository: nil,
@@ -912,6 +898,7 @@ describe Chatops::Commands::Feature do
               {
                 project: nil,
                 group: nil,
+                feature_group: nil,
                 namespace: nil,
                 user: 'myuser',
                 repository: nil,
