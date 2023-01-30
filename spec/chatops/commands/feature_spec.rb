@@ -774,6 +774,31 @@ describe Chatops::Commands::Feature do
       end
     end
 
+    context 'when using a feature-group feature gate' do
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo true] }
+        let(:command_opts) { default_opts.merge(featureGroup: 'gitlab-org') }
+        # TODO: Work out how to test this
+        # 
+        # let(:gates) { [{ 'groupmembers' => 'gitlab-org', 'value' => true }] }
+        # let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser', feature_scope_actors: 'false' } }
+        # let(:set_feature_params) do
+        #   [
+        #     'foo',
+        #     'true',
+        #     {
+        #       project: nil,
+        #       group: nil,
+        #       namespace: nil,
+        #       user: 'myuser',
+        #       repository: nil,
+        #       actors: false
+        #     }
+        #   ]
+        # end
+      end
+    end
+
     context 'when using a repository feature gate' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }

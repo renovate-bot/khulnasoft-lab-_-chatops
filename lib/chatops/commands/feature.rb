@@ -68,6 +68,10 @@ module Chatops
           'The path of a group to set a feature flag for, e.g. gitlab-org'
         )
         o.string(
+          '--feature-group',
+          'The path of a group to set a feature flag for its members, e.g. gitlab-org'
+        )
+        o.string(
           '--namespace',
           'The path of a group or user namespace to set a feature flag for, e.g. gitlab-org'
         )
@@ -151,6 +155,9 @@ module Chatops
 
           # To enable a feature for a group
           feature set --group=gitlab-org gitaly_tags
+
+          # To enable a feature for all members within a group
+          feature set --feature-group=gitlab-org gitaly_tags
 
           # To enable a feature for a namespace
           feature set --namespace=gitlab-org gitaly_tags # Same as `feature set --group=gitlab-org gitaly_tags`
@@ -255,7 +262,7 @@ module Chatops
           unless valid_setting_for_percentage_value?(value, options)
 
         # rubocop: disable Metrics/LineLength
-        return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--namespace`, `--user`, or `--repository`.' \
+        return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`.' \
           unless valid_actors_random_setting?(options)
         # rubocop: enable Metrics/LineLength
 
@@ -267,6 +274,7 @@ module Chatops
           .new(token: environment.gitlab_token, host: environment.gitlab_host)
           .set_feature(name, value, project: options[:project],
                                     group: options[:group],
+                                    feature_group: options[:featureGroup],
                                     namespace: options[:namespace],
                                     user: options[:user],
                                     repository: options[:repository],
@@ -525,6 +533,7 @@ module Chatops
         scopes = {
           feature_scope_project: options[:project],
           feature_scope_group: options[:group],
+          feature_scope_feature_group: options[:featureGroup],
           feature_scope_namespace: options[:namespace],
           feature_scope_user: options[:user],
           feature_scope_repository: options[:repository],
@@ -660,7 +669,7 @@ module Chatops
       def valid_actors_random_setting?(options)
         return true unless actors_or_random?(options)
 
-        options.slice(:project, :group, :namespace, :user, :repository).compact.none?
+        options.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.none?
       end
     end
   end
