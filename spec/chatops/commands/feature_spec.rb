@@ -807,6 +807,30 @@ describe Chatops::Commands::Feature do
       end
     end
 
+    context 'when using a feature group feature gate' do
+      include_examples 'valid feature flag update' do
+        let(:command_args) { %w[set foo true] }
+        let(:command_opts) { default_opts.merge(featureGroup: 'gitlab-org') }
+        let(:gates) { [{ 'group' => 'gitlab-org', 'value' => true }] }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_feature_group: 'gitlab-org', feature_scope_actors: 'false' } }
+        let(:set_feature_params) do
+          [
+            'foo',
+            'true',
+            {
+              project: nil,
+              group: nil,
+              feature_group: 'gitlab-org',
+              namespace: nil,
+              user: nil,
+              repository: nil,
+              actors: false
+            }
+          ]
+        end
+      end
+    end
+
     # rubocop: disable RSpec/NestedGroups
     context 'when the flag is turned off in staging' do
       context 'when turning on production' do
