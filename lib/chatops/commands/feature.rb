@@ -69,7 +69,7 @@ module Chatops
         )
         o.string(
           '--feature-group',
-          'The path of a group to set a feature flag for its members, e.g. gitlab-org'
+          'The name of a user group to set a feature flag, e.g. gitlab_team_members'
         )
         o.string(
           '--namespace',
@@ -157,7 +157,7 @@ module Chatops
           feature set --group=gitlab-org gitaly_tags
 
           # To enable a feature for all members within a group
-          feature set --feature-group=gitlab-org gitaly_tags
+          feature set --feature-group=gitlab_team_members gitaly_tags
 
           # To enable a feature for a namespace
           feature set --namespace=gitlab-org gitaly_tags # Same as `feature set --group=gitlab-org gitaly_tags`

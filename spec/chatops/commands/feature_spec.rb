@@ -811,8 +811,9 @@ describe Chatops::Commands::Feature do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo true] }
         let(:command_opts) { default_opts.merge(featureGroup: 'gitlab-org') }
+        let(:command_opts) { default_opts.merge(featureGroup: 'gitlab_team_members') }
         let(:gates) { [{ 'group' => 'gitlab-org', 'value' => true }] }
-        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_feature_group: 'gitlab-org', feature_scope_actors: 'false' } }
+        let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_feature_group: 'gitlab_team_members', feature_scope_actors: 'false' } }
         let(:set_feature_params) do
           [
             'foo',
@@ -820,7 +821,7 @@ describe Chatops::Commands::Feature do
             {
               project: nil,
               group: nil,
-              feature_group: 'gitlab-org',
+              feature_group: 'gitlab_team_members',
               namespace: nil,
               user: nil,
               repository: nil,
