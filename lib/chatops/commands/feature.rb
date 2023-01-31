@@ -69,7 +69,7 @@ module Chatops
         )
         o.string(
           '--feature-group',
-          'The name of a user group to set a feature flag, e.g. gitlab_team_members'
+          'The name of a feature group to set a feature flag, e.g. gitlab_team_members'
         )
         o.string(
           '--namespace',
@@ -156,7 +156,7 @@ module Chatops
           # To enable a feature for a group
           feature set --group=gitlab-org gitaly_tags
 
-          # To enable a feature for all members within a group
+          # To enable a feature for all team members (for flags scoped to a user)
           feature set --feature-group=gitlab_team_members gitaly_tags
 
           # To enable a feature for a namespace
@@ -274,7 +274,7 @@ module Chatops
           .new(token: environment.gitlab_token, host: environment.gitlab_host)
           .set_feature(name, value, project: options[:project],
                                     group: options[:group],
-                                    feature_group: options[:featureGroup],
+                                    feature_group: options[:feature_group],
                                     namespace: options[:namespace],
                                     user: options[:user],
                                     repository: options[:repository],
@@ -533,7 +533,7 @@ module Chatops
         scopes = {
           feature_scope_project: options[:project],
           feature_scope_group: options[:group],
-          feature_scope_feature_group: options[:featureGroup],
+          feature_scope_feature_group: options[:feature_group],
           feature_scope_namespace: options[:namespace],
           feature_scope_user: options[:user],
           feature_scope_repository: options[:repository],
