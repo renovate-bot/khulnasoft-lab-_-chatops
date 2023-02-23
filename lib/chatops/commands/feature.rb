@@ -49,6 +49,10 @@ module Chatops
           'may only be invoked in the #production Slack channel.'
       }.freeze
 
+      # This job name is defined in release-tools.
+      # https://gitlab.com/gitlab-org/release-tools/-/blob/9358665fa14fd92b4296b11cb1fda88f97d27580/.gitlab/ci/auto-deploy.gitlab-ci.yml#L39
+      AUTO_DEPLOY_CHECK_PRODUCTION_JOB = 'auto_deploy:check_production'
+
       description 'Managing of GitLab feature flags.'
       enable_multi_environments
 
@@ -313,7 +317,7 @@ module Chatops
         )
 
         loop do
-          case pipeline_status(resp.id)
+          case production_check_status(resp.id)
           when PIPELINE_SUCCESS
             return true
           when PIPELINE_FAILED
@@ -670,6 +674,12 @@ module Chatops
         return true unless actors_or_random?(options)
 
         options.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.none?
+      end
+
+      def production_check_status(pipeline_id)
+        pipeline_jobs(pipeline_id).auto_paginate.each do |job|
+          return job.status if job.name == AUTO_DEPLOY_CHECK_PRODUCTION_JOB
+        end
       end
     end
   end

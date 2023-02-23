@@ -1691,7 +1691,46 @@ describe Chatops::Commands::Feature do
     let(:trigger_resp) { instance_double('trigger response', id: '123') }
     let(:slack_msg) { instance_spy(Chatops::Slack::Message) }
 
-    shared_examples 'triggers a production check' do |pipeline_status:, result:|
+    it 'checks status of job in pipeline' do
+      client = instance_double(Chatops::Gitlab::Client)
+
+      allow(Chatops::Gitlab::Client)
+        .to receive(:new)
+        .with(token: '789', host: 'ops.gitlab.net')
+        .and_return(client)
+
+      allow(Chatops::Slack::Message)
+        .to receive(:new)
+        .with(token: '123', channel: '456')
+        .and_return(slack_msg)
+
+      allow(slack_msg).to receive(:send).with(text: 'Production check initiated, this may take up to 300 seconds ...')
+
+      allow(command).to receive(:run_trigger).with(
+        CHECK_PRODUCTION: 'true',
+        FAIL_IF_NOT_SAFE: 'true',
+        SKIP_DEPLOYMENT_CHECK: 'true',
+        PRODUCTION_CHECK_SCOPE: 'feature_flag'
+      ).and_return(trigger_resp)
+
+      allow(client)
+        .to receive(:pipeline_jobs)
+        .with('gitlab-org/release/tools', '123')
+        .and_return(
+          instance_double(
+            Gitlab::PaginatedResponse,
+            auto_paginate: [
+              instance_double('gitlab API response', name: 'auto_deploy:check_production', status: 'success'),
+              instance_double('gitlab API response', name: 'another-job')
+            ]
+          )
+        )
+
+      environment = command.environments.first
+      expect(command.production_check?(environment)).to eq(true)
+    end
+
+    shared_examples 'triggers a production check' do |production_check_job_status:, result:|
       it 'sends a Slack notification and triggers a pipline' do
         expect(Chatops::Slack::Message)
           .to receive(:new)
@@ -1704,8 +1743,8 @@ describe Chatops::Commands::Feature do
           SKIP_DEPLOYMENT_CHECK: 'true',
           PRODUCTION_CHECK_SCOPE: 'feature_flag'
         ).and_return(trigger_resp)
-        expect(command).to receive(:pipeline_status).with('123')
-          .and_return(pipeline_status)
+        expect(command).to receive(:production_check_status).with('123')
+          .and_return(production_check_job_status)
 
         environment = command.environments.first
         expect(command.production_check?(environment)).to eq(result)
@@ -1714,13 +1753,13 @@ describe Chatops::Commands::Feature do
 
     context 'when there are no failing checks' do
       it_behaves_like 'triggers a production check',
-                      pipeline_status: 'success',
+                      production_check_job_status: 'success',
                       result: true
     end
 
     context 'when there is a failing checks' do
       it_behaves_like 'triggers a production check',
-                      pipeline_status: 'failed',
+                      production_check_job_status: 'failed',
                       result: false
     end
 

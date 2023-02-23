@@ -101,10 +101,6 @@ module Chatops
         client.pipeline_jobs(TARGET_PROJECT, pipeline_id)
       end
 
-      def pipeline_status(pipeline_id)
-        client.pipeline(TARGET_PROJECT, pipeline_id).status
-      end
-
       def chatops_job?(jobs)
         jobs.count == 1 && jobs.first.name == 'chatops'
       end
