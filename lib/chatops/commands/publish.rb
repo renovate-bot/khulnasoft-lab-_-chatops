@@ -18,12 +18,12 @@ module Chatops
       end
 
       def perform
-        if options[:security]
-          trigger_release(nil, 'security:publish')
-        else
-          version = required_argument(0, 'version')
-          validate_version!(version)
+        version = required_argument(0, 'version')
+        validate_version!(version)
 
+        if options[:security]
+          trigger_release(version, 'security:publish')
+        else
           trigger_release(version)
         end
       end

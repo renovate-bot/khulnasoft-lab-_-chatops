@@ -6,7 +6,7 @@ describe Chatops::Commands::Publish, :release_command do
   describe '#perform' do
     include_context 'release command #perform'
 
-    context 'with a normal release' do
+    shared_examples 'validating the version' do
       it 'raises an error when no argument is given' do
         expect { described_class.new.perform }
           .to raise_error(ArgumentError, 'You must specify the version!')
@@ -26,6 +26,10 @@ describe Chatops::Commands::Publish, :release_command do
             .to raise_error(ArgumentError, "Invalid version provided: #{version}")
         end
       end
+    end
+
+    context 'with a normal release' do
+      it_behaves_like 'validating the version'
 
       it 'runs the trigger' do
         expect(stubbed_client)
@@ -39,15 +43,17 @@ describe Chatops::Commands::Publish, :release_command do
     end
 
     context 'with a security release' do
+      it_behaves_like 'validating the version'
+
       it 'runs the trigger' do
         expect(stubbed_client)
-          .to trigger_release(RELEASE_VERSION: nil, TASK: 'security:publish')
+          .to trigger_release(RELEASE_VERSION: '10.9.0', TASK: 'security:publish')
 
-        stubbed_instance(security: true).perform
+        stubbed_instance('10.9.0', security: true).perform
       end
 
-      include_examples 'with a valid chatops job',    input: [{ security: true }]
-      include_examples 'with an invalid chatops job', input: [{ security: true }]
+      include_examples 'with a valid chatops job',    input: ['10.9.0', { security: true }]
+      include_examples 'with an invalid chatops job', input: ['10.9.0', { security: true }]
     end
   end
 end
