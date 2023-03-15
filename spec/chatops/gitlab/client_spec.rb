@@ -244,6 +244,14 @@ describe Chatops::Gitlab::Client do
       client.set_feature('foo', 'true', user: 'myuser')
     end
 
+    it 'sets the feature group of a feature flag' do
+      expect(client.internal_client)
+        .to receive(:post)
+        .with('/features/foo', body: { value: 'true', feature_group: 'gitlab_team_members' })
+
+      client.set_feature('foo', 'true', feature_group: 'gitlab_team_members')
+    end
+
     it 'sets the percentage of actors rollout' do
       expect(client.internal_client)
         .to receive(:post)

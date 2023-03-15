@@ -92,13 +92,14 @@ module Chatops
       #   + group - A group actor
       #   + user - A user actor
       #   + repository - A repository actor
+      #   + feature_group - A feature group
       def set_feature(name, value, **targets)
         body = { value: value }
 
         if targets[:actors]
           body[:key] = 'percentage_of_actors'
         else
-          %i[project group namespace user repository].each do |actor_type|
+          %i[project group namespace user repository feature_group].each do |actor_type|
             body[actor_type] = targets[actor_type] if targets[actor_type]
           end
         end
