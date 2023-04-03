@@ -40,6 +40,7 @@ describe Chatops::Commands::Publish, :release_command do
 
       include_examples 'with a valid chatops job',    input: '10.9.0'
       include_examples 'with an invalid chatops job', input: '10.9.0'
+      include_examples 'with a dry-run flag',         input: '10.9.0'
     end
 
     context 'with a security release' do
@@ -54,6 +55,7 @@ describe Chatops::Commands::Publish, :release_command do
 
       include_examples 'with a valid chatops job',    input: ['10.9.0', { security: true }]
       include_examples 'with an invalid chatops job', input: ['10.9.0', { security: true }]
+      include_examples 'with a dry-run flag',         input: ['10.9.0', { security: true }]
     end
   end
 end
