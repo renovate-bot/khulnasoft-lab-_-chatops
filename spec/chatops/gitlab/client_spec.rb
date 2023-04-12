@@ -309,6 +309,80 @@ describe Chatops::Gitlab::Client do
     end
   end
 
+  describe '#zoekt_shard_indexed_namespaces_create' do
+    let(:indexed_namespace) { instance_double('indexed_namespace', id: 999) }
+
+    let(:missing_response) do
+      instance_double(
+        'response',
+        code: 404,
+        request: instance_double('request', base_uri: 'foo', path: 'bar', query: 'boo'),
+        parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+      )
+    end
+
+    it 'creates an indexed namespace for the shard' do
+      expect(client.internal_client)
+        .to receive(:put)
+        .with('/admin/zoekt/shards/123/indexed_namespaces/456')
+        .and_return(indexed_namespace)
+
+      result = client.zoekt_shard_indexed_namespaces_create(shard_id: 123, namespace_id: 456)
+
+      expect(result.id).to eq(999)
+    end
+
+    context 'when the response is 404' do
+      it 'returns nil' do
+        expect(client.internal_client)
+          .to receive(:put)
+          .with('/admin/zoekt/shards/123/indexed_namespaces/456')
+          .and_raise(::Gitlab::Error::NotFound.new(missing_response))
+
+        result = client.zoekt_shard_indexed_namespaces_create(shard_id: 123, namespace_id: 456)
+
+        expect(result).to be_nil
+      end
+    end
+  end
+
+  describe '#zoekt_project_index' do
+    let(:index_response) { instance_double('index_response', job_id: 'the-job-id') }
+
+    let(:missing_response) do
+      instance_double(
+        'response',
+        code: 404,
+        request: instance_double('request', base_uri: 'foo', path: 'bar', query: 'boo'),
+        parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+      )
+    end
+
+    it 'triggers indexing for the project' do
+      expect(client.internal_client)
+        .to receive(:put)
+        .with('/admin/zoekt/projects/123/index')
+        .and_return(index_response)
+
+      result = client.zoekt_project_index(project_id: 123)
+
+      expect(result.job_id).to eq('the-job-id')
+    end
+
+    context 'when the response is 404' do
+      it 'returns nil' do
+        expect(client.internal_client)
+          .to receive(:put)
+          .with('/admin/zoekt/projects/123/index')
+          .and_raise(::Gitlab::Error::NotFound.new(missing_response))
+
+        result = client.zoekt_project_index(project_id: 123)
+
+        expect(result).to be_nil
+      end
+    end
+  end
+
   describe '#block_user' do
     it 'blocks a user' do
       expect(client.internal_client)
