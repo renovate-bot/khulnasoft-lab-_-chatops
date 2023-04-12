@@ -76,6 +76,17 @@ describe Chatops::Commands::Release, :release_command do
       end
     end
 
+    describe '#pending_backports' do
+      it 'triggers a pending_backports task' do
+        instance = stubbed_instance('pending_backports')
+
+        expect(instance).to receive(:trigger_release)
+          .with(nil, 'release:pending_backports')
+
+        instance.perform
+      end
+    end
+
     describe '#merge' do
       it 'triggers a normal release' do
         instance = stubbed_instance('merge', version)

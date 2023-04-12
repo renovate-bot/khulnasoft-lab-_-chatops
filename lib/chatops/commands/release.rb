@@ -15,6 +15,7 @@ module Chatops
       COMMANDS = Set.new(
         %w[
           issue
+          pending_backports
           merge
           prepare
           qa
@@ -162,6 +163,10 @@ module Chatops
         validate_version!(version)
 
         trigger_release(version, "#{namespace}:#{__method__}")
+      end
+
+      def pending_backports
+        trigger_release(nil, "#{namespace}:#{__method__}")
       end
 
       def merge(version = nil)
