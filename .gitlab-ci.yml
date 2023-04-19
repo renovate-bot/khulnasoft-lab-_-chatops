@@ -155,3 +155,6 @@ pager:
 
 quality:
   <<: *chatops
+
+zoekt:
+  <<: *chatops
