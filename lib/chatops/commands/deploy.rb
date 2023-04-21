@@ -27,7 +27,7 @@ module Chatops
 
       # The regular expression to use for verifying auto-deploy versions
       #   The auto-deploy version may change due to
-      #   https://gitlab.com/gitlab-org/release/framework/issues/343
+      #   https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/343
       #   this regex allows for both options
       AUTO_DEPLOY_REGEX = /\A\d+\.\d+\.\d+[+-][^ ]{7,}\.[^ ]{7,}\z/
 

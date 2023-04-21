@@ -5,7 +5,7 @@ module Chatops
     # Triggers a pipeline in release-tools that publishes packages for a
     # specified version.
     #
-    # See https://gitlab.com/gitlab-org/release-tools/blob/master/doc/chatops.md#publish
+    # See https://gitlab.com/gitlab-org/release-tools/-/blob/master/doc/chatops.md#publish
     class Publish
       include Command
       include Release::Command

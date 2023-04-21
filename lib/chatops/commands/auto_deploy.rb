@@ -375,7 +375,7 @@ module Chatops
       end
 
       def commit_link(sha)
-        url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/commit/#{sha}"
+        url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/-/commit/#{sha}"
         text = "`#{sha}`"
 
         "<#{url}|#{text}>"
@@ -383,14 +383,14 @@ module Chatops
 
       def compare_link(prev_sha, sha)
         comparison = "#{prev_sha}...#{sha}"
-        url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/compare/#{comparison}"
+        url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/-/compare/#{comparison}"
 
         "<#{url}|#{comparison}>"
       end
 
       def branch_link(branch)
         if branch
-          url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/commits/#{branch}"
+          url = "#{SOURCE_HOST}/#{RAILS_PROJECT}/-/commits/#{branch}"
           text = "`#{branch}`"
 
           "<#{url}|#{text}>"
@@ -403,7 +403,7 @@ module Chatops
       def package_link(package)
         if package
           ref = package.sub('-', '+')
-          url = "#{SOURCE_HOST}/#{OMNIBUS_PROJECT}/commits/#{ref}"
+          url = "#{SOURCE_HOST}/#{OMNIBUS_PROJECT}/-/commits/#{ref}"
           text = "`#{package}`"
 
           "<#{url}|#{text}>"
