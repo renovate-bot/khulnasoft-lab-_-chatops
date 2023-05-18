@@ -6,8 +6,6 @@ module Chatops
       class Service
         MONTHLY_RELEASE_VERSION_REGEX = /\A(?<major>\d+)\.(?<minor>\d+)\z/
 
-        MR_URL_REGEX = %r{https://gitlab.com/(?<project>.+)/-/merge_requests/(?<iid>\d+)}
-
         ALLOWED_MR_PROJECTS = [
           Projects::GITLAB_CANONICAL, Projects::GITLAB_SECURITY,
           Projects::OMNIBUS_CANONICAL, Projects::OMNIBUS_SECURITY
@@ -39,7 +37,7 @@ module Chatops
         end
 
         def validate_merge_request_url
-          return :invalid_mr_url unless mr_url_parts
+          return :invalid_mr_url unless merge_request_url_parser.valid?
           return :invalid_mr_project unless ALLOWED_MR_PROJECTS.include?(mr_project)
           return :mr_does_not_exist unless merge_request
 
@@ -97,22 +95,22 @@ module Chatops
           @production_client ||= Gitlab::Client.new(token: token)
         end
 
+        def merge_request_url_parser
+          @merge_request_url_parser ||= ::Chatops::MergeRequestURLParser.new(mr_url)
+        end
+
         def merge_request
           @merge_request ||= production_client.merge_request(mr_project, mr_iid)
         rescue ::Gitlab::Error::NotFound
           nil
         end
 
-        def mr_url_parts
-          @mr_url_parts ||= MR_URL_REGEX.match(mr_url)
-        end
-
         def mr_project
-          mr_url_parts[:project]
+          merge_request_url_parser.merge_request_project
         end
 
         def mr_iid
-          mr_url_parts[:iid]
+          merge_request_url_parser.merge_request_iid
         end
 
         def security_project

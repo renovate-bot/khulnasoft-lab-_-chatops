@@ -333,6 +333,146 @@ describe Chatops::Commands::AutoDeploy do
       end
     end
 
+    context 'with MR URL' do
+      let(:command) { described_class.new(%w[status https://gitlab.com/gitlab-org/gitlab/-/merge_requests/120710], *env) }
+      let(:slack_message) { instance_double('Chatops::Slack::Message') }
+
+      before do
+        allow(command).to receive(:environment_status)
+          .and_return([production_status])
+
+        allow(fake_client)
+          .to receive(:merge_request)
+          .with('gitlab-org/gitlab', '120710')
+          .and_return(
+            instance_spy(
+              'merge request',
+              {
+                merge_commit_sha: 'abcdefg',
+                web_url: 'https://gitlab.com/gitlab-org/gitlab/-/merge_requests/120710'
+              }
+            )
+          )
+
+        %w[abcdefg hijkl].each do |sha|
+          allow(fake_client)
+            .to receive(:commit_refs)
+            .with('gitlab-org/security/gitlab', sha, include({ type: 'branch' }))
+            .and_return(
+              Gitlab::PaginatedResponse.new(
+                [
+                  instance_spy('Branch', { name: production_status[:branch] })
+                ]
+              )
+            )
+        end
+
+        commits = [
+          instance_double('Commit', { id: '0874a8d346c2c91fc78151a6bab004dd71d6bfba' }),
+          instance_double('Commit', { id: 'abcdefg' }),
+          instance_double('Commit', { id: 'hijkl' })
+        ]
+        allow(fake_client).to receive(:commits)
+          .and_return(commits)
+
+        fake_commit1 = instance_double(
+          'Commit',
+          {
+            short_id: 'abcd',
+            title: 'Commit title 1'
+          }
+        )
+        fake_commit2 = instance_double(
+          'Commit',
+          {
+            short_id: 'hijk',
+            title: 'Commit title 1'
+          }
+        )
+        allow(fake_client).to receive(:commit).and_return(fake_commit1, fake_commit2)
+
+        allow(Chatops::Slack::Message)
+          .to receive(:new)
+          .and_return(slack_message)
+      end
+
+      it 'checks merge commit and searches for cherry-picked commits' do
+        allow(fake_client)
+          .to receive(:search_in_project)
+          .with(
+            'gitlab-org/security/gitlab',
+            'commits',
+            'cherry picked from commit abcdefg',
+            production_status[:branch]
+          )
+          .and_return(
+            [
+              instance_spy('search results', id: 'hijkl', web_url: 'https://gitlab.com/gitlab-org/security/gitlab/-/commit/hijkl')
+            ]
+          )
+
+        expect(Chatops::Slack::Message).to receive(:new)
+
+        expected_blocks = slack_blocks(
+          [
+            '<https://gitlab.com/gitlab-org/security/gitlab/-/commit/abcd|`abcd`> Commit title 1',
+            '<https://gitlab.com/gitlab-org/security/gitlab/-/commit/hijk|`hijk`> Commit title 1'
+          ],
+          [':party-tanuki: gprd']
+        )
+
+        expect(slack_message)
+          .to receive(:send)
+          .with(blocks: expected_blocks)
+
+        expect(command.perform).to eq(
+          'Merge commit: <https://gitlab.com/gitlab-org/security/gitlab/-/commit/abcdefg|abcdefg>, ' \
+          'Cherry-picked commit: <https://gitlab.com/gitlab-org/security/gitlab/-/commit/hijkl|hijkl> ' \
+          'for MR https://gitlab.com/gitlab-org/gitlab/-/merge_requests/120710'
+        )
+      end
+
+      it 'prints only merge commit when no cherry-picked commits are found' do
+        allow(fake_client)
+          .to receive(:search_in_project)
+          .with(
+            'gitlab-org/security/gitlab',
+            'commits',
+            'cherry picked from commit abcdefg',
+            production_status[:branch]
+          )
+          .and_return([])
+
+        expect(Chatops::Slack::Message).to receive(:new)
+
+        expected_blocks = slack_blocks(
+          ['<https://gitlab.com/gitlab-org/security/gitlab/-/commit/abcd|`abcd`> Commit title 1'],
+          [':party-tanuki: gprd']
+        )
+
+        expect(slack_message)
+          .to receive(:send)
+          .with(blocks: expected_blocks)
+
+        command.perform
+      end
+    end
+
+    context 'with multiple MR URLs' do
+      let(:command) do
+        described_class.new(%w[status https://gitlab.com/gitlab-org/gitlab/-/merge_requests/120710 something_else], *env)
+      end
+
+      it 'returns error message' do
+        expect(fake_client).not_to receive(:merge_request)
+        expect(fake_client).not_to receive(:search_in_project)
+
+        expect(Chatops::Slack::Message).not_to receive(:new)
+
+        expect(command.perform).to eq('This command accepts one MR URL argument')
+      end
+    end
+
     context 'with a running deployment' do
       let(:production_deployment_status) { 'running' }
       let(:command) do
@@ -646,4 +786,27 @@ class AutoDeployTestForPackageLink < Chatops::Commands::AutoDeploy
   def package_link(package)
     super package
   end
+end
+
+def slack_blocks(section_texts, context_texts)
+  blocks =
+    section_texts.map do |text|
+      {
+        text: {
+          text: text,
+          type: 'mrkdwn'
+        },
+        type: 'section'
+      }
+    end
+
+  elements =
+    context_texts.map do |text|
+      {
+        text: text,
+        type: 'mrkdwn'
+      }
+    end
+
+  blocks << { elements: elements, type: 'context' }
 end

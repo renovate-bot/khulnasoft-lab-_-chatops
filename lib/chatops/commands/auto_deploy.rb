@@ -52,7 +52,9 @@ module Chatops
 
               status
 
-            Check the deploy status of one or more commits
+            Check the deploy status of an MR or one or more commits
+
+              status https://gitlab.com/gitlab-org/gitlab/-/merge_requests/120480
 
               status 6dc9ffbaa4a4e77facec1f2a1573bbbac2252066 738f386d1c850607904fd9672e0ac3b5a32d1063
 
@@ -109,22 +111,20 @@ module Chatops
         post_task_status(tasks)
       end
 
-      def status(*shas)
-        envs = [
-          *environment_status('gprd'),
-          *environment_status('gprd-cny'),
-          *environment_status('gstg'),
-          *environment_status('gstg-cny'),
-          *environment_status('gstg-ref'),
-          *environment_status('db/gstg'),
-          *environment_status('db/gprd')
-        ]
-
-        if shas.empty?
-          post_environment_status(envs)
+      def status(*shas_or_mr)
+        if shas_or_mr.empty?
+          post_environment_status(environments_with_status)
           production_checks if options[:checks]
+
+        elsif (mr_parser = ::Chatops::MergeRequestURLParser.new(shas_or_mr.first)).valid?
+          return 'This command accepts one MR URL argument' if shas_or_mr.length > 1
+
+          mr_status(mr_parser)
         else
-          shas.each { |sha| sha_status(envs, sha) }
+          shas_or_mr.each do |sha|
+            deployed_envs = sha_status(environments_with_status, sha)
+            post_commit_status([sha], deployed_envs)
+          end
 
           nil
         end
@@ -181,10 +181,85 @@ module Chatops
 
       private
 
+      # @param mr_parser [Chatops::MergeRequestURLParser]
+      def mr_status(mr_parser)
+        merge_request = production_client.merge_request(mr_parser.merge_request_project, mr_parser.merge_request_iid)
+        return 'MR has not been merged yet' unless merge_request.merge_commit_sha
+
+        # Get environments where the merge commit has been deployed.
+        merge_commit_deployed_envs = sha_status(environments_with_status, merge_request.merge_commit_sha)
+
+        # Get environments where the cherry-picked commits (if any are found) have been deployed.
+        cherry_picked_commits = find_cherry_picked_commits(merge_request.merge_commit_sha)
+        cherry_picked_deployed_envs =
+          cherry_picked_commits
+            .map { |result| sha_status(environments_with_status, result.id) }
+            .flatten
+
+        all_deployed_envs = (merge_commit_deployed_envs + cherry_picked_deployed_envs).uniq { |env| env[:role] }
+
+        all_commits = [merge_request.merge_commit_sha] + cherry_picked_commits.collect(&:id)
+
+        # Post deployment status of merge commit and cherry-picked commits
+        post_commit_status(all_commits, all_deployed_envs)
+
+        mr_status_response_message(merge_request, cherry_picked_commits)
+      end
+
+      def mr_status_response_message(merge_request, cherry_picked_commits)
+        merge_commit_url = "https://gitlab.com/#{RAILS_PROJECT}/-/commit/#{merge_request.merge_commit_sha}"
+        message_parts = ["Merge commit: <#{merge_commit_url}|#{merge_request.merge_commit_sha}>"]
+
+        cherry_picked_shas = cherry_picked_commits.map { |commit| "<#{commit.web_url}|#{commit.id}>" }
+        message_parts << "Cherry-picked commit: #{cherry_picked_shas.join(', ')}" unless cherry_picked_commits.empty?
+
+        message_parts.join(', ') + " for MR #{merge_request.web_url}"
+      end
+
+      def environments_with_status
+        @environments_with_status ||= [
+          *environment_status('gprd'),
+          *environment_status('gprd-cny'),
+          *environment_status('gstg'),
+          *environment_status('gstg-cny'),
+          *environment_status('gstg-ref'),
+          *environment_status('db/gstg'),
+          *environment_status('db/gprd')
+        ]
+      end
+
+      # Searches for the given SHA in branches that are deployed to any environment.
+      def find_cherry_picked_commits(sha)
+        env_branches = environments_with_status
+          .map { |env| env[:branch] }
+          .compact
+          .uniq
+
+        # Search for a cherry-picked commit in each environment branch. Calling the API without the branch parameter
+        # does not always find cherry-picked commits.
+        results =
+          env_branches.map do |branch|
+            logger.info('Searching for cherry-picked commits', environment_branch: branch, original_sha: sha)
+
+            production_client.search_in_project(
+              RAILS_PROJECT,
+              'commits',
+              "cherry picked from commit #{sha}",
+              branch
+            )
+          end
+
+        results = results.flatten.uniq(&:id)
+
+        logger.info('Found cherry-picked commits', commits: results.collect(&:id)) unless results.empty?
+
+        results
+      end
+
       def sha_status(envs, sha)
         auto_deploy_branches = auto_deploy_branches(sha)
 
-        deployed = envs.select do |env|
+        envs.select do |env|
           logger.info('Deployment environment details', env: env[:role], branch: env[:branch], sha: env[:sha])
 
           auto_deploy_branches.any? do |b|
@@ -193,8 +268,6 @@ module Chatops
               commit_deployed?(b.name, env[:sha], sha)
           end
         end
-
-        post_commit_status(sha, deployed)
       end
 
       def production_checks
@@ -289,28 +362,28 @@ module Chatops
         !commits_not_deployed.include?(sha)
       end
 
-      def post_commit_status(commit_sha, envs)
+      def post_commit_status(commit_shas, envs)
         blocks = ::Slack::BlockKit.blocks
 
-        begin
+        commit_shas.each do |commit_sha|
           commit = production_client.commit(RAILS_PROJECT, commit_sha)
 
           blocks.section do |s|
             s.mrkdwn(text: "#{commit_link(commit.short_id)} #{commit.title}")
           end
-
-          blocks.context do |c|
-            if envs.any?
-              envs.each do |env|
-                c.mrkdwn(text: environment_text(env))
-              end
-            else
-              c.mrkdwn(text: ':warning: Unable to find a deployed branch for this commit.')
-            end
-          end
         rescue ::Gitlab::Error::NotFound
           blocks.section do |s|
             s.mrkdwn(text: ":exclamation: `#{commit_sha}` not found in `#{RAILS_PROJECT}`.")
+          end
+        end
+
+        blocks.context do |c|
+          if envs.any?
+            envs.each do |env|
+              c.mrkdwn(text: environment_text(env))
+            end
+          else
+            c.mrkdwn(text: ':warning: Unable to find a deployed branch for this commit.')
           end
         end
 

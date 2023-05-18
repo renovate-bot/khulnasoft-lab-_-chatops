@@ -231,6 +231,8 @@ module Chatops
 
       def_delegator :internal_client, :branch
       def_delegator :internal_client, :file_contents
+
+      def_delegator :internal_client, :search_in_project
     end
   end
 end
