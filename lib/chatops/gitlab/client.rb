@@ -143,6 +143,16 @@ module Chatops
         nil
       end
 
+      def search_migrations
+        internal_client.get('/admin/search/migrations')
+      end
+
+      def find_search_migration_by_version_or_name(version_or_name)
+        internal_client.get("/admin/search/migrations/#{version_or_name}")
+      rescue ::Gitlab::Error::NotFound
+        nil
+      end
+
       def latest_deployments(project, environment, limit:, status: nil)
         options = {
           environment: environment,

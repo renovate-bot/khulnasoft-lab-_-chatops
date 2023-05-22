@@ -158,3 +158,6 @@ quality:
 
 zoekt:
   <<: *chatops
+
+search_migrations:
+  <<: *chatops
