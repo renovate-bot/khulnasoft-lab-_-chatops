@@ -22,7 +22,7 @@ describe Chatops::Gitlab::TestsPipeline do
     let(:project_path) { Chatops::Gitlab::TestsPipeline::PRODUCTION_QUALITY_PROJECT }
     let(:response) { instance_double('response', web_url: 'some_url') }
     let(:trigger_variables) do
-      { feature_toggled: feature_name, feature_value: feature_value, gitlab_username: username, chat_user_id: chat_user_id, FULL_ONLY: 'true' }
+      { feature_toggled: feature_name, feature_value: feature_value, gitlab_username: username, chat_user_id: chat_user_id, SMOKE_ONLY: 'true' }
     end
 
     around do |example|

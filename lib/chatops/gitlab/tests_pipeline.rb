@@ -3,7 +3,7 @@
 module Chatops
   module Gitlab
     class TestsPipeline
-      # The project where the end-to-end test full pipeline will be triggered for run against staging.gitlab.com
+      # The project where the end-to-end test smoke pipeline will be triggered for run against staging.gitlab.com
       STAGING_QUALITY_PROJECT = 'gitlab-org/quality/staging'
 
       # The project where the end-to-end test smoke pipeline will be triggered for run against gitlab.com
@@ -22,7 +22,7 @@ module Chatops
         trigger_variables = { feature_toggled: @feature_name,
                               feature_value: @feature_value,
                               gitlab_username: ENV.fetch('GITLAB_USER_LOGIN'),
-                              FULL_ONLY: 'true' }
+                              SMOKE_ONLY: 'true' }
 
         trigger_variables[:chat_user_id] = ENV.fetch('CHAT_USER_ID') if ENV.key?('CHAT_USER_ID')
 
