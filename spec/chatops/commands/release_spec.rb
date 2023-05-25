@@ -175,44 +175,6 @@ describe Chatops::Commands::Release, :release_command do
       end
     end
 
-    describe '#qa' do
-      it 'triggers a normal release' do
-        tags = %w[v1.2.3 v1.3.0-rc1]
-        instance = stubbed_instance('qa', tags)
-
-        expect(instance).to receive(:validate_comparison!).with(tags)
-          .and_call_original
-        expect(instance).to receive(:trigger_release)
-          .with(tags.join(','), 'release:qa')
-
-        instance.perform
-      end
-
-      it 'triggers a security release' do
-        tags = %w[v1.2.3 v1.3.0-rc1]
-        instance = stubbed_instance('qa', tags, security: true)
-
-        expect(instance).to receive(:validate_comparison!).with(tags)
-          .and_call_original
-        expect(instance).to receive(:trigger_release)
-          .with(tags.join(','), 'security:qa')
-
-        instance.perform
-      end
-
-      it 'supports a single range argument' do
-        tags = %w[v1.2.3 v1.3.0-rc1]
-        instance = stubbed_instance('qa', tags.join('..'))
-
-        expect(instance).to receive(:validate_comparison!).with(tags)
-          .and_call_original
-        expect(instance).to receive(:trigger_release)
-          .with(tags.join(','), 'release:qa')
-
-        instance.perform
-      end
-    end
-
     describe '#status' do
       it 'triggers status for a normal release' do
         instance = stubbed_instance('status', version)
