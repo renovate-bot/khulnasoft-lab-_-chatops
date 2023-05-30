@@ -88,14 +88,10 @@ describe Chatops::Commands::Release, :release_command do
     end
 
     describe '#merge' do
-      it 'triggers a normal release' do
+      it 'returns when there is no security option' do
         instance = stubbed_instance('merge', version)
 
-        expect(instance).to receive(:validate_version!).with(version)
-        expect(instance).to receive(:trigger_release)
-          .with(version, 'release:merge')
-
-        instance.perform
+        expect(instance.perform).to eq('This command is only available with the --security option')
       end
 
       it 'triggers a security release' do

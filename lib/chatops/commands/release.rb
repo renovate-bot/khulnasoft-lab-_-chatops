@@ -165,27 +165,23 @@ module Chatops
       end
 
       def merge(version = nil)
-        if options[:security]
-          merge_default_branch =
-            # Temporarily support either `--master` or `--default-branch`
-            #
-            # See https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/1440
-            if options[:master] || options[:default_branch]
-              '1'
-            else
-              ''
-            end
+        return 'This command is only available with the --security option' unless options[:security]
 
-          trigger_release(
-            version,
-            "#{namespace}:#{__method__}",
-            'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_default_branch
-          )
-        else
-          validate_version!(version)
+        merge_default_branch =
+          # Temporarily support either `--master` or `--default-branch`
+          #
+          # See https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/1440
+          if options[:master] || options[:default_branch]
+            '1'
+          else
+            ''
+          end
 
-          trigger_release(version, "#{namespace}:#{__method__}")
-        end
+        trigger_release(
+          version,
+          "#{namespace}:#{__method__}",
+          'MERGE_MASTER_SECURITY_MERGE_REQUESTS' => merge_default_branch
+        )
       end
 
       def prepare(version = nil)
