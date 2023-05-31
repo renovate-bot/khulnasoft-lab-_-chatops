@@ -118,4 +118,33 @@ describe Chatops::Command do
       end
     end
   end
+
+  describe '#required_argument' do
+    let(:cmd) { command.new(['the-arg0', 'the-arg1'], {}) }
+
+    it 'returns the specified argument' do
+      expect(cmd.required_argument(0, :my_arg0)).to eq('the-arg0')
+      expect(cmd.required_argument(1, :my_arg1)).to eq('the-arg1')
+    end
+
+    it 'raises an error when the argument is not found' do
+      expect { cmd.required_argument(2, :my_arg2) }.to raise_error(ArgumentError, 'You must specify the my_arg2!')
+    end
+  end
+
+  describe '#required_integer_argument' do
+    let(:cmd) { command.new(['the-arg0', '123'], {}) }
+
+    it 'returns the specified argument converted to an Integer' do
+      expect(cmd.required_integer_argument(1, :my_arg1)).to eq(123)
+    end
+
+    it 'raises an error when the argument is not an integer' do
+      expect { cmd.required_integer_argument(0, :my_arg0) }.to raise_error(ArgumentError)
+    end
+
+    it 'raises an error when the argument is not found' do
+      expect { cmd.required_integer_argument(2, :my_arg2) }.to raise_error(ArgumentError, 'You must specify the my_arg2!')
+    end
+  end
 end

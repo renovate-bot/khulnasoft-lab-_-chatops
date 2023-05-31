@@ -53,6 +53,18 @@ module Chatops
       env.fetch('PAGERDUTY_TOKEN')
     end
 
+    def required_argument(index, name)
+      arguments.fetch(index) do
+        raise(ArgumentError, "You must specify the #{name}!")
+      end
+    end
+
+    def required_integer_argument(index, name)
+      id = required_argument(index, name)
+
+      Integer(id)
+    end
+
     module ClassMethods
       def command_name
         @command_name ||= name

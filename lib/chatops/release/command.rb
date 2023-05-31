@@ -51,12 +51,6 @@ module Chatops
 
       private
 
-      def required_argument(index, name)
-        arguments.fetch(index) do
-          raise(ArgumentError, "You must specify the #{name}!")
-        end
-      end
-
       def validate_version!(version)
         return if VERSION_REGEX.match?(version)
 

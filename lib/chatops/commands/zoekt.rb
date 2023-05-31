@@ -53,8 +53,8 @@ module Chatops
       private
 
       def indexed_namespace_create
-        shard_id = required_id_argument(1, :shard_id)
-        namespace_id = required_id_argument(2, :namespace_id)
+        shard_id = required_integer_argument(1, :shard_id)
+        namespace_id = required_integer_argument(2, :namespace_id)
 
         result = gitlab_client.zoekt_shard_indexed_namespaces_create(shard_id: shard_id, namespace_id: namespace_id)
 
@@ -67,7 +67,7 @@ module Chatops
       end
 
       def force_index_project
-        project_id = required_id_argument(1, :project_id)
+        project_id = required_integer_argument(1, :project_id)
 
         result = gitlab_client.zoekt_project_index(project_id: project_id)
 
@@ -76,14 +76,6 @@ module Chatops
         else
           "Failed to trigger indexing for project #{project_id}"
         end
-      end
-
-      def required_id_argument(index, name)
-        id = arguments.fetch(index) do
-          raise ArgumentError, "You must specify the #{name}!"
-        end
-
-        Integer(id)
       end
 
       def unsupported_command

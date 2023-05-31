@@ -86,15 +86,6 @@ module Chatops
         )
       end
 
-      def required_argument(index, name)
-        arguments.fetch(index) do
-          raise(
-            ArgumentError,
-            "You must specify the #{name} of the graph to render"
-          )
-        end
-      end
-
       def configuration_for(category, name)
         entry = self.class.configuration.dig(category, name)
 
