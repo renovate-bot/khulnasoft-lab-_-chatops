@@ -56,7 +56,8 @@ describe Chatops::Commands::Namespace do
         plan: 'default',
         trial: false,
         trial_ends_on: '',
-        extra_shared_runners_minutes_limit: 2000
+        extra_shared_runners_minutes_limit: 2000,
+        root_repository_size: 8675
       )
     end
 
@@ -72,7 +73,8 @@ describe Chatops::Commands::Namespace do
         plan: 'default',
         trial: false,
         trial_ends_on: '',
-        extra_shared_runners_minutes_limit: 2000
+        extra_shared_runners_minutes_limit: 2000,
+        root_repository_size: 8675
       )
     end
 

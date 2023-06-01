@@ -141,6 +141,11 @@ module Chatops
                     title: 'Extra Shared Runners Minutes Limit',
                     value: namespace.extra_shared_runners_minutes_limit,
                     short: true
+                  },
+                  {
+                    title: 'Root Repository Size',
+                    value: namespace.root_repository_size,
+                    short: true
                   }
                 ]
               }
