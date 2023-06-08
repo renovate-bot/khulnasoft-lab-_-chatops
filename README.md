@@ -190,6 +190,53 @@ You can run the chatops command locally if you specify the proper environment va
 env SLACK_TOKEN='SLACK_XXX' GITLAB_TOKEN='GITLAB_XXX' CHAT_INPUT='find cmcfarland' CHAT_CHANNEL='SLACK_CHANNEL_ID' bundle exec ./bin/chatops user
 ```
 
+## Testing in the ops instance
+
+Before merging a new feature into the default branch, it can be tested in the Ops instance. For that,
+
+1. Push your development branch into the ops repository:
+
+```
+git push ops branch-name
+```
+
+2. On the ChatOps ops repository, protect your branch by going to Settings > Repository > Protected branches. This allows
+existing environment variables to be used in your branch.
+3. Ensure you're logged into the container registry in Ops:
+
+```bash
+docker login registry.ops.gitlab.net -u <username> -p <personal_access_token>
+```
+
+4. Build a temporary container registry image (`feature-test` is the name of the image):
+
+```bash
+docker build -t registry.ops.gitlab.net/gitlab-com/chatops:feature-test .
+```
+
+5. Push the image to the container registry:
+
+```bash
+docker push registry.ops.gitlab.net/gitlab-com/chatops:feature-test
+```
+
+6. Temporarily modify the CI job configuration in your branch to:
+    - Use the image created instead of `latest`
+    - Run when an environment variable is present
+
+Example:
+```yml
+mirror:
+  image: $CI_REGISTRY_IMAGE:feature-test
+  ...
+  rules:
+    - if: $PERFORMING_TEST = 'true'
+```
+
+7. Trigger a pipeline by going to https://ops.gitlab.net/gitlab-com/chatops/-/pipelines, selecting your branch, and adding
+`PERFORMING_TEST` as environment variable and `true` as value.
+8. After performing the test, don't forget to remove the container registry image, unprotect your branch and delete it from the ops instance.
+
 ## Logging
 
 This project uses the [SemanticLogger](https://logger.rocketjob.io/) library.
