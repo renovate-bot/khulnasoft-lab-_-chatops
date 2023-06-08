@@ -42,16 +42,14 @@ describe Chatops::Commands::Mirror do
   end
 
   describe '#status' do
-    def expect_slack_message(block_matcher)
-      message = instance_double('message')
+    subject(:command) { described_class.new(%w[status], *env) }
 
-      expect(Chatops::Slack::Message)
-        .to receive(:new)
-        .and_return(message)
-
-      expect(message)
-        .to receive(:send)
-        .with(blocks: block_matcher)
+    let(:slack_service) do
+      instance_spy(
+        'Chatops::Slack::MirrorMessage',
+        general_status: 'foo',
+        job_status: 'bar'
+      )
     end
 
     let(:env) do
@@ -81,7 +79,8 @@ describe Chatops::Commands::Mirror do
         canonical: project['forked_from_project'],
         mirror_chain: 'Mirror chain',
         security_error: 'Security failed',
-        build_error: 'Build failed'
+        build_error: 'Build failed',
+        complete?: false
       )
     end
 
@@ -91,49 +90,57 @@ describe Chatops::Commands::Mirror do
 
     before do
       stub_const('Chatops::Gitlab::Client', fake_client)
+
+      # rubocop:disable RSpec/SubjectStub
+      allow(command)
+        .to receive(:security_mirrors)
+        .and_return([mirror_status])
+      # rubocop:enable RSpec/SubjectStub
+
+      allow(Chatops::Slack::MirrorMessage)
+        .to receive(:new)
+        .and_return(slack_service)
     end
 
-    it 'sends a formatted Slack message' do
-      command = described_class.new(%w[status], *env)
-      allow(command).to receive(:security_mirrors).and_return([mirror_status])
-
-      expect_slack_message(MirrorStatusBlockMatcher.new(mirror_status))
+    it 'reports the mirror status' do
+      expect(slack_service)
+        .to receive(:general_status)
 
       command.perform
     end
-  end
-end
 
-# RSpec argument matcher for verifying the complex `block` Hash passed to
-# `Slack::Message#send` from the described class
-class MirrorStatusBlockMatcher
-  def initialize(status)
-    @status = status
-  end
+    context 'when running the security release pipeline' do
+      let(:env) do
+        [
+          {},
+          'SLACK_TOKEN' => 'token',
+          'CHAT_CHANNEL' => 'channel',
+          'GITLAB_TOKEN' => 'token',
+          'SECURITY_RELEASE_PIPELINE' => 'true',
+          'CI_JOB_URL' => 'https://example.com/foo/bar/-/jobs/1'
+        ]
+      end
 
-  def ===(other)
-    project = @status.canonical
-    json = other.to_json
+      it 'reports the job status' do
+        # rubocop:disable RSpec/SubjectStub
+        allow(command).to receive(:synced_repositories?).and_return(true)
+        # rubocop:enable RSpec/SubjectStub
 
-    includes_security_error?(other) && includes_build_error?(other) &&
-      json.include?(@status.mirror_chain) &&
-      json.include?(project['avatar_url']) &&
-      json.include?(project['name'])
-  end
+        expect(slack_service).to receive(:job_status)
 
-  private
+        command.perform
+      end
 
-  def includes_security_error?(other)
-    other.one? do |block|
-      block[:type] == 'section' &&
-        block[:text][:text] == "*Security*:\n```#{@status.security_error}```"
-    end
-  end
+      # rubocop:disable RSpec/NestedGroups
+      context 'when the mirror check fails' do
+        it 'raises an exception' do
+          expect(slack_service).to receive(:job_status)
 
-  def includes_build_error?(other)
-    other.one? do |block|
-      block[:type] == 'section' &&
-        block[:text][:text] == "*Build*:\n```#{@status.build_error}```"
+          expect { command.perform }
+            .to raise_error(described_class::RepositoriesOutOfSync)
+        end
+      end
+      # rubocop:enable RSpec/NestedGroups
     end
   end
 end

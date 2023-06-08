@@ -3,7 +3,10 @@
 module Chatops
   module Commands
     class Mirror
+      include ::SemanticLogger::Loggable
       include Command
+
+      RepositoriesOutOfSync = Class.new(StandardError)
 
       COMMANDS = Set.new(%w[status])
 
@@ -40,13 +43,15 @@ module Chatops
       end
 
       def status
-        blocks = ::Slack::BlockKit.blocks
+        post_general_status
 
-        security_mirrors.each do |mirror|
-          mirror_block(mirror, blocks)
-        end
+        return unless security_release_pipeline?
 
-        post_status(blocks)
+        logger.info('Running as part of a security pipeline')
+
+        post_job_status
+
+        raise RepositoriesOutOfSync unless synced_repositories?
       end
 
       private
@@ -62,38 +67,27 @@ module Chatops
           .select(&:available?)
       end
 
-      def mirror_block(mirror, blocks)
-        canonical = mirror.canonical
-
-        blocks.context do |context|
-          unless canonical['avatar_url'].nil?
-            context
-              .image(url: canonical['avatar_url'], alt_text: canonical['name'])
-          end
-
-          context
-            .mrkdwn(text: "*#{canonical['name']}* -- #{mirror.mirror_chain}")
-        end
-
-        # rubocop:disable Style/GuardClause
-        if mirror.security_error
-          blocks.section do |s|
-            s.mrkdwn(text: "*Security*:\n```#{mirror.security_error}```")
-          end
-        end
-
-        if mirror.build_error
-          blocks.section do |s|
-            s.mrkdwn(text: "*Build*:\n```#{mirror.build_error}```")
-          end
-        end
-        # rubocop:enable Style/GuardClause
+      def mirror_message
+        Slack::MirrorMessage.new(
+          security_mirrors: security_mirrors,
+          env: env
+        )
       end
 
-      def post_status(blocks)
-        Slack::Message
-          .new(token: slack_token, channel: channel)
-          .send(blocks: blocks.as_json)
+      def post_general_status
+        mirror_message.general_status
+      end
+
+      def post_job_status
+        mirror_message.job_status(synced_repositories: synced_repositories?)
+      end
+
+      def synced_repositories?
+        security_mirrors.all?(&:complete?)
+      end
+
+      def security_release_pipeline?
+        env.fetch('SECURITY_RELEASE_PIPELINE', nil)
       end
 
       def client
