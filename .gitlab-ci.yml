@@ -42,6 +42,8 @@ build:image:
   only:
     - master
     - schedules
+  except:
+    - pipeline
   script:
     - ./bin/docker "${CI_REGISTRY_IMAGE}:latest"
 
@@ -138,7 +140,7 @@ mirror:
   tags:
     - chatops
   rules:
-    - if: $CI_PIPELINE_SOURCE == "chat" && $CI_PIPELINES_SOURCE == "pipelines"
+    - if: $CI_PIPELINE_SOURCE == "chat" || $CI_PIPELINES_SOURCE == "pipelines"
     - if: $SECURITY_RELEASE_PIPELINE == 'true'
   script:
     - cd /app
