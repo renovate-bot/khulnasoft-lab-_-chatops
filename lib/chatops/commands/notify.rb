@@ -10,7 +10,9 @@ module Chatops
         'C3JJET4Q6', # quality
         'C8HG8D9MY', # backend
         'C0GQHHPGW', # frontend
-        'C0XM5UU6B' # releases
+        'C0XM5UU6B', # releases
+        'CMA7DQJRX', # g_engineering_productivity
+        'CBQ76ND6W' # g_runner
       ].freeze
 
       usage "#{command_name} [MESSAGE] [OPTIONS]"
