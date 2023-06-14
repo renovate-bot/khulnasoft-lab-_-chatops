@@ -175,3 +175,6 @@ zoekt:
 
 search_migrations:
   <<: *chatops
+
+migrations:
+  <<: *chatops

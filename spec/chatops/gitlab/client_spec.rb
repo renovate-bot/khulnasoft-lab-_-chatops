@@ -504,4 +504,49 @@ describe Chatops::Gitlab::Client do
       end
     end
   end
+
+  describe '#mark_database_migration_by_version' do
+    let(:database) { 'main' }
+    let(:query) { { query: { database: database } } }
+    let(:version) { 1 }
+
+    context 'when the migration does not exist' do
+      let(:url) { "/admin/migrations/#{version}/mark" }
+
+      let(:missing_response) do
+        instance_double(
+          'response',
+          code: 404,
+          request: instance_double('request', base_uri: 'foo', path: url),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+        )
+      end
+
+      it 'returns nil' do
+        allow(client.internal_client)
+          .to receive(:post)
+          .with(url, query)
+          .and_raise(Gitlab::Error::NotFound.new(missing_response))
+
+        expect(client.mark_database_migration_by_version(version, database: database)).to be_nil
+      end
+    end
+
+    it 'marks a migration' do
+      expect(client.internal_client)
+        .to receive(:post)
+        .with("/admin/migrations/#{version}/mark", query)
+        .and_return({})
+
+      client.mark_database_migration_by_version(version, database: database)
+    end
+
+    it 'sends a request to the correct url' do
+      admin_api = stub_request(:post, "https://localhost/api/v4/admin/migrations/#{version}/mark?database=main")
+
+      client.mark_database_migration_by_version(version, database: database)
+
+      expect(admin_api).to have_been_requested
+    end
+  end
 end

@@ -153,6 +153,14 @@ module Chatops
         nil
       end
 
+      def mark_database_migration_by_version(version, database:)
+        query = { query: { database: database } }
+
+        internal_client.post("/admin/migrations/#{version}/mark", query)
+      rescue ::Gitlab::Error::NotFound
+        nil
+      end
+
       def latest_deployments(project, environment, limit:, status: nil)
         options = {
           environment: environment,
