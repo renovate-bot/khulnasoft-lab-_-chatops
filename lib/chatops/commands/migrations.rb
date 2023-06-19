@@ -39,7 +39,7 @@ module Chatops
 
           Examples:
 
-            Mark a batched background migration as successful.
+            Mark a database migration as successful.
 
               migrations mark 20230428500000
               migrations mark 20230428500000 --database ci
