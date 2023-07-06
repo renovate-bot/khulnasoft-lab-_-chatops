@@ -6,7 +6,8 @@ module Chatops
       include ::SemanticLogger::Loggable
       include Command
 
-      RepositoriesOutOfSync = Class.new(StandardError)
+      TARGET_PROJECT = 'gitlab-org/release/tools'
+      TARGET_REF = 'master'
 
       COMMANDS = Set.new(%w[status])
 
@@ -43,55 +44,28 @@ module Chatops
       end
 
       def status
-        post_general_status
+        params = {
+          CHAT_CHANNEL: channel,
+          MIRROR_STATUS: 'true'
+        }
 
-        return unless security_release_pipeline?
+        logger.info('Calling release tools trigger API', params: params)
 
-        logger.info('Running as part of a security pipeline')
-
-        post_job_status
-
-        raise RepositoriesOutOfSync unless synced_repositories?
+        client.run_trigger(
+          TARGET_PROJECT,
+          env.fetch('RELEASE_TRIGGER_TOKEN') { env.fetch('CI_JOB_TOKEN') },
+          TARGET_REF,
+          params
+        )
       end
 
       private
 
-      def security_mirrors
-        @security_mirrors ||= client
-          .group_projects('gitlab-org/security', include_subgroups: true)
-          .auto_paginate
-          .map(&:to_h)
-          .select { |p| p.key?('forked_from_project') }
-          .sort_by { |p| p['path'] }
-          .map { |p| Gitlab::SecurityMirrorStatus.new(p) }
-          .select(&:available?)
-      end
-
-      def mirror_message
-        Slack::MirrorMessage.new(
-          security_mirrors: security_mirrors,
-          env: env
-        )
-      end
-
-      def post_general_status
-        mirror_message.general_status
-      end
-
-      def post_job_status
-        mirror_message.job_status(synced_repositories: synced_repositories?)
-      end
-
-      def synced_repositories?
-        security_mirrors.all?(&:complete?)
-      end
-
-      def security_release_pipeline?
-        env.fetch('SECURITY_RELEASE_PIPELINE', nil)
-      end
-
       def client
-        @client ||= Gitlab::Client.new(token: gitlab_token)
+        @client ||= Gitlab::Client.new(
+          token: gitlab_ops_token,
+          host: Chatops::GitlabEnvironments::OPS_HOST
+        )
       end
     end
   end

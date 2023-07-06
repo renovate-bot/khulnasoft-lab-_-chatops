@@ -44,44 +44,13 @@ describe Chatops::Commands::Mirror do
   describe '#status' do
     subject(:command) { described_class.new(%w[status], *env) }
 
-    let(:slack_service) do
-      instance_spy(
-        'Chatops::Slack::MirrorMessage',
-        general_status: 'foo',
-        job_status: 'bar'
-      )
-    end
-
     let(:env) do
       [
         {},
-        'SLACK_TOKEN' => 'token',
-        'CHAT_CHANNEL' => 'channel',
-        'GITLAB_TOKEN' => 'token'
+        'GITLAB_OPS_TOKEN' => 'ops-token',
+        'RELEASE_TRIGGER_TOKEN' => 'token',
+        'CHAT_CHANNEL' => 'channel'
       ]
-    end
-
-    let(:project) do
-      {
-        'path_with_namespace' => 'gitlab-org/security/gitlab',
-        'forked_from_project' => {
-          'avatar_url' => 'avatar.png',
-          'name' => 'GitLab',
-          'path_with_namespace' => 'gitlab-org/gitlab'
-        }
-      }
-    end
-
-    let(:mirror_status) do
-      instance_double(
-        'Chatops::Gitlab::SecurityMirrorStatus',
-        available?: true,
-        canonical: project['forked_from_project'],
-        mirror_chain: 'Mirror chain',
-        security_error: 'Security failed',
-        build_error: 'Build failed',
-        complete?: false
-      )
     end
 
     # rubocop:disable RSpec/VerifiedDoubles
@@ -90,57 +59,26 @@ describe Chatops::Commands::Mirror do
 
     before do
       stub_const('Chatops::Gitlab::Client', fake_client)
-
-      # rubocop:disable RSpec/SubjectStub
-      allow(command)
-        .to receive(:security_mirrors)
-        .and_return([mirror_status])
-      # rubocop:enable RSpec/SubjectStub
-
-      allow(Chatops::Slack::MirrorMessage)
-        .to receive(:new)
-        .and_return(slack_service)
     end
 
-    it 'reports the mirror status' do
-      expect(slack_service)
-        .to receive(:general_status)
+    it 'triggers a pipeline on release-tools' do
+      expect(fake_client).to receive(:new).with(
+        token: 'ops-token',
+        host: Chatops::GitlabEnvironments::OPS_HOST
+      )
+
+      expect(fake_client)
+        .to receive(:run_trigger).with(
+          described_class::TARGET_PROJECT,
+          'token',
+          described_class::TARGET_REF,
+          {
+            CHAT_CHANNEL: 'channel',
+            MIRROR_STATUS: 'true'
+          }
+        )
 
       command.perform
-    end
-
-    context 'when running the security release pipeline' do
-      let(:env) do
-        [
-          {},
-          'SLACK_TOKEN' => 'token',
-          'CHAT_CHANNEL' => 'channel',
-          'GITLAB_TOKEN' => 'token',
-          'SECURITY_RELEASE_PIPELINE' => 'true',
-          'CI_JOB_URL' => 'https://example.com/foo/bar/-/jobs/1'
-        ]
-      end
-
-      it 'reports the job status' do
-        # rubocop:disable RSpec/SubjectStub
-        allow(command).to receive(:synced_repositories?).and_return(true)
-        # rubocop:enable RSpec/SubjectStub
-
-        expect(slack_service).to receive(:job_status)
-
-        command.perform
-      end
-
-      # rubocop:disable RSpec/NestedGroups
-      context 'when the mirror check fails' do
-        it 'raises an exception' do
-          expect(slack_service).to receive(:job_status)
-
-          expect { command.perform }
-            .to raise_error(described_class::RepositoriesOutOfSync)
-        end
-      end
-      # rubocop:enable RSpec/NestedGroups
     end
   end
 end
