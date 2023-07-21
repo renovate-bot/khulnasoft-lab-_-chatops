@@ -131,6 +131,11 @@ module Chatops
                     short: true
                   },
                   {
+                    title: 'Column',
+                    value: batched_background_migration.column_name,
+                    short: true
+                  },
+                  {
                     title: 'Status',
                     value: batched_background_migration.status,
                     short: true

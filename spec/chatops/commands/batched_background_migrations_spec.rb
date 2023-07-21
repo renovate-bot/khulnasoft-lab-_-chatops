@@ -76,7 +76,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
     let(:command) { %w[list] }
     let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
     let(:slack_client) { instance_double(Chatops::Slack::Message) }
-    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', column_name: 'c', status: 'b', progress: 1, created_at: Time.now) }
 
     it 'list migrations' do
       expect(Chatops::Gitlab::Client)
@@ -127,7 +127,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
     let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
     let(:slack_client) { instance_double(Chatops::Slack::Message) }
-    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', column_name: 'c', status: 'b', progress: 1, created_at: Time.now) }
     let(:command) { %w[resume 1] }
 
     context 'when the migration does not exist' do
@@ -182,7 +182,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
 
     let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
     let(:slack_client) { instance_double(Chatops::Slack::Message) }
-    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', column_name: 'c', status: 'b', progress: 1, created_at: Time.now) }
     let(:command) { %w[status 1] }
 
     context 'when the migration does not exist' do
@@ -238,7 +238,7 @@ RSpec.describe Chatops::Commands::BatchedBackgroundMigrations do
     let(:subcommand) { %w[pause 1] }
     let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
     let(:slack_client) { instance_double(Chatops::Slack::Message) }
-    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', status: 'b', progress: 1, created_at: Time.now) }
+    let(:migration) { instance_double('migration', id: 1, job_class_name: 'a', table_name: 'b', column_name: 'c', status: 'b', progress: 1, created_at: Time.now) }
 
     context 'when the migration does not exist' do
       it 'returns a message' do
