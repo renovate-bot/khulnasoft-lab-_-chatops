@@ -20,7 +20,7 @@ describe Chatops::Commands::Mirror do
         expect(command)
           .to receive(:status)
 
-        command.perform
+        expect(command.perform).to be_nil
       end
     end
 

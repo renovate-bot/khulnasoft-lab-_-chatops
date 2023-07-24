@@ -57,6 +57,8 @@ module Chatops
           TARGET_REF,
           params
         )
+
+        nil
       end
 
       private
