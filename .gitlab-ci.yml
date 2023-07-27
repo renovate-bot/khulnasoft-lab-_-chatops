@@ -22,9 +22,7 @@ stages:
   except:
     - chat
     - schedules
-    - pipelines
-    - web
-    - api
+    - pipeline
   before_script:
     - apk add --update build-base postgresql-dev
     - gem install bundler --no-document
@@ -135,7 +133,18 @@ deploycmd:
   <<: *chatops
 
 mirror:
-  <<: *chatops
+  image: $CI_REGISTRY_IMAGE:latest
+  variables:
+    GIT_STRATEGY: none
+    GIT_SUBMODULE_STRATEGY: none
+  tags:
+    - chatops
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "chat" || $CI_PIPELINES_SOURCE == "pipelines"
+    - if: $SECURITY_RELEASE_PIPELINE == 'true'
+  script:
+    - cd /app
+    - bundle exec ruby /app/bin/chatops $CI_JOB_NAME
 
 annotate:
   <<: *chatops
@@ -151,12 +160,6 @@ rollback:
 
 notify:
   <<: *chatops
-  only:
-    refs:
-      - chat
-      - api
-    variables:
-      - $TRIGGER_NOTIFY == 'true'
 
 production_checks:
   <<: *chatops
