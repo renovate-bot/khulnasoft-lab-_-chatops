@@ -327,7 +327,7 @@ describe Chatops::Commands::Release, :release_command do
         instance = stubbed_instance('tracking_issue', nil, security: true)
 
         expect(instance).to receive(:trigger_release)
-          .with(nil, 'security:tracking_issue')
+          .with(nil, 'security:finalize:update_tracking_issue')
 
         instance.perform
       end

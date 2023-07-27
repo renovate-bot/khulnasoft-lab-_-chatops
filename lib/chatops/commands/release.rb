@@ -259,7 +259,7 @@ module Chatops
       end
 
       def tracking_issue(version = nil)
-        trigger_release(version, "#{namespace}:#{__method__}")
+        trigger_release(version, "#{namespace}:finalize:update_#{__method__}")
       end
 
       private
