@@ -133,18 +133,7 @@ deploycmd:
   <<: *chatops
 
 mirror:
-  image: $CI_REGISTRY_IMAGE:latest
-  variables:
-    GIT_STRATEGY: none
-    GIT_SUBMODULE_STRATEGY: none
-  tags:
-    - chatops
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "chat" || $CI_PIPELINES_SOURCE == "pipelines"
-    - if: $SECURITY_RELEASE_PIPELINE == 'true'
-  script:
-    - cd /app
-    - bundle exec ruby /app/bin/chatops $CI_JOB_NAME
+  <<: *chatops
 
 annotate:
   <<: *chatops
