@@ -22,7 +22,9 @@ stages:
   except:
     - chat
     - schedules
-    - pipeline
+    - pipelines
+    - web
+    - api
   before_script:
     - apk add --update build-base postgresql-dev
     - gem install bundler --no-document
@@ -148,7 +150,18 @@ rollback:
   <<: *chatops
 
 notify:
-  <<: *chatops
+  image: $CI_REGISTRY_IMAGE:latest
+  variables:
+    GIT_STRATEGY: none
+    GIT_SUBMODULE_STRATEGY: none
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'chat' || $CI_PIPELINE_SOURCE == 'api'
+    - if: $TRIGGER_NOTIFY == 'true'
+  tags:
+    - chatops
+  script:
+    - cd /app
+    - bundle exec ruby /app/bin/chatops $CI_JOB_NAME
 
 production_checks:
   <<: *chatops
