@@ -3,8 +3,8 @@
 module Chatops
   module Gitlab
     class TestsPipeline
-      # The project where the end-to-end test smoke pipeline will be triggered for run against staging.gitlab.com
-      STAGING_QUALITY_PROJECT = 'gitlab-org/quality/staging'
+      # The project where the end-to-end test full pipeline will be triggered for run against staging.gitlab.com canary
+      STAGING_QUALITY_PROJECT = 'gitlab-org/quality/staging-canary'
 
       # The project where the end-to-end test smoke pipeline will be triggered for run against gitlab.com
       PRODUCTION_QUALITY_PROJECT = 'gitlab-org/quality/production'
@@ -21,8 +21,7 @@ module Chatops
 
         trigger_variables = { feature_toggled: @feature_name,
                               feature_value: @feature_value,
-                              gitlab_username: ENV.fetch('GITLAB_USER_LOGIN'),
-                              SMOKE_ONLY: 'true' }
+                              gitlab_username: ENV.fetch('GITLAB_USER_LOGIN') }.merge(smoke_or_full)
 
         trigger_variables[:chat_user_id] = ENV.fetch('CHAT_USER_ID') if ENV.key?('CHAT_USER_ID')
 
@@ -86,6 +85,10 @@ module Chatops
         else
           raise 'No quality project path available for this environment'
         end
+      end
+
+      def smoke_or_full
+        staging? ? { FULL_ONLY: 'true' } : { SMOKE_ONLY: 'true' }
       end
 
       def staging?
