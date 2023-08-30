@@ -64,6 +64,44 @@ RSpec.describe Chatops::Commands::Zoekt do
     it_behaves_like 'validates argument is integer', 2
   end
 
+  describe 'indexed_namespace_delete' do
+    let(:subcommand) { %w[indexed_namespace_delete 123 456] }
+
+    it 'deletes the indexed namespace' do
+      expect(Chatops::Gitlab::Client)
+        .to receive(:new)
+        .with(token: 'the-token', host: 'gitlab.com')
+        .and_return(gitlab_client)
+
+      expect(gitlab_client)
+        .to receive(:zoekt_shard_indexed_namespaces_delete)
+        .with(shard_id: 123, namespace_id: 456)
+        .and_return(instance_double('indexed_namespace', {}))
+
+      expect(perform).to eq('Successfully deleted indexed namespace with shard 123 and namespace 456')
+    end
+
+    context 'when deletion fails' do
+      it 'returns an error message' do
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'the-token', host: 'gitlab.com')
+          .and_return(gitlab_client)
+
+        expect(gitlab_client)
+          .to receive(:zoekt_shard_indexed_namespaces_delete)
+          .with(shard_id: 123, namespace_id: 456)
+          .and_return(nil)
+
+        expect(perform).to eq('Failed: Could not find Zoekt indexed namespace with shard_id: 123 and namespace_id: 456')
+      end
+    end
+
+    it_behaves_like 'validates required number of arguments'
+    it_behaves_like 'validates argument is integer', 1
+    it_behaves_like 'validates argument is integer', 2
+  end
+
   describe 'force_index_project' do
     let(:subcommand) { %w[force_index_project 123] }
 
@@ -106,6 +144,7 @@ RSpec.describe Chatops::Commands::Zoekt do
       expect(described_class.available_subcommands).to eq(<<~LIST.strip)
         * force_index_project
         * indexed_namespace_create
+        * indexed_namespace_delete
       LIST
     end
   end

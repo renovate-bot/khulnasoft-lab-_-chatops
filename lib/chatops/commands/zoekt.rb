@@ -7,7 +7,7 @@ module Chatops
       include GitlabEnvironments
       include ::SemanticLogger::Loggable
 
-      COMMANDS = %w[force_index_project indexed_namespace_create].freeze
+      COMMANDS = %w[force_index_project indexed_namespace_create indexed_namespace_delete].freeze
 
       description 'Managing Zoekt shards and indexed namespaces'
 
@@ -21,6 +21,10 @@ module Chatops
           Force indexing for a project
 
             force_index_project <project_id>
+
+          Deleting an indexed namespace from the shard
+
+            indexed_namespace_delete <shard_id> <namespace_id>
       EXAMP
 
       options do |o|
@@ -63,6 +67,19 @@ module Chatops
           "shard #{result.zoekt_shard_id} and namespace #{result.namespace_id}"
         else
           "Failed to create the indexed namespace for shard #{shard_id} and namespace #{namespace_id}"
+        end
+      end
+
+      def indexed_namespace_delete
+        shard_id = required_integer_argument(1, :shard_id)
+        namespace_id = required_integer_argument(2, :namespace_id)
+
+        result = gitlab_client.zoekt_shard_indexed_namespaces_delete(shard_id: shard_id, namespace_id: namespace_id)
+
+        if result
+          "Successfully deleted indexed namespace with shard #{shard_id} and namespace #{namespace_id}"
+        else
+          "Failed: Could not find Zoekt indexed namespace with shard_id: #{shard_id} and namespace_id: #{namespace_id}"
         end
       end
 

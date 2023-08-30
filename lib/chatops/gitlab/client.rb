@@ -137,6 +137,12 @@ module Chatops
         nil
       end
 
+      def zoekt_shard_indexed_namespaces_delete(shard_id:, namespace_id:)
+        internal_client.delete("/admin/zoekt/shards/#{shard_id}/indexed_namespaces/#{namespace_id}")
+      rescue ::Gitlab::Error::NotFound
+        nil
+      end
+
       def zoekt_project_index(project_id:)
         internal_client.put("/admin/zoekt/projects/#{project_id}/index")
       rescue ::Gitlab::Error::NotFound
