@@ -124,6 +124,10 @@ module Chatops
             Create a Security Release Tracking Issue
 
               release tracking_issue --security
+
+            Process security-target issues for a security release
+
+              release process_security_target_issues --security
         HELP
       end
       # rubocop: enable Metrics/BlockLength
