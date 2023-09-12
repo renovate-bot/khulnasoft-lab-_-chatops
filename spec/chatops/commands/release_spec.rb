@@ -171,6 +171,23 @@ describe Chatops::Commands::Release, :release_command do
       end
     end
 
+    describe '#process_security_target_issues' do
+      it 'returns when there is no security option' do
+        instance = stubbed_instance('process_security_target_issues')
+
+        expect(instance.perform).to eq('This command is only available with the --security option')
+      end
+
+      it 'triggers a process_security_target_issues task' do
+        instance = stubbed_instance('process_security_target_issues', security: true)
+
+        expect(instance).to receive(:trigger_release)
+          .with(nil, 'security:process_security_target_issues')
+
+        instance.perform
+      end
+    end
+
     describe '#status' do
       it 'triggers status for a normal release' do
         instance = stubbed_instance('status', version)

@@ -18,6 +18,7 @@ module Chatops
           pending_backports
           merge
           prepare
+          process_security_target_issues
           status
           sync_remotes
           tag
@@ -188,6 +189,12 @@ module Chatops
         validate_version!(version) unless options[:security] || version.nil?
 
         trigger_release(version, "#{namespace}:#{__method__}")
+      end
+
+      def process_security_target_issues
+        return 'This command is only available with the --security option' unless options[:security]
+
+        trigger_release(nil, "#{namespace}:#{__method__}")
       end
 
       def status(version = nil)
