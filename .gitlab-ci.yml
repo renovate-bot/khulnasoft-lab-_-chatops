@@ -6,7 +6,9 @@ stages:
   - build
 
 .chatops: &chatops
-  image: $CI_REGISTRY_IMAGE:latest
+  image:
+    name: $CI_REGISTRY_IMAGE:latest
+    pull_policy: always
   variables:
     GIT_STRATEGY: none
     GIT_SUBMODULE_STRATEGY: none
@@ -150,7 +152,9 @@ rollback:
   <<: *chatops
 
 notify:
-  image: $CI_REGISTRY_IMAGE:latest
+  image:
+    name: $CI_REGISTRY_IMAGE:latest
+    pull_policy: always
   variables:
     GIT_STRATEGY: none
     GIT_SUBMODULE_STRATEGY: none
