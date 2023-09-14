@@ -3,6 +3,8 @@
 require 'spec_helper'
 
 describe Chatops::Commands::Feature do
+  using RSpec::Parameterized::TableSyntax
+
   shared_examples 'invalid feature flag update' do
     let(:error_message) { /Unable to proceed due to inconsistent feature flag status. When the flag on production is turned on, staging should be on too./ }
     let(:command_args) { %w[set foo] + [value] }
@@ -160,8 +162,8 @@ describe Chatops::Commands::Feature do
       expect(annotate)
         .to receive(:annotate!)
         .with(
-          "alice set feature flag foo to #{log_feature_toggle_fields[:feature_value]}",
-          tags: tag_env + ['feature-flag', 'foo']
+          "alice set feature flag #{log_feature_toggle_fields[:feature_name]} to #{log_feature_toggle_fields[:feature_value]}",
+          tags: tag_env + ['feature-flag', log_feature_toggle_fields[:feature_name]]
         )
 
       expect(command)
@@ -399,27 +401,41 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when using a valid feature name' do
-      it 'sends the details of the feature to Slack' do
-        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
-        collection = instance_double('collection')
-        feature = instance_double('feature')
-        environment = command.environments.first
+      shared_examples 'sends the details of the feature to Slack' do
+        it 'receives the feature details' do
+          command = described_class.new(['get', feature_name], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
+          collection = instance_double('collection')
+          feature = instance_double('feature')
+          environment = command.environments.first
 
-        expect(Chatops::Gitlab::FeatureCollection)
-          .to receive(:new)
-          .with(token: '123', host: 'gitlab.com')
-          .and_return(collection)
+          expect(Chatops::Gitlab::FeatureCollection)
+            .to receive(:new)
+            .with(token: '123', host: 'gitlab.com')
+            .and_return(collection)
 
-        expect(collection)
-          .to receive(:find_by_name)
-          .with('foo')
-          .and_return(feature)
+          expect(collection)
+            .to receive(:find_by_name)
+            .with(expected_feature_name)
+            .and_return(feature)
 
-        expect(command)
-          .to receive(:send_feature_details)
-          .with(feature: feature, environment: environment)
+          expect(command)
+            .to receive(:send_feature_details)
+            .with(feature: feature, environment: environment)
 
-        command.get
+          command.get
+        end
+      end
+
+      where(:feature_name, :expected_feature_name) do
+        'foo'   | 'foo'
+        '`foo`' | 'foo'
+        '`foo'  | '`foo'
+        'foo`'  | 'foo`'
+        'f`oo`' | 'f`oo`'
+      end
+
+      with_them do
+        it_behaves_like 'sends the details of the feature to Slack'
       end
     end
   end
@@ -1098,6 +1114,40 @@ describe Chatops::Commands::Feature do
         command.set
       end
     end
+
+    context 'when specifying feature name with backticks' do
+      let(:command_args) { ['set', feature_name, '0'] }
+      let(:command_opts) { default_opts }
+      let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 0 }] }
+      let(:log_feature_toggle_fields) { { feature_name: expected_feature_name, feature_value: '0', feature_scope_actors: 'false' } }
+      let(:set_feature_params) do
+        [
+          expected_feature_name,
+          '0',
+          {
+            project: nil,
+            group: nil,
+            feature_group: nil,
+            namespace: nil,
+            user: nil,
+            repository: nil,
+            actors: false
+          }
+        ]
+      end
+
+      where(:feature_name, :expected_feature_name) do
+        '`foo`' | 'foo'
+        '`foo'  | '`foo'
+        'foo`'  | 'foo`'
+        'f`oo`' | 'f`oo`'
+        'foo'   | 'foo'
+      end
+
+      with_them do
+        it_behaves_like 'valid feature flag update'
+      end
+    end
   end
   # describe '#set'
 
@@ -1219,6 +1269,37 @@ describe Chatops::Commands::Feature do
         expect(client).not_to receive(:delete_feature)
 
         command.delete
+      end
+    end
+
+    context 'when feature name contains backticks' do
+      where(:feature_name, :expected_feature_name) do
+        '`foo`' | 'foo'
+        '`foo'  | '`foo'
+        'foo`'  | 'foo`'
+        'f`oo`' | 'f`oo`'
+        'foo'   | 'foo'
+      end
+
+      with_them do
+        let(:command) do
+          described_class.new(
+            ['delete', feature_name],
+            {},
+            'GITLAB_TOKEN' => '123',
+            'GITLAB_USER_LOGIN' => 'alice',
+            'GITLAB_STAGING_TOKEN' => '321',
+            'GITLAB_STAGING_REF_TOKEN' => '654',
+            'SLACK_TOKEN' => '456',
+            'CHAT_CHANNEL' => 'foo'
+          )
+        end
+        it 'deletes the feature with stripped backticks' do
+          expect(Chatops::Gitlab::Client).to receive(:new).with(token: '123', host: 'gitlab.com').and_return(client)
+          expect(client).to receive(:delete_feature).with(expected_feature_name)
+
+          command.delete
+        end
       end
     end
   end

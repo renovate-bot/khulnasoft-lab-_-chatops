@@ -196,7 +196,7 @@ module Chatops
       end
 
       def get_on(environment)
-        name = arguments[1]
+        name = strip_backticks(arguments[1])
 
         unless name
           return 'You must specify the name of the feature. ' \
@@ -249,7 +249,7 @@ module Chatops
           'oncall `@sre-oncall`, and use the ' \
           '--ignore-feature-flag-consistency-check. '
 
-        name = arguments[1]
+        name = strip_backticks(arguments[1])
         value = arguments[2]
 
         if !name || !value
@@ -427,7 +427,7 @@ module Chatops
       end
 
       def delete_on(environment)
-        name = arguments[1]
+        name = strip_backticks(arguments[1])
 
         return wrong_channel_resp if environment.production? && channel != production_channel_id
 
@@ -647,8 +647,9 @@ module Chatops
       end
 
       def feature_enabled_with_opts?(options, environment)
-        feature_check = Chatops::Commands::Feature.new(['get', arguments[1]], options, env)
-        feature = feature_check.get_feature(arguments[1], environment)
+        name = strip_backticks(arguments[1])
+        feature_check = Chatops::Commands::Feature.new(['get', name], options, env)
+        feature = feature_check.get_feature(name, environment)
         feature&.enabled?
       end
 
@@ -680,6 +681,13 @@ module Chatops
         pipeline_jobs(pipeline_id).auto_paginate.each do |job|
           return job.status if job.name == AUTO_DEPLOY_CHECK_PRODUCTION_JOB
         end
+      end
+
+      # backticks are used to escape Slack auto-converting string to emoji
+      # so we strip them here if backticks surround the feature name
+      # https://gitlab.com/gitlab-com/gl-infra/reliability/-/issues/24376#note_1555034145
+      def strip_backticks(name)
+        name&.gsub(/^`(.*)`$/, '\1')
       end
     end
   end
