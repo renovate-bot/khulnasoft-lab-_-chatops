@@ -184,6 +184,17 @@ describe Chatops::Commands::Feature do
   # rubocop: enable RSpec/ExampleLength
   # rubocop: enable RSpec/MultipleExpectations
 
+  shared_context 'with feature name tables with backticks' do
+    where(:feature_name, :expected_feature_name) do
+      '`foo`' | 'foo'
+      '`foo'  | '`foo'
+      'foo`'  | 'foo`'
+      'f`oo`' | 'f`oo`'
+      'foo'   | 'foo'
+      '`drop_sidekiq_jobs_ComplianceManagement::Standards::Gitlab::AtLeastTwoApprovalsWorker`' | 'drop_sidekiq_jobs_ComplianceManagement::Standards::Gitlab::AtLeastTwoApprovalsWorker'
+    end
+  end
+
   describe '.perform' do
     it 'supports a --match option' do
       instance = instance_double('instance')
@@ -426,14 +437,7 @@ describe Chatops::Commands::Feature do
         end
       end
 
-      where(:feature_name, :expected_feature_name) do
-        'foo'   | 'foo'
-        '`foo`' | 'foo'
-        '`foo'  | '`foo'
-        'foo`'  | 'foo`'
-        'f`oo`' | 'f`oo`'
-      end
-
+      include_context 'with feature name tables with backticks'
       with_them do
         it_behaves_like 'sends the details of the feature to Slack'
       end
@@ -1136,14 +1140,7 @@ describe Chatops::Commands::Feature do
         ]
       end
 
-      where(:feature_name, :expected_feature_name) do
-        '`foo`' | 'foo'
-        '`foo'  | '`foo'
-        'foo`'  | 'foo`'
-        'f`oo`' | 'f`oo`'
-        'foo'   | 'foo'
-      end
-
+      include_context 'with feature name tables with backticks'
       with_them do
         it_behaves_like 'valid feature flag update'
       end
@@ -1273,14 +1270,7 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when feature name contains backticks' do
-      where(:feature_name, :expected_feature_name) do
-        '`foo`' | 'foo'
-        '`foo'  | '`foo'
-        'foo`'  | 'foo`'
-        'f`oo`' | 'f`oo`'
-        'foo'   | 'foo'
-      end
-
+      include_context 'with feature name tables with backticks'
       with_them do
         let(:command) do
           described_class.new(
