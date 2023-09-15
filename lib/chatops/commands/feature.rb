@@ -680,6 +680,9 @@ module Chatops
       def feature_name
         return @feature_name if defined?(@feature_name)
 
+        # backticks are used to escape Slack auto-converting string to emoji
+        # so we strip them here if backticks surround the feature name
+        # https://gitlab.com/gitlab-com/gl-infra/reliability/-/issues/24376#note_1555034145
         @feature_name = arguments[1]&.gsub(/^`(.*)`$/, '\1')
       end
     end
