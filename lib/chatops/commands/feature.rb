@@ -274,12 +274,12 @@ module Chatops
         response = Gitlab::Client
           .new(token: environment.gitlab_token, host: environment.gitlab_host)
           .set_feature(feature_name, value, project: options[:project],
-                                    group: options[:group],
-                                    feature_group: options[:feature_group],
-                                    namespace: options[:namespace],
-                                    user: options[:user],
-                                    repository: options[:repository],
-                                    actors: options[:actors])
+                                            group: options[:group],
+                                            feature_group: options[:feature_group],
+                                            namespace: options[:namespace],
+                                            user: options[:user],
+                                            repository: options[:repository],
+                                            actors: options[:actors])
 
         feature = Gitlab::Feature.from_api_response(response)
         perform_side_effects(feature_name, value, feature, environment, options)
