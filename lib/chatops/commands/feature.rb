@@ -196,16 +196,14 @@ module Chatops
       end
 
       def get_on(environment)
-        name = strip_backticks(arguments[1])
-
-        unless name
+        unless feature_name
           return 'You must specify the name of the feature. ' \
             'For example: `feature get gitaly_tags`'
         end
 
-        feature = get_feature(name, environment)
+        feature = get_feature(feature_name, environment)
 
-        return "The feature #{name.inspect} does not exist on #{environment.env_name}." unless feature
+        return "The feature #{feature_name.inspect} does not exist on #{environment.env_name}." unless feature
 
         send_feature_details(feature: feature, environment: environment)
       end
@@ -249,10 +247,9 @@ module Chatops
           'oncall `@sre-oncall`, and use the ' \
           '--ignore-feature-flag-consistency-check. '
 
-        name = strip_backticks(arguments[1])
         value = arguments[2]
 
-        if !name || !value
+        if !feature_name || !value
           return 'You must specify the name of the feature flag ' \
             'and its new value.'
         end
@@ -276,7 +273,7 @@ module Chatops
 
         response = Gitlab::Client
           .new(token: environment.gitlab_token, host: environment.gitlab_host)
-          .set_feature(name, value, project: options[:project],
+          .set_feature(feature_name, value, project: options[:project],
                                     group: options[:group],
                                     feature_group: options[:feature_group],
                                     namespace: options[:namespace],
@@ -285,7 +282,7 @@ module Chatops
                                     actors: options[:actors])
 
         feature = Gitlab::Feature.from_api_response(response)
-        perform_side_effects(name, value, feature, environment, options)
+        perform_side_effects(feature_name, value, feature, environment, options)
       rescue ProductionCheckTimeout => e
         e.message + ' ' + check_failure_resp
       end
@@ -427,22 +424,20 @@ module Chatops
       end
 
       def delete_on(environment)
-        name = strip_backticks(arguments[1])
-
         return wrong_channel_resp if environment.production? && channel != production_channel_id
 
         Gitlab::Client
           .new(token: environment.gitlab_token, host: environment.gitlab_host)
-          .delete_feature(name)
+          .delete_feature(feature_name)
 
-        send_feature_toggle_event(name, 'deleted', environment)
-        log_feature_toggle(name, 'deleted', environment)
+        send_feature_toggle_event(feature_name, 'deleted', environment)
+        log_feature_toggle(feature_name, 'deleted', environment)
 
         send_slack_message_safely(
           slack_token: slack_token,
           channel: channel,
           slack_args: {
-            text: "Feature flag #{name} has been removed from #{environment.gitlab_host}!"
+            text: "Feature flag #{feature_name} has been removed from #{environment.gitlab_host}!"
           }
         )
       end
@@ -647,9 +642,8 @@ module Chatops
       end
 
       def feature_enabled_with_opts?(options, environment)
-        name = strip_backticks(arguments[1])
-        feature_check = Chatops::Commands::Feature.new(['get', name], options, env)
-        feature = feature_check.get_feature(name, environment)
+        feature_check = Chatops::Commands::Feature.new(['get', feature_name], options, env)
+        feature = feature_check.get_feature(feature_name, environment)
         feature&.enabled?
       end
 
@@ -683,11 +677,10 @@ module Chatops
         end
       end
 
-      # backticks are used to escape Slack auto-converting string to emoji
-      # so we strip them here if backticks surround the feature name
-      # https://gitlab.com/gitlab-com/gl-infra/reliability/-/issues/24376#note_1555034145
-      def strip_backticks(name)
-        name&.gsub(/^`(.*)`$/, '\1')
+      def feature_name
+        return @feature_name if defined?(@feature_name)
+
+        @feature_name = arguments[1]&.gsub(/^`(.*)`$/, '\1')
       end
     end
   end
