@@ -99,6 +99,11 @@ module Chatops
           "Ignore the production check when changing a feature flag's state"
         )
 
+        o.bool(
+          '--ignore-deprecation-check',
+          'Force the setting of the feature flag in case of deprecation'
+        )
+
         o.boolean(
           '--ignore-feature-flag-consistency-check',
           "Ignore the feature flag consistency check when changing a feature flag's state"
@@ -148,8 +153,8 @@ module Chatops
           # To always enable a feature:
           feature set gitaly_tags true
 
-          # To enable a feature 50% of the time:
-          feature set gitaly_tags 50 --random
+          # [Deprecated in favor of using actors] To enable a feature 50% of the time:
+          feature set gitaly_tags 50 --random --ignore-deprecation-check
 
           # To enable a feature 50% of the actors:
           feature set gitaly_tags 50 --actors
@@ -262,10 +267,15 @@ module Chatops
         return 'One of `--actors` or `--random` must be set for percentage values.' \
           unless valid_setting_for_percentage_value?(value, options)
 
-        # rubocop: disable Metrics/LineLength
-        return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, `--namespace`, `--user`, or `--repository`.' \
-          unless valid_actors_random_setting?(options)
-        # rubocop: enable Metrics/LineLength
+        unless valid_actors_random_setting?(options)
+          return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, ' \
+            '`--namespace`, `--user`, or `--repository`.' \
+        end
+
+        if random_not_forced?(options)
+          return 'Time percentage feature flags are being deprecated in favor of using actors. If you understand ' \
+            'the consequences, you can force it using --ignore-deprecation-check'
+        end
 
         return wrong_channel_resp if environment.production? && channel != production_channel_id
         return prod_check_failure_resp unless production_check?(environment)
@@ -669,6 +679,10 @@ module Chatops
         return true unless actors_or_random?(options)
 
         options.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.none?
+      end
+
+      def random_not_forced?(options)
+        options[:random] && !options[:ignore_deprecation_check]
       end
 
       def production_check_status(pipeline_id)
