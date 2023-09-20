@@ -649,7 +649,7 @@ describe Chatops::Commands::Feature do
     context 'when using valid arguments' do
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo 10] }
-        let(:command_opts) { default_opts.merge(random: true, ignore_deprecation_check: true) }
+        let(:command_opts) { default_opts.merge(random: true, ignore_random_deprecation_check: true) }
         let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 10 }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '10', feature_scope_actors: 'false' } }
         let(:set_feature_params) do
@@ -671,7 +671,7 @@ describe Chatops::Commands::Feature do
 
       include_examples 'valid feature flag update' do
         let(:command_args) { %w[set foo 0.001] }
-        let(:command_opts) { default_opts.merge(random: true, ignore_deprecation_check: true) }
+        let(:command_opts) { default_opts.merge(random: true, ignore_random_deprecation_check: true) }
         let(:gates) { [{ 'key' => 'percentage_of_time', 'value' => 0.001 }] }
         let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: '0.001', feature_scope_actors: 'false' } }
         let(:set_feature_params) do
@@ -874,7 +874,7 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a percentage value' do
           let(:value) { '10' }
-          let(:command_opts) { default_opts.merge(random: true, ignore_deprecation_check: true) }
+          let(:command_opts) { default_opts.merge(random: true, ignore_random_deprecation_check: true) }
           let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
 
           include_examples 'invalid feature flag update'
@@ -934,7 +934,7 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a percentage value' do
           let(:value) { '10' }
-          let(:command_opts) { default_opts.merge(random: true, ignore_deprecation_check: true) }
+          let(:command_opts) { default_opts.merge(random: true, ignore_random_deprecation_check: true) }
           let(:gates) { [{ 'value' => 10, 'key' => 'percentage_of_time' }] }
 
           include_examples 'invalid feature flag update'
@@ -1028,7 +1028,7 @@ describe Chatops::Commands::Feature do
 
     context 'when there is an ongoing incident' do
       it 'does not allow changing the feature flag state' do
-        opts = default_opts.merge(random: true, ignore_deprecation_check: true)
+        opts = default_opts.merge(random: true, ignore_random_deprecation_check: true)
         command =
           described_class.new(%w[set foo 10], opts, 'CHAT_CHANNEL' => '456', 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
         allow(command).to receive(:production_channel_id).and_return(command.env['CHAT_CHANNEL'])

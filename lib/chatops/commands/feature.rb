@@ -100,7 +100,7 @@ module Chatops
         )
 
         o.bool(
-          '--ignore-deprecation-check',
+          '--ignore-random-deprecation-check',
           'Force the setting of the feature flag in case of deprecation'
         )
 
@@ -154,7 +154,7 @@ module Chatops
           feature set gitaly_tags true
 
           # [Deprecated in favor of using actors] To enable a feature 50% of the time:
-          feature set gitaly_tags 50 --random --ignore-deprecation-check
+          feature set gitaly_tags 50 --random --ignore-random-deprecation-check
 
           # To enable a feature 50% of the actors:
           feature set gitaly_tags 50 --actors
@@ -274,7 +274,7 @@ module Chatops
 
         if random_not_forced?(options)
           return 'Time percentage feature flags are being deprecated in favor of using actors. If you understand ' \
-            'the consequences, you can force it using --ignore-deprecation-check'
+            'the consequences, you can force it using --ignore-random-deprecation-check'
         end
 
         return wrong_channel_resp if environment.production? && channel != production_channel_id
@@ -682,7 +682,7 @@ module Chatops
       end
 
       def random_not_forced?(options)
-        options[:random] && !options[:ignore_deprecation_check]
+        options[:random] && !options[:ignore_random_deprecation_check]
       end
 
       def production_check_status(pipeline_id)
