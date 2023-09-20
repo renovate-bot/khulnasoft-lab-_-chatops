@@ -92,7 +92,7 @@ module Chatops
                'Modifier to roll out a feature flag to a percentage of actors')
 
         o.bool('--random',
-               'Modifier to roll out a feature flag to a percentage of time')
+               'Modifier to roll out a feature flag to a percentage of time (deprecated)')
 
         o.boolean(
           '--ignore-production-check',
@@ -101,7 +101,7 @@ module Chatops
 
         o.bool(
           '--ignore-random-deprecation-check',
-          'Force the setting of the feature flag in case of deprecation'
+          'Allow usage of the deprecated option --random'
         )
 
         o.boolean(
@@ -269,7 +269,7 @@ module Chatops
 
         unless valid_actors_random_setting?(options)
           return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, ' \
-            '`--namespace`, `--user`, or `--repository`.' \
+            '`--namespace`, `--user`, or `--repository`.'
         end
 
         if random_not_forced?(options)
