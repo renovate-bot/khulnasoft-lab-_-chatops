@@ -54,7 +54,7 @@ module Chatops
       AUTO_DEPLOY_CHECK_PRODUCTION_JOB = 'auto_deploy:check_production'
 
       FEATURE_FLAG_TYPES = %i[development ops undefined experiment].freeze
-      FEATURE_FLAG_PATH_TEMPLATE = "%<prefix>config/feature_flags/%<type>/%<name>.yml"
+      FEATURE_FLAG_PATH_TEMPLATE = '%<prefix>config/feature_flags/%<type>/%<name>.yml'
       MONOLITH_PROJECT = 'gitlab-org/gitlab'
 
       ISSUE_HEADER = <<~DESC
@@ -62,24 +62,22 @@ module Chatops
         * Host: %<environment_host>s
         * Rollout issue: %<rollout_issue_url>s
       DESC
-
       ISSUE_SCOPES_TABLE = <<~MARKDOWN
-      ## Feature flag scopes
+        ## Feature flag scopes
 
-      This feature flag applies the following scopes (if any):
+        This feature flag applies the following scopes (if any):
 
-      | User                     | Project                     | Group                     | Feature group                     | Namespace                     | Repository                     |
-      |--------------------------|-----------------------------|---------------------------|-----------------------------------|-------------------------------|--------------------------------|
-      | `%<feature_scope_user>s` | `%<feature_scope_project>s` | `%<feature_scope_group>s` | `%<feature_scope_feature_group>s` | `%<feature_scope_namespace>s` | `%<feature_scope_repository>s` |
+        | User                     | Project                     | Group                     | Feature group                     | Namespace                     | Repository                     |
+        |--------------------------|-----------------------------|---------------------------|-----------------------------------|-------------------------------|--------------------------------|
+        | `%<feature_scope_user>s` | `%<feature_scope_project>s` | `%<feature_scope_group>s` | `%<feature_scope_feature_group>s` | `%<feature_scope_namespace>s` | `%<feature_scope_repository>s` |
 
-      When a value is empty, it means the scope does not apply. If none of these scopes are set it means the feature flag applies globally.
+        When a value is empty, it means the scope does not apply. If none of these scopes are set it means the feature flag applies globally.
       MARKDOWN
-
       ISSUE_FOOTER = <<~MARKDOWN
-      <hr>
+        <hr>
 
-      :robot: This issue was generated using [GitLab
-      Chatops](https://gitlab.com/gitlab-com/chatops/).
+        :robot: This issue was generated using [GitLab Chatops](https://gitlab.com/gitlab-com/chatops/).
+        /close
       MARKDOWN
 
       description 'Managing of GitLab feature flags.'
@@ -590,16 +588,12 @@ module Chatops
             "\n\n#{description}"
         end
 
-        issue = Environment.production.api_client.create_issue(
+        Environment.production.api_client.create_issue(
           LOG_PROJECT,
           log_title(name, value, environment, options),
           labels: labels,
           description: description
         )
-
-        Environment.production.api_client.close_issue(issue.project_id, issue.iid)
-
-        issue
       end
 
       private
@@ -630,11 +624,11 @@ module Chatops
         title = ["Feature flag '#{name}'"]
         title <<
           if flag_was_deleted?(value)
-            "has been deleted"
+            'has been deleted'
           else
             "has been set to '#{value}'"
           end
-        title << "of actors" if options[:actors]
+        title << 'of actors' if options[:actors]
         title << "on #{environment.env_name}"
 
         title.join(' ')
@@ -687,9 +681,15 @@ module Chatops
 
         # Search for CE flags first
         ['', 'ee/'].each do |prefix|
-          # We're not using the Search endpoint as it seems to not work well. Otherwise, we'd search for feature_flag_name with the `.yml` extension...
+          # We're not using the Search endpoint as it seems to not work well. Otherwise, we'd search for
+          # feature_flag_name with the `.yml` extension...
           FEATURE_FLAG_TYPES.each do |feature_flag_type|
-            potential_file_path = FEATURE_FLAG_PATH_TEMPLATE % { prefix: prefix, type: feature_flag_type, name: feature_flag_name }
+            potential_file_path = format(
+              FEATURE_FLAG_PATH_TEMPLATE,
+              prefix: prefix,
+              type: feature_flag_type,
+              name: feature_flag_name
+            )
 
             file_content = Environment.production.api_client.file_contents(MONOLITH_PROJECT, potential_file_path)
             next if file_content.nil?

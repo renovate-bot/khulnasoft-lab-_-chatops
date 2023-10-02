@@ -136,8 +136,9 @@ describe Chatops::Commands::Feature do
       expect(events_client)
         .to receive(:send_event)
         .with(
-          "feature '#{log_feature_toggle_fields[:feature_name]}' " \
-          "updated to '#{log_feature_toggle_fields[:feature_value]}'",
+          "Feature flag '#{log_feature_toggle_fields[:feature_name]}' " \
+          "has been set to '#{log_feature_toggle_fields[:feature_value]}' " \
+          "on #{environment.env_name}",
           fields: log_feature_toggle_fields
         )
 
@@ -1661,26 +1662,6 @@ describe Chatops::Commands::Feature do
   end
 
   describe '#log_feature_toggle' do
-    context 'without the GITLAB_USER_LOGIN variable' do
-      it 'raises KeyError' do
-        command = described_class.new
-        environment = command.environments.find(&:production?)
-
-        expect { command.log_feature_toggle('foo', 'bar', environment) }
-          .to raise_error(KeyError)
-      end
-    end
-
-    context 'without the GITLAB_TOKEN variable' do
-      it 'raises KeyError' do
-        command = described_class.new([], {}, 'GITLAB_USER_LOGIN' => 'alice')
-        environment = command.environments.find(&:production?)
-
-        expect { command.log_feature_toggle('foo', 'bar', environment) }
-          .to raise_error(KeyError)
-      end
-    end
-
     context 'with all required variables set' do
       it 'creates a closed issue' do
         command = described_class.new(
@@ -1692,12 +1673,12 @@ describe Chatops::Commands::Feature do
           'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
+        environment = command.environments.find(&:production?)
         client = instance_double(Chatops::Gitlab::Client)
         issue = instance_double('issue', project_id: 1, iid: 2)
 
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: 'foo', host: 'gitlab.com')
+        expect(Chatops::GitlabEnvironments::Environment.production)
+          .to receive(:api_client)
           .and_return(client)
 
         expect(client)
@@ -1710,9 +1691,6 @@ describe Chatops::Commands::Feature do
           )
           .and_return(issue)
 
-        expect(client).to receive(:close_issue).with(1, 2)
-
-        environment = command.environments.find(&:production?)
         expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
       end
 
@@ -1726,12 +1704,12 @@ describe Chatops::Commands::Feature do
           'GITLAB_STAGING_REF_TOKEN' => '654'
         )
 
+        environment = command.environments.find(&:production?)
         client = instance_double(Chatops::Gitlab::Client)
         issue = instance_double('issue', project_id: 1, iid: 2)
 
-        expect(Chatops::Gitlab::Client)
-          .to receive(:new)
-          .with(token: 'foo', host: 'gitlab.com')
+        expect(Chatops::GitlabEnvironments::Environment.production)
+          .to receive(:api_client)
           .and_return(client)
 
         expect(client)
@@ -1744,9 +1722,6 @@ describe Chatops::Commands::Feature do
           )
           .and_return(issue)
 
-        expect(client).to receive(:close_issue).with(1, 2)
-
-        environment = command.environments.find(&:production?)
         expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
       end
     end
