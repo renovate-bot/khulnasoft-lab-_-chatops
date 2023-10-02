@@ -1,7 +1,18 @@
 ---
 image: ruby:2.6-alpine
 
+include:
+  # Upgrades dependencies on a schedule
+  # see https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/renovate-bot.md
+  - project: 'gitlab-com/gl-infra/common-ci-tasks'
+    ref: v1.78.1 # renovate:managed
+    file: renovate-bot.yml
+    rules:
+      - if: '$CI_SERVER_HOST == "gitlab.com"'
+
 stages:
+  - validate       # renovate_bot validation stage
+  - renovate_bot
   - test
   - build
 
@@ -184,3 +195,12 @@ search_migrations:
 
 migrations:
   <<: *chatops
+
+# make sure we keep renovate bot image updated when
+# 'gitlab-com/gl-infra/common-ci-tasks' updates its base images, we
+# need a second release to have the correct image applied to the
+# imported tag. With this direct override we have more control over
+# the image version
+.base_renovate_image:
+  image:
+    name: registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks/renovate:v1.78.1
