@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["gitlab>gitlab-com/gl-infra/common-ci-tasks:renovate-common"],
   "rebaseWhen": "auto",
+  "reviewersFromCodeOwners": false,
   "packageRules": [
     {
       "groupName": "ruby",
