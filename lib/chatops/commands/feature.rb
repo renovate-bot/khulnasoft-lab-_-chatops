@@ -53,6 +53,35 @@ module Chatops
       # https://gitlab.com/gitlab-org/release-tools/-/blob/9358665fa14fd92b4296b11cb1fda88f97d27580/.gitlab/ci/auto-deploy.gitlab-ci.yml#L39
       AUTO_DEPLOY_CHECK_PRODUCTION_JOB = 'auto_deploy:check_production'
 
+      FEATURE_FLAG_TYPES = %i[development ops undefined experiment].freeze
+      FEATURE_FLAG_PATH_TEMPLATE = "%<prefix>config/feature_flags/%<type>/%<name>.yml"
+      MONOLITH_PROJECT = 'gitlab-org/gitlab'
+
+      ISSUE_HEADER = <<~DESC
+        * Changed by [`@%<username>s`](https://gitlab.com/%<username>s) at `%<now>s` (UTC)
+        * Host: %<environment_host>s
+        * Rollout issue: %<rollout_issue_url>s
+      DESC
+
+      ISSUE_SCOPES_TABLE = <<~MARKDOWN
+      ## Feature flag scopes
+
+      This feature flag applies the following scopes (if any):
+
+      | User                     | Project                     | Group                     | Feature group                     | Namespace                     | Repository                     |
+      |--------------------------|-----------------------------|---------------------------|-----------------------------------|-------------------------------|--------------------------------|
+      | `%<feature_scope_user>s` | `%<feature_scope_project>s` | `%<feature_scope_group>s` | `%<feature_scope_feature_group>s` | `%<feature_scope_namespace>s` | `%<feature_scope_repository>s` |
+
+      When a value is empty, it means the scope does not apply. If none of these scopes are set it means the feature flag applies globally.
+      MARKDOWN
+
+      ISSUE_FOOTER = <<~MARKDOWN
+      <hr>
+
+      :robot: This issue was generated using [GitLab
+      Chatops](https://gitlab.com/gitlab-com/chatops/).
+      MARKDOWN
+
       description 'Managing of GitLab feature flags.'
       enable_multi_environments
 
@@ -281,8 +310,7 @@ module Chatops
         return prod_check_failure_resp unless production_check?(environment)
         return feature_flag_consistency_check_failure_resp unless feature_flag_consistency_check?(value, environment)
 
-        response = Gitlab::Client
-          .new(token: environment.gitlab_token, host: environment.gitlab_host)
+        response = environment.api_client
           .set_feature(feature_name, value, project: options[:project],
                                             group: options[:group],
                                             feature_group: options[:feature_group],
@@ -436,9 +464,7 @@ module Chatops
       def delete_on(environment)
         return wrong_channel_resp if environment.production? && channel != production_channel_id
 
-        Gitlab::Client
-          .new(token: environment.gitlab_token, host: environment.gitlab_host)
-          .delete_feature(feature_name)
+        environment.api_client.delete_feature(feature_name)
 
         send_feature_toggle_event(feature_name, 'deleted', environment)
         log_feature_toggle(feature_name, 'deleted', environment)
@@ -537,22 +563,12 @@ module Chatops
       def send_feature_toggle_event(name, value, environment, options = {})
         return unless environment.staging? || environment.staging_ref? || environment.production?
 
-        message = "feature '#{name}' updated to '#{value}'"
-
-        scopes = {
-          feature_scope_project: options[:project],
-          feature_scope_group: options[:group],
-          feature_scope_feature_group: options[:feature_group],
-          feature_scope_namespace: options[:namespace],
-          feature_scope_user: options[:user],
-          feature_scope_repository: options[:repository],
-          feature_scope_actors: options[:actors]&.to_s
-        }.compact
+        scopes = event_scopes_hash(options).merge(feature_scope_actors: options[:actors]&.to_s).compact
 
         Chatops::Events::Client
           .new(environment.env_name)
           .send_event(
-            message,
+            log_title(name, value, environment, options),
             fields: {
               feature_name: name,
               feature_value: value.to_s
@@ -561,13 +577,10 @@ module Chatops
       end
 
       def log_feature_toggle(name, value, environment)
-        client = Gitlab::Client
-          .new(token: env.fetch('GITLAB_TOKEN'), host: PRODUCTION_HOST)
-
         host = environment.gitlab_host
         labels = "host::#{host}, change"
 
-        description = issue_description(name, value, environment)
+        description = issue_description(name, value, environment, options)
 
         if options[:ignore_production_check]
           labels += ', Production check ignored'
@@ -577,17 +590,19 @@ module Chatops
             "\n\n#{description}"
         end
 
-        issue = client.create_issue(
+        issue = Environment.production.api_client.create_issue(
           LOG_PROJECT,
-          issue_title(name, value),
+          log_title(name, value, environment, options),
           labels: labels,
           description: description
         )
 
-        client.close_issue(issue.project_id, issue.iid)
+        Environment.production.api_client.close_issue(issue.project_id, issue.iid)
 
         issue
       end
+
+      private
 
       def annotate_feature_toggle(name, value, environment)
         Grafana::Annotate.new(token: grafana_token)
@@ -598,48 +613,85 @@ module Chatops
       end
 
       def username
-        env.fetch('GITLAB_USER_LOGIN')
+        @username ||= env.fetch('GITLAB_USER_LOGIN')
       end
-
-      private
 
       def production_channel_id
         ENV.fetch('PRODUCTION_SLACK_CHANNEL_ID', PRODUCTION_SLACK_CHANNEL_ID)
       end
 
-      def issue_description(name, value, environment)
-        <<~DESC
-          * Feature flag: `#{name}`
-          * New value: `#{value}`
-          * Percentage of actors: `#{options[:actors]}`
-          * Changed by: [`@#{username}`](https://gitlab.com/#{username})
-          * Changed on (in UTC): `#{Time.now.utc.iso8601}`
-          * Host: https://#{environment.gitlab_host}
-
-          ## Feature flag scopes
-
-          This feature flag applies the following scopes (if any):
-
-          | User                        | Project                        | Group                        | Namespace                        | Repository                        |
-          |-----------------------------|--------------------------------|------------------------------|----------------------------------| ----------------------------------|
-          | `#{options[:user].inspect}` | `#{options[:project].inspect}` | `#{options[:group].inspect}` | `#{options[:namespace].inspect}` | `#{options[:repository].inspect}` |
-
-          When a value is set to `nil` it means the scope does not apply. If
-          none of these scopes are set it means the feature flag applies to
-          everybody.
-
-          <hr>
-
-          :robot: This issue was generated using [GitLab
-          Chatops](https://gitlab.com/gitlab-com/chatops/).
-        DESC
+      def flag_was_deleted?(value)
+        value == 'deleted'
       end
 
-      def issue_title(name, value)
-        if value == 'deleted'
-          "Feature flag #{name.inspect} has been deleted"
-        else
-          "Feature flag #{name.inspect} has been set to #{value.inspect}"
+      def log_title(name, value, environment, options)
+        value = final_value(value, options)
+
+        title = ["Feature flag '#{name}'"]
+        title <<
+          if flag_was_deleted?(value)
+            "has been deleted"
+          else
+            "has been set to '#{value}'"
+          end
+        title << "of actors" if options[:actors]
+        title << "on #{environment.env_name}"
+
+        title.join(' ')
+      end
+
+      def final_value(value, options)
+        return "#{value}%" if options[:actors]
+
+        value
+      end
+
+      def event_scopes_hash(options)
+        {
+          feature_scope_user: options[:user],
+          feature_scope_project: options[:project],
+          feature_scope_group: options[:group],
+          feature_scope_feature_group: options[:feature_group],
+          feature_scope_namespace: options[:namespace],
+          feature_scope_repository: options[:repository]
+        }
+      end
+
+      def issue_data(name:, environment:, options: {})
+        event_scopes_hash(options).merge(
+          username: username,
+          now: Time.now.utc.iso8601,
+          environment_host: "https://#{environment.gitlab_host}",
+          rollout_issue_url: rollout_issue_url(name)
+        )
+      end
+
+      def issue_description(name, value, environment, options)
+        data = issue_data(name: name, environment: environment, options: options)
+
+        description = [format(ISSUE_HEADER, data)]
+        description.push(format(ISSUE_SCOPES_TABLE, data)) unless flag_was_deleted?(value)
+        description.push(ISSUE_FOOTER).join("\n\n")
+      end
+
+      def rollout_issue_url(feature_flag_name)
+        return @rollout_issue_url if defined?(@rollout_issue_url)
+
+        # Search for CE flags first
+        ['', 'ee/'].each do |prefix|
+          # We're not using the Search endpoint as it seems to not work well. Otherwise, we'd search for feature_flag_name with the `.yml` extension...
+          FEATURE_FLAG_TYPES.each do |feature_flag_type|
+            potential_file_path = FEATURE_FLAG_PATH_TEMPLATE % { prefix: prefix, type: feature_flag_type, name: feature_flag_name }
+
+            file_content = Environment.production.api_client.file_contents(MONOLITH_PROJECT, potential_file_path)
+            next if file_content.nil?
+
+            issue_url_match = file_content.match(%r{^rollout_issue_url: (?<issue_url>https://.+)$})
+            return unless issue_url_match
+
+            @rollout_issue_url = issue_url_match[:issue_url]
+            return @rollout_issue_url
+          end
         end
       end
 

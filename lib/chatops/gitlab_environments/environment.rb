@@ -48,6 +48,10 @@ module Chatops
       def production?
         env_name == 'gprd'
       end
+
+      def api_client
+        @api_client ||= Gitlab::Client.new(token: gitlab_token, host: gitlab_host)
+      end
     end
   end
 end
