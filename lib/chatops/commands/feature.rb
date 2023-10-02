@@ -674,8 +674,16 @@ module Chatops
         description.push(ISSUE_FOOTER).join("\n\n")
       end
 
-      def rollout_issue_url(feature_flag_name)
-        return @rollout_issue_url if defined?(@rollout_issue_url)
+      def feature_flag_definitions
+        @feature_flag_definitions ||= {}
+      end
+
+      def feature_flag_definition?(feature_flag_name)
+        feature_flag_definitions.key?(feature_flag_name)
+      end
+
+      def feature_flag_definition(feature_flag_name)
+        return feature_flag_definitions[feature_flag_name] if feature_flag_definition?(feature_flag_name)
 
         # Search for CE flags first
         ['', 'ee/'].each do |prefix|
@@ -686,13 +694,17 @@ module Chatops
             file_content = Environment.production.api_client.file_contents(MONOLITH_PROJECT, potential_file_path)
             next if file_content.nil?
 
-            issue_url_match = file_content.match(%r{^rollout_issue_url: (?<issue_url>https://.+)$})
-            return unless issue_url_match
-
-            @rollout_issue_url = issue_url_match[:issue_url]
-            return @rollout_issue_url
+            feature_flag_definitions[feature_flag_name] = YAML.safe_load(file_contents)
           end
         end
+
+        @feature_flag_definitions[feature_flag_name]
+      end
+
+      def rollout_issue_url(feature_flag_name)
+        return unless feature_flag_definition?(feature_flag_name)
+
+        feature_flag_definition(feature_flag_name)[:rollout_issue_url]
       end
 
       def enable_feature_value?(value)
