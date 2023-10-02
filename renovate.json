@@ -7,6 +7,6 @@
       "groupName": "ruby",
       "matchPackageNames": ["ruby"],
       "separateMinorPatch": true
-    },
+    }
   ]
 }
