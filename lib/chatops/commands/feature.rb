@@ -6,6 +6,7 @@ module Chatops
       include Command
       include GitlabEnvironments
       include ::Chatops::Release::Command
+      include ::SemanticLogger::Loggable
 
       ProductionCheckTimeout = Class.new(StandardError)
       PRODUCTION_SLACK_CHANNEL_ID = 'C101F3796'
@@ -53,8 +54,6 @@ module Chatops
       # https://gitlab.com/gitlab-org/release-tools/-/blob/9358665fa14fd92b4296b11cb1fda88f97d27580/.gitlab/ci/auto-deploy.gitlab-ci.yml#L39
       AUTO_DEPLOY_CHECK_PRODUCTION_JOB = 'auto_deploy:check_production'
 
-      FEATURE_FLAG_TYPES = %i[development ops undefined experiment].freeze
-      FEATURE_FLAG_PATH_TEMPLATE = '%<prefix>config/feature_flags/%<type>/%<name>.yml'
       MONOLITH_PROJECT = 'gitlab-org/gitlab'
 
       ISSUE_HEADER = <<~DESC
@@ -77,7 +76,6 @@ module Chatops
         <hr>
 
         :robot: This issue was generated using [GitLab Chatops](https://gitlab.com/gitlab-com/chatops/).
-        /close
       MARKDOWN
 
       description 'Managing of GitLab feature flags.'
@@ -588,12 +586,14 @@ module Chatops
             "\n\n#{description}"
         end
 
-        Environment.production.api_client.create_issue(
+        production_api_client.create_issue(
           LOG_PROJECT,
           log_title(name, value, environment, options),
           labels: labels,
           description: description
-        )
+        ).tap do |issue|
+          production_api_client.close_issue(issue.project_id, issue.iid)
+        end
       end
 
       private
@@ -679,26 +679,23 @@ module Chatops
       def feature_flag_definition(feature_flag_name)
         return feature_flag_definitions[feature_flag_name] if feature_flag_definition?(feature_flag_name)
 
-        # Search for CE flags first
-        ['', 'ee/'].each do |prefix|
-          # We're not using the Search endpoint as it seems to not work well. Otherwise, we'd search for
-          # feature_flag_name with the `.yml` extension...
-          FEATURE_FLAG_TYPES.each do |feature_flag_type|
-            potential_file_path = format(
-              FEATURE_FLAG_PATH_TEMPLATE,
-              prefix: prefix,
-              type: feature_flag_type,
-              name: feature_flag_name
-            )
+        feature_flag_definitions[feature_flag_name] = {}
+        pattern = "#{feature_flag_name} f:\.yml$"
+        search_results = production_api_client.search_in_project(MONOLITH_PROJECT, 'blobs', pattern)
 
-            file_content = Environment.production.api_client.file_contents(MONOLITH_PROJECT, potential_file_path)
-            next if file_content.nil?
+        if search_results.any?
+          logger.info(
+            "Found #{search_results.size} files matching `#{pattern}`." \
+            " `#{search_results.first[:path]}` will be fetched."
+          )
+          file_content = production_api_client.file_contents(MONOLITH_PROJECT, search_results.first[:path])
 
-            feature_flag_definitions[feature_flag_name] = YAML.safe_load(file_contents)
-          end
+          feature_flag_definitions[feature_flag_name] = YAML.safe_load(file_contents) if file_content
+        else
+          logger.info("Found no files matching `#{pattern}`!")
         end
 
-        @feature_flag_definitions[feature_flag_name]
+        feature_flag_definitions[feature_flag_name]
       end
 
       def rollout_issue_url(feature_flag_name)
@@ -753,6 +750,10 @@ module Chatops
         pipeline_jobs(pipeline_id).auto_paginate.each do |job|
           return job.status if job.name == AUTO_DEPLOY_CHECK_PRODUCTION_JOB
         end
+      end
+
+      def production_api_client
+        @production_api_client ||= Environment.production.api_client
       end
 
       def feature_name

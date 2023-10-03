@@ -1690,6 +1690,7 @@ describe Chatops::Commands::Feature do
             description: an_instance_of(String)
           )
           .and_return(issue)
+        expect(client).to receive(:close_issue).with(1, 2)
 
         expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
       end
@@ -1721,6 +1722,7 @@ describe Chatops::Commands::Feature do
             description: an_instance_of(String)
           )
           .and_return(issue)
+        expect(client).to receive(:close_issue).with(1, 2)
 
         expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
       end
