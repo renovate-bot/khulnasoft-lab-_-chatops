@@ -234,6 +234,8 @@ module Chatops
       def_delegator :internal_client, :create_issue
       def_delegator :internal_client, :close_issue
       def_delegator :internal_client, :issues
+      def_delegator :internal_client, :create_issue_note
+      def_delegator :internal_client, :create_issue_link
 
       def_delegator :internal_client, :create_branch
       def_delegator :internal_client, :create_merge_request

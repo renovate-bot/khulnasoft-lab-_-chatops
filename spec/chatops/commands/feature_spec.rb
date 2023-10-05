@@ -126,6 +126,10 @@ describe Chatops::Commands::Feature do
         .with(log_feature_toggle_fields[:feature_name], log_feature_toggle_fields[:feature_value], environment)
         .and_return(issue)
 
+      expect(command)
+        .to receive(:notify_and_link_rollout_issue)
+        .with(log_feature_toggle_fields[:feature_name], issue)
+
       events_client = instance_double('Chatops::Events::Client')
 
       expect(Chatops::Events::Client)
@@ -1726,6 +1730,80 @@ describe Chatops::Commands::Feature do
 
         expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
       end
+    end
+  end
+
+  describe '#notify_and_link_rollout_issue' do
+    let(:feature_flag_name) { 'foo' }
+    let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
+    let(:rollout_issue_iid) { '423524' }
+    let(:log_issue) { instance_double('Gitlab::Issue', project_id: 42, iid: 12, title: 'log issue title', web_url: 'https://log-issue-web-url') }
+    let(:client) { instance_double(Chatops::Gitlab::Client) }
+
+    it 'creates an issue note in the rollout issue' do
+      command = described_class.new(
+        [],
+        {},
+        'GITLAB_USER_LOGIN' => 'alice',
+        'GITLAB_TOKEN' => 'foo',
+        'GITLAB_STAGING_TOKEN' => '321',
+        'GITLAB_STAGING_REF_TOKEN' => '654'
+      )
+      # needed to initialize environments
+      _ = command.environments
+
+      expect(command).to receive(:rollout_issue_project_path).with(feature_flag_name).and_return(rollout_issue_project_path)
+      expect(command).to receive(:rollout_issue_iid).with(feature_flag_name).and_return(rollout_issue_iid)
+      expect(Chatops::GitlabEnvironments::Environment.production)
+        .to receive(:api_client)
+        .and_return(client)
+      expect(client)
+        .to receive(:create_issue_note)
+        .with(
+          rollout_issue_project_path,
+          rollout_issue_iid,
+          "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}"
+        )
+      expect(client)
+        .to receive(:create_issue_link)
+        .with(
+          rollout_issue_project_path,
+          rollout_issue_iid,
+          log_issue.project_id,
+          log_issue.iid
+        )
+
+      command.__send__(:notify_and_link_rollout_issue, feature_flag_name, log_issue)
+    end
+  end
+
+  describe '#rollout_issue_project_path' do
+    let(:feature_flag_name) { 'foo' }
+    let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
+    let(:rollout_issue_iid) { '423524' }
+    let(:rollout_issue_url) { "https://gitlab.com/#{rollout_issue_project_path}/-/issues/#{rollout_issue_iid}" }
+
+    it 'creates an issue note in the rollout issue' do
+      command = described_class.new
+
+      expect(command).to receive(:rollout_issue_url).with(feature_flag_name).and_return(rollout_issue_url)
+
+      expect(command.__send__(:rollout_issue_project_path, feature_flag_name)).to eq(rollout_issue_project_path)
+    end
+  end
+
+  describe '#rollout_issue_iid' do
+    let(:feature_flag_name) { 'foo' }
+    let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
+    let(:rollout_issue_iid) { '423524' }
+    let(:rollout_issue_url) { "https://gitlab.com/#{rollout_issue_project_path}/-/issues/#{rollout_issue_iid}" }
+
+    it 'creates an issue note in the rollout issue' do
+      command = described_class.new
+
+      expect(command).to receive(:rollout_issue_url).with(feature_flag_name).and_return(rollout_issue_url)
+
+      expect(command.__send__(:rollout_issue_iid, feature_flag_name)).to eq(rollout_issue_iid)
     end
   end
 

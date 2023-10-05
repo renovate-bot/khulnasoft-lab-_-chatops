@@ -55,6 +55,7 @@ module Chatops
       AUTO_DEPLOY_CHECK_PRODUCTION_JOB = 'auto_deploy:check_production'
 
       MONOLITH_PROJECT = 'gitlab-org/gitlab'
+      ISSUE_REGEXP = %r{gitlab\.com/(?<issue_project_path>.+)/-/issues/(?<issue_iid>\d+)}
 
       ISSUE_HEADER = <<~DESC
         * Changed by [`@%<username>s`](https://gitlab.com/%<username>s) at `%<now>s` (UTC)
@@ -394,6 +395,7 @@ module Chatops
         annotate_feature_toggle(name, value, environment)
         send_feature_toggle_event(name, value, environment, options)
         issue = log_feature_toggle(name, value, environment)
+        notify_and_link_rollout_issue(name, issue)
 
         output = []
         output << send_feature_details(
@@ -598,6 +600,24 @@ module Chatops
 
       private
 
+      def notify_and_link_rollout_issue(feature_flag_name, log_issue)
+        project = rollout_issue_project_path(feature_flag_name)
+        issue_iid = rollout_issue_iid(feature_flag_name)
+
+        production_api_client.create_issue_note(
+          project,
+          issue_iid,
+          "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}"
+        )
+
+        production_api_client.create_issue_link(
+          project,
+          issue_iid,
+          log_issue.project_id,
+          log_issue.iid
+        )
+      end
+
       def annotate_feature_toggle(name, value, environment)
         Grafana::Annotate.new(token: grafana_token)
           .annotate!(
@@ -702,6 +722,26 @@ module Chatops
         return unless feature_flag_definition?(feature_flag_name)
 
         feature_flag_definition(feature_flag_name)[:rollout_issue_url]
+      end
+
+      def rollout_issue_project_path(feature_flag_name)
+        issue_url = rollout_issue_url(feature_flag_name)
+        return unless issue_url
+
+        matches = issue_url.match(ISSUE_REGEXP)
+        return unless matches
+
+        matches[:issue_project_path]
+      end
+
+      def rollout_issue_iid(feature_flag_name)
+        issue_url = rollout_issue_url(feature_flag_name)
+        return unless issue_url
+
+        matches = issue_url.match(ISSUE_REGEXP)
+        return unless matches
+
+        matches[:issue_iid]
       end
 
       def enable_feature_value?(value)
