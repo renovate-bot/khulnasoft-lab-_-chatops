@@ -712,7 +712,13 @@ module Chatops
           )
           file_content = production_api_client.file_contents(MONOLITH_PROJECT, search_results.first[:path])
 
-          feature_flag_definitions[feature_flag_name] = YAML.safe_load(file_contents) if file_content
+          if file_content
+            feature_flag_definitions[feature_flag_name] = YAML.safe_load(
+              file_content,
+              permitted_classes: [Symbol],
+              symbolize_names: true
+            )
+          end
         else
           logger.info("Found no files matching `#{pattern}`!")
         end
@@ -721,9 +727,10 @@ module Chatops
       end
 
       def rollout_issue_url(feature_flag_name)
-        return unless feature_flag_definition?(feature_flag_name)
+        flag_definition = feature_flag_definition(feature_flag_name)
+        return unless flag_definition
 
-        feature_flag_definition(feature_flag_name)[:rollout_issue_url]
+        flag_definition[:rollout_issue_url]
       end
 
       def rollout_issue_project_path(feature_flag_name)

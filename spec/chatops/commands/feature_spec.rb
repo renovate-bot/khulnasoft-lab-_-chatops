@@ -1667,6 +1667,29 @@ describe Chatops::Commands::Feature do
 
   describe '#log_feature_toggle' do
     context 'with all required variables set' do
+      let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
+      let(:rollout_issue_iid) { '423524' }
+      let(:rollout_issue_url) { "https://gitlab.com/#{rollout_issue_project_path}/-/issues/#{rollout_issue_iid}" }
+      let(:feature_flag_definition_path) { 'config/feature_flags/development/foo.yml' }
+
+      def expect_ff_definition_file_api_calls(client, feature_flag_definition_path, rollout_issue_url)
+        expect(client)
+          .to receive(:search_in_project)
+          .with(
+            'gitlab-org/gitlab',
+            'blobs',
+            'foo f:.yml$'
+          )
+          .and_return([{ path: feature_flag_definition_path }])
+        expect(client)
+          .to receive(:file_contents)
+          .with(
+            'gitlab-org/gitlab',
+            feature_flag_definition_path
+          )
+          .and_return({ rollout_issue_url: rollout_issue_url }.to_yaml)
+      end
+
       it 'creates a closed issue' do
         command = described_class.new(
           [],
@@ -1684,6 +1707,8 @@ describe Chatops::Commands::Feature do
         expect(Chatops::GitlabEnvironments::Environment.production)
           .to receive(:api_client)
           .and_return(client)
+
+        expect_ff_definition_file_api_calls(client, feature_flag_definition_path, rollout_issue_url)
 
         expect(client)
           .to receive(:create_issue)
@@ -1716,6 +1741,8 @@ describe Chatops::Commands::Feature do
         expect(Chatops::GitlabEnvironments::Environment.production)
           .to receive(:api_client)
           .and_return(client)
+
+        expect_ff_definition_file_api_calls(client, feature_flag_definition_path, rollout_issue_url)
 
         expect(client)
           .to receive(:create_issue)
