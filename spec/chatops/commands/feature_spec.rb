@@ -1735,13 +1735,10 @@ describe Chatops::Commands::Feature do
 
   describe '#notify_and_link_rollout_issue' do
     let(:feature_flag_name) { 'foo' }
-    let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
-    let(:rollout_issue_iid) { '423524' }
     let(:log_issue) { instance_double('Gitlab::Issue', project_id: 42, iid: 12, title: 'log issue title', web_url: 'https://log-issue-web-url') }
     let(:client) { instance_double(Chatops::Gitlab::Client) }
-
-    it 'creates an issue note in the rollout issue' do
-      command = described_class.new(
+    let(:command) do
+      described_class.new(
         [],
         {},
         'GITLAB_USER_LOGIN' => 'alice',
@@ -1749,31 +1746,62 @@ describe Chatops::Commands::Feature do
         'GITLAB_STAGING_TOKEN' => '321',
         'GITLAB_STAGING_REF_TOKEN' => '654'
       )
+    end
+
+    before do
       # needed to initialize environments
       _ = command.environments
 
-      expect(command).to receive(:rollout_issue_project_path).with(feature_flag_name).and_return(rollout_issue_project_path)
-      expect(command).to receive(:rollout_issue_iid).with(feature_flag_name).and_return(rollout_issue_iid)
-      expect(Chatops::GitlabEnvironments::Environment.production)
+      allow(Chatops::GitlabEnvironments::Environment.production)
         .to receive(:api_client)
         .and_return(client)
-      expect(client)
-        .to receive(:create_issue_note)
-        .with(
-          rollout_issue_project_path,
-          rollout_issue_iid,
-          "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}"
-        )
-      expect(client)
-        .to receive(:create_issue_link)
-        .with(
-          rollout_issue_project_path,
-          rollout_issue_iid,
-          log_issue.project_id,
-          log_issue.iid
-        )
+    end
 
-      command.__send__(:notify_and_link_rollout_issue, feature_flag_name, log_issue)
+    context 'when issue can be parsed from the rollout_issue_url' do
+      let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
+      let(:rollout_issue_iid) { '423524' }
+
+      before do
+        allow(command).to receive(:rollout_issue_project_path).with(feature_flag_name).and_return(rollout_issue_project_path)
+        allow(command).to receive(:rollout_issue_iid).with(feature_flag_name).and_return(rollout_issue_iid)
+      end
+
+      it 'creates an issue note in the rollout issue' do
+        expect(client)
+          .to receive(:create_issue_note)
+          .with(
+            rollout_issue_project_path,
+            rollout_issue_iid,
+            "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}. " \
+            'Message generated through [`chatops`](https://gitlab.com/gitlab-com/chatops/-/blob/master/lib/chatops/gitlab/feature.rb).'
+          )
+        expect(client)
+          .to receive(:create_issue_link)
+          .with(
+            rollout_issue_project_path,
+            rollout_issue_iid,
+            log_issue.project_id,
+            log_issue.iid
+          )
+
+        command.__send__(:notify_and_link_rollout_issue, feature_flag_name, log_issue)
+      end
+    end
+
+    context 'when issue cannot be parsed from the rollout_issue_url' do
+      before do
+        allow(command).to receive(:rollout_issue_project_path).with(feature_flag_name).and_return(nil)
+        allow(command).to receive(:rollout_issue_iid).with(feature_flag_name).and_return(nil)
+      end
+
+      it 'does not create an issue note in the rollout issue' do
+        expect(client)
+          .not_to receive(:create_issue_note)
+        expect(client)
+          .not_to receive(:create_issue_link)
+
+        command.__send__(:notify_and_link_rollout_issue, feature_flag_name, log_issue)
+      end
     end
   end
 

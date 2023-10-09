@@ -603,11 +603,13 @@ module Chatops
       def notify_and_link_rollout_issue(feature_flag_name, log_issue)
         project = rollout_issue_project_path(feature_flag_name)
         issue_iid = rollout_issue_iid(feature_flag_name)
+        return unless project && issue_iid
 
         production_api_client.create_issue_note(
           project,
           issue_iid,
-          "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}"
+          "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}. " \
+            'Message generated through [`chatops`](https://gitlab.com/gitlab-com/chatops/-/blob/master/lib/chatops/gitlab/feature.rb).'
         )
 
         production_api_client.create_issue_link(
