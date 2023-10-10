@@ -37,8 +37,8 @@ module Chatops
             '`--staging` or `--production`._'
         end
 
-        # If there is a new state transition, make it here. Otherwise
-        # we just print the status and a note about usage
+        # If there is a new state transition, make it here.
+        # Otherwise we just print the status and a note about usage
         server_state_commands.each do |state|
           if !options[:ignore_deployment_check] &&
              reduce_canary_traffic?(state) &&
@@ -77,8 +77,7 @@ module Chatops
       end
 
       def usage_disp
-        # display some additional text if no options are
-        # specifified
+        # display some additional text if no options are specifified
         return [] unless options.to_hash.reject { |k| %i[production staging].include?(k) }.empty?
 
         ['_Use `/chatops run canary --help` to list canary commands_',
@@ -126,9 +125,7 @@ module Chatops
       end
 
       def canary_server_name?(server)
-        # By convention, all canary server
-        # names have the identifier '-cny-'
-        # in the name
+        # By convention, all canary server names have the identifier '-cny-' in the name
         server.include?('-cny-')
       end
 
@@ -137,7 +134,7 @@ module Chatops
       end
 
       def lb_ips
-        @lb_ips ||= chef_client.ips_from_role("#{environment.env_name}-base-lb")
+        @lb_ips ||= chef_client.ips_from_role("#{environment.env_name}-base-haproxy")
       end
 
       def send_event(message)
