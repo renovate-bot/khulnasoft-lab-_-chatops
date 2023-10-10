@@ -12,9 +12,9 @@ describe Chatops::Commands::Annotate do
         'CHAT_CHANNEL' => 'chan'
       }
     end
-    let(:grafana_annotate) { instance_double('Grafana::Annotate') }
-    let(:grafana_dashboard) { instance_double('Grafana::Dashboard') }
-    let(:slack_message) { instance_double('Slack::Message') }
+    let(:grafana_annotate) { instance_double(Chatops::Grafana::Annotate) }
+    let(:grafana_dashboard) { instance_double(Chatops::Grafana::Dashboard) }
+    let(:slack_message) { instance_double(Chatops::Slack::Message) }
     let(:success_response) do
       {
         'message' => 'Annotation added',
@@ -60,7 +60,7 @@ describe Chatops::Commands::Annotate do
           .twice
           .with(
             'my annotation text (<a href="https://gitlab.com/jane_doe">@jane_doe</a>)',
-            tags: ['user-annotation', 'gprd'], dashboard_id: 42
+            tags: %w[user-annotation gprd], dashboard_id: 42
           )
           .and_return(success_response)
 
@@ -84,7 +84,7 @@ describe Chatops::Commands::Annotate do
           .twice
           .with(
             'my annotation text (<a href="https://gitlab.com/jane_doe">@jane_doe</a>)',
-            tags: ['user-annotation', 'gprd'], dashboard_id: 42
+            tags: %w[user-annotation gprd], dashboard_id: 42
           )
           .and_return(success_response)
 

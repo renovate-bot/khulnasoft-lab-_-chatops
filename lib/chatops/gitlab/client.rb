@@ -61,7 +61,7 @@ module Chatops
 
       # Returns a user for a given username or email address.
       def find_user(username_or_email)
-        if /[^@]+@[^\.]+\..+/.match?(username_or_email)
+        if /[^@]+@[^.]+\..+/.match?(username_or_email)
           internal_client.users(search: username_or_email).first
         else
           internal_client.users(username: username_or_email).first

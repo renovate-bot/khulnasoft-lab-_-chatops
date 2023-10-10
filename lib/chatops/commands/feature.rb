@@ -55,7 +55,7 @@ module Chatops
       AUTO_DEPLOY_CHECK_PRODUCTION_JOB = 'auto_deploy:check_production'
 
       MONOLITH_PROJECT = 'gitlab-org/gitlab'
-      ISSUE_REGEXP = %r{gitlab\.com/(?<issue_project_path>.+)/-/issues/(?<issue_iid>\d+)}
+      ISSUE_REGEXP = %r{gitlab\.com/(?<issue_project_path>.+)/-/issues/(?<issue_iid>\d+)}.freeze
 
       ISSUE_HEADER = <<~DESC
         * Changed by [`@%<username>s`](https://gitlab.com/%<username>s) at `%<now>s` (UTC)
@@ -229,7 +229,7 @@ module Chatops
       def get_on(environment)
         unless feature_name
           return 'You must specify the name of the feature. ' \
-            'For example: `feature get gitaly_tags`'
+                 'For example: `feature get gitaly_tags`'
         end
 
         feature = get_feature(feature_name, environment)
@@ -282,12 +282,12 @@ module Chatops
 
         if !feature_name || !value
           return 'You must specify the name of the feature flag ' \
-            'and its new value.'
+                 'and its new value.'
         end
 
         unless Gitlab::Feature.valid_value?(value)
           return "The value #{value.inspect} is invalid. " \
-            'Valid values are: `true`, `false`, or an integer from 0 to 100.'
+                 'Valid values are: `true`, `false`, or an integer from 0 to 100.'
         end
 
         return 'One of `--actors` or `--random` must be set for percentage values.' \
@@ -295,12 +295,12 @@ module Chatops
 
         unless valid_actors_random_setting?(options)
           return '`--actors` and `--random` cannot be set together with `--project`, `--group`, `--feature-group`, ' \
-            '`--namespace`, `--user`, or `--repository`.'
+                 '`--namespace`, `--user`, or `--repository`.'
         end
 
         if random_not_forced?(options)
           return 'Time percentage feature flags are being deprecated in favor of using actors. If you understand ' \
-            'the consequences, you can force it using --ignore-random-deprecation-check'
+                 'the consequences, you can force it using --ignore-random-deprecation-check'
         end
 
         return wrong_channel_resp if environment.production? && channel != production_channel_id
@@ -319,7 +319,7 @@ module Chatops
         feature = Gitlab::Feature.from_api_response(response)
         perform_side_effects(feature_name, value, feature, environment, options)
       rescue ProductionCheckTimeout => e
-        e.message + ' ' + check_failure_resp
+        "#{e.message} #{check_failure_resp}"
       end
       # rubocop: enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
@@ -336,7 +336,7 @@ module Chatops
           channel: channel,
           slack_args: {
             text: 'Production check initiated, this may take up to ' \
-              "#{PRODUCTION_CHECK_DURATION} seconds ..."
+                  "#{PRODUCTION_CHECK_DURATION} seconds ..."
           }
         )
 
@@ -481,7 +481,7 @@ module Chatops
       # feature - A `Chatops::Gitlab::Feature` instance containing the details
       #           we want to send back.
       # text - Optional text to include in the message.
-      def send_feature_details(feature:, text: nil, environment:)
+      def send_feature_details(feature:, environment:, text: nil)
         send_slack_message_safely(
           slack_token: slack_token,
           channel: channel,
@@ -546,9 +546,9 @@ module Chatops
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(**slack_args)
-      rescue Slack::Message::MessageError => error
+      rescue Slack::Message::MessageError => e
         'The following Slack message could not be posted to channel ' \
-        "'#{channel}': #{slack_args}\n\nError: #{error.message}"
+        "'#{channel}': #{slack_args}\n\nError: #{e.message}"
       end
 
       def attachment_fields_per_state(environment)
@@ -584,8 +584,8 @@ module Chatops
           labels += ', Production check ignored'
 
           description = ':warning: **This feature flag was changed despite ' \
-            'the production checks failing**' \
-            "\n\n#{description}"
+                        'the production checks failing**' \
+                        "\n\n#{description}"
         end
 
         production_api_client.create_issue(
@@ -747,7 +747,7 @@ module Chatops
       end
 
       def enable_feature_value?(value)
-        (value == 'true' || valid_numeric_value?(value) && (1..100).cover?(value.to_i))
+        (value == 'true' || (valid_numeric_value?(value) && (1..100).cover?(value.to_i)))
       end
 
       def disable_feature_value?(value)

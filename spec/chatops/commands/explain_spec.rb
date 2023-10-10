@@ -179,7 +179,7 @@ describe Chatops::Commands::Explain do
           .and_return(response)
 
         expect(command.url_for_visualised_plan('Foo'))
-          .to eq(described_class::EXPLAIN_HOST + '/foo')
+          .to eq("#{described_class::EXPLAIN_HOST}/foo")
       end
     end
 

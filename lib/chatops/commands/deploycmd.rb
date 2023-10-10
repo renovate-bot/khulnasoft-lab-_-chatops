@@ -10,7 +10,7 @@ module Chatops
       include Command
       include YamlCmd
 
-      COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/
+      COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/.freeze
 
       usage "#{command_name} [COMMAND NAME] [ROLE] [OPTIONS]"
       description 'Runs ansible commands across roles in our fleet.'
@@ -44,9 +44,9 @@ module Chatops
 
       def run_command(command_name, role)
         vars = {
-          'CMD': command_name,
-          'GITLAB_ROLES': role,
-          'CURRENT_DEPLOY_ENVIRONMENT': environment
+          CMD: command_name,
+          GITLAB_ROLES: role,
+          CURRENT_DEPLOY_ENVIRONMENT: environment
         }
         vars[:CHECKMODE] = options[:no_check] ? 'false' : 'true'
         vars[:ANSIBLE_SKIP_TAGS] = 'haproxy' if options[:skip_haproxy]
@@ -59,9 +59,9 @@ module Chatops
         )
 
         "Command `#{command_name}` was issued to "\
-        "`#{role}` in `#{environment}`: <#{response.web_url}>"
-      rescue StandardError => error
-        "The command could not be run: #{error.message}"
+          "`#{role}` in `#{environment}`: <#{response.web_url}>"
+      rescue StandardError => e
+        "The command could not be run: #{e.message}"
       end
 
       def client

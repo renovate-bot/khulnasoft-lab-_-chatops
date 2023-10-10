@@ -7,10 +7,10 @@ module Chatops
         include ::SemanticLogger::Loggable
 
         # 14-8-auto-deploy-2022020906
-        GITLAB_AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
+        GITLAB_AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/.freeze
 
         # 14.8.202202082218+113b5654b3c.d8c9987d59d
-        OMNIBUS_AUTO_DEPLOY_TAG_REGEX = /^\d+\.\d+\.\d+\+\h+\.\h+$/
+        OMNIBUS_AUTO_DEPLOY_TAG_REGEX = /^\d+\.\d+\.\d+\+\h+\.\h+$/.freeze
 
         def initialize(client, project, commit_sha)
           @client = client
@@ -65,21 +65,21 @@ module Chatops
         end
 
         def auto_deploy_regex
-          @auto_deploy_regex ||=
-            if Projects::GITLAB_SECURITY == project
-              GITLAB_AUTO_DEPLOY_BRANCH_REGEX
-            elsif Projects::OMNIBUS_SECURITY == project
-              OMNIBUS_AUTO_DEPLOY_TAG_REGEX
-            end
+          @auto_deploy_regex ||= case project
+                                 when Projects::GITLAB_SECURITY
+                                   GITLAB_AUTO_DEPLOY_BRANCH_REGEX
+                                 when Projects::OMNIBUS_SECURITY
+                                   OMNIBUS_AUTO_DEPLOY_TAG_REGEX
+                                 end
         end
 
         def ref_type
-          @ref_type ||=
-            if Projects::GITLAB_SECURITY == project
-              'branch'
-            elsif Projects::OMNIBUS_SECURITY == project
-              'tag'
-            end
+          @ref_type ||= case project
+                        when Projects::GITLAB_SECURITY
+                          'branch'
+                        when Projects::OMNIBUS_SECURITY
+                          'tag'
+                        end
         end
       end
     end

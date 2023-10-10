@@ -98,7 +98,7 @@ describe Chatops::HAProxy::Client do
       allow(sock)
         .to receive(:gets).and_raise(Errno::ECONNRESET)
       allow(client).to receive(:sleep)
-      expect(STDOUT).to receive(:puts)
+      expect($stdout).to receive(:puts)
         .with('Giving up on LB 1.1.1.1 after 10 retries')
 
       expect { client.server_stats }.to raise_error(Errno::ECONNRESET)

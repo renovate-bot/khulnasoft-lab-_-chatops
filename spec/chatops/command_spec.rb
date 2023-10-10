@@ -120,7 +120,7 @@ describe Chatops::Command do
   end
 
   describe '#required_argument' do
-    let(:cmd) { command.new(['the-arg0', 'the-arg1'], {}) }
+    let(:cmd) { command.new(%w[the-arg0 the-arg1], {}) }
 
     it 'returns the specified argument' do
       expect(cmd.required_argument(0, :my_arg0)).to eq('the-arg0')
@@ -133,7 +133,7 @@ describe Chatops::Command do
   end
 
   describe '#required_integer_argument' do
-    let(:cmd) { command.new(['the-arg0', '123'], {}) }
+    let(:cmd) { command.new(%w[the-arg0 123], {}) }
 
     it 'returns the specified argument converted to an Integer' do
       expect(cmd.required_integer_argument(1, :my_arg1)).to eq(123)

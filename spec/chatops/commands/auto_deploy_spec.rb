@@ -783,7 +783,7 @@ class TaskBlockMatcher
 end
 
 class AutoDeployTestForPackageLink < Chatops::Commands::AutoDeploy
-  def package_link(package)
+  def package_link(package = Chatops::Commands::AutoDeploy.new)
     super package
   end
 end

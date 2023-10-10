@@ -21,11 +21,11 @@ module Chatops
       # password - The password to use if authentication is required.
       # database - The database to connect to.
       def initialize(
+        database:,
         host: 'localhost',
         port: 5432,
         user: nil,
-        password: nil,
-        database:
+        password: nil
       )
         @connection = PG.connect(
           host: host,

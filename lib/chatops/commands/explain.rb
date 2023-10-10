@@ -13,7 +13,7 @@ module Chatops
       QueryVisualisationError = Class.new(StandardError)
 
       description 'Obtains the query plan of a SQL query, ' \
-        'optionally visualising it using explain.depesz.com'
+                  'optionally visualising it using explain.depesz.com'
 
       usage "#{command_name} [QUERY | URL] [OPTIONS]"
 
@@ -45,7 +45,7 @@ module Chatops
 
       # A regex indicating clearly dangerous queries that should never be
       # executed.
-      UNSAFE_PATTERN = /\A(DELETE|DROP|ALTER|UPDATE|INSERT|CREATE)/i
+      UNSAFE_PATTERN = /\A(DELETE|DROP|ALTER|UPDATE|INSERT|CREATE)/i.freeze
 
       # The host to use for visualising query plans.
       EXPLAIN_HOST = 'https://explain.depesz.com'
@@ -60,7 +60,7 @@ module Chatops
             .strip
             .gsub(/[“”]/, '"')
             .gsub(/[‘’]/, "'")
-            .gsub(/[`]/, '')
+            .gsub(/`/, '')
             .gsub(/\s*(--without-analyze|--visual)\s*/, '')
 
         query = download_query(query) if query.start_with?('http')

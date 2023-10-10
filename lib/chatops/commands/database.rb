@@ -30,8 +30,8 @@ module Chatops
 
         "Command `#{command}` was issued in `#{environment}`: " \
           "<#{response.web_url}>"
-      rescue StandardError => error
-        "The command could not be run: #{error.message}"
+      rescue StandardError => e
+        "The command could not be run: #{e.message}"
       end
 
       def trigger_token
@@ -61,8 +61,8 @@ module Chatops
           trigger_project,
           trigger_token,
           :master,
-          'CMD': command,
-          'DB_OPS_ENV': environment
+          CMD: command,
+          DB_OPS_ENV: environment
         )
       end
 

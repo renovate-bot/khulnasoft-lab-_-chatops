@@ -13,7 +13,7 @@ module Chatops
       # All the available subcommands and the corresponding methods to invoke.
       COMMANDS = Set.new(%w[get list])
 
-      MIGRATION_REGEX = /\A[A-Za-z0-9_]+\z/
+      MIGRATION_REGEX = /\A[A-Za-z0-9_]+\z/.freeze
 
       options do |o|
         o.separator <<~AVAIL.chomp

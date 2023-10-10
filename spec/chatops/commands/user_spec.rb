@@ -578,7 +578,7 @@ describe Chatops::Commands::User do
     let(:email) { 'alice@example.com' }
     let(:user) { instance_double('user', id: 1, email: email, note: '') }
     let(:date) { Time.now.strftime('%F') }
-    let(:new_note) { user.note + "\n#{date}: " + 'example note' }
+    let(:new_note) { "#{user.note}\n#{date}: example note" }
     let(:fake_client) { spy }
     let(:env) do
       [
@@ -731,7 +731,7 @@ describe Chatops::Commands::User do
   describe '#idle' do
     let(:email) { 'alice@example.com' }
     let(:user) { instance_double('user', id: 1, username: 'alice') }
-    let(:new_username) { user.username + '_idle' }
+    let(:new_username) { "#{user.username}_idle" }
     let(:fake_client) { spy }
     let(:env) do
       [

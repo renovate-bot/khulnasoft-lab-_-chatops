@@ -167,8 +167,10 @@ describe Chatops::Commands::Database do
           '777',
           'florb',
           :master,
-          'CMD': 'foo',
-          'DB_OPS_ENV': 'gstg'
+          {
+            CMD: 'foo',
+            DB_OPS_ENV: 'gstg'
+          }
         ]
       end
 

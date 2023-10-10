@@ -210,8 +210,8 @@ module Chatops
       def check(mr_url = nil, version = nil)
         if mr_url.nil?
           return 'You must specify a merge request URL and an optional self-managed release version. ' \
-            'Ex: `release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345` ' \
-            'or `release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345 14.2`'
+                 'Ex: `release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345` ' \
+                 'or `release check https://gitlab.com/gitlab-org/gitlab/-/merge_requests/12345 14.2`'
         end
 
         ::Chatops::Gitlab::ReleaseCheck::Service
@@ -235,8 +235,8 @@ module Chatops
               if pipeline
                 statuses = pipeline_status_per_stage(gitlab, pipeline)
                 output = "<#{pipeline.web_url}|*#{tag_name}*>\n" \
-                  ":status_#{statuses['package-and-image']}: packaging " \
-                  ":status_#{statuses['package-and-image-release']}: publishing"
+                         ":status_#{statuses['package-and-image']}: packaging " \
+                         ":status_#{statuses['package-and-image-release']}: publishing"
 
                 section.mrkdwn(text: output)
               else
@@ -275,7 +275,7 @@ module Chatops
 
       private
 
-      TAG_REGEX = /\Av\d+\.\d+\.\d+(-rc\d+)?\z/
+      TAG_REGEX = /\Av\d+\.\d+\.\d+(-rc\d+)?\z/.freeze
 
       def tag_params
         params = {}
@@ -319,8 +319,8 @@ module Chatops
           .pipeline_jobs(pipeline.project_id, pipeline.id)
           .auto_paginate
           .group_by(&:stage)
-          .each_with_object({}) do |(stage, jobs), memo|
-            memo[stage] = status_for_jobs(jobs)
+          .transform_values do |jobs|
+            status_for_jobs(jobs)
           end
       end
 

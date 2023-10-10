@@ -14,15 +14,15 @@ describe Chatops::Commands::Oncall do
 
     let(:env) do
       {
-        'CHAT_CHANNEL'    => 'C0123456',
+        'CHAT_CHANNEL' => 'C0123456',
         'PAGERDUTY_TOKEN' => 'pd_token',
-        'SLACK_TOKEN'     => 'slack_token'
+        'SLACK_TOKEN' => 'slack_token'
       }
     end
 
     before do
       allow(Chatops::Slack::Message).to receive(:new)
-        .and_return(instance_double('Message', send: true))
+        .and_return(instance_double(Chatops::Slack::Message, send: true))
     end
 
     it 'passes a query to services' do
@@ -37,7 +37,7 @@ describe Chatops::Commands::Oncall do
     it 'posts oncall details' do
       command = described_class.new([], {}, env)
       client = instance_double(
-        'Client',
+        Chatops::PagerDuty::Client,
         services: %w[services],
         oncalls: %w[oncalls]
       )

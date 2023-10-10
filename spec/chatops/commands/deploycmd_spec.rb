@@ -269,10 +269,12 @@ describe Chatops::Commands::Deploycmd do
           '777',
           'florb',
           :master,
-          CHECKMODE: 'true',
-          CMD: 'foo',
-          CURRENT_DEPLOY_ENVIRONMENT: 'gstg',
-          GITLAB_ROLES: 'bar'
+          {
+            CHECKMODE: 'true',
+            CMD: 'foo',
+            CURRENT_DEPLOY_ENVIRONMENT: 'gstg',
+            GITLAB_ROLES: 'bar'
+          }
         ]
       end
 

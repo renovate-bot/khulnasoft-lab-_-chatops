@@ -4,8 +4,9 @@ require:
 
 AllCops:
   TargetRubyVersion: 2.5
+  NewCops: enable
 
-Documentation:
+Style/Documentation:
   Enabled: false
 
 Metrics/MethodLength:
@@ -21,7 +22,7 @@ Metrics/BlockLength:
 Metrics/AbcSize:
   Max: 30
 
-Metrics/LineLength:
+Layout/LineLength:
   Max: 120
   Exclude:
     - spec/**/*
@@ -59,6 +60,3 @@ Style/MethodCallWithArgsParentheses:
 
 Style/MethodCallWithoutArgsParentheses:
   Enabled: true
-
-Style/BracesAroundHashParameters:
-  Enabled: false

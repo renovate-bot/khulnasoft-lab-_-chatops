@@ -20,16 +20,16 @@ module Chatops
       ].freeze
 
       # The regular expression to use for verifying release candidate versions.
-      RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/
+      RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/.freeze
 
       # The regular expression to use for verifying regular release versions.
-      VERSION_REGEX = /\A\d+\.\d+\.\d+-ee\.\d+\z/
+      VERSION_REGEX = /\A\d+\.\d+\.\d+-ee\.\d+\z/.freeze
 
       # The regular expression to use for verifying auto-deploy versions
       #   The auto-deploy version may change due to
       #   https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/343
       #   this regex allows for both options
-      AUTO_DEPLOY_REGEX = /\A\d+\.\d+\.\d+[+-][^ ]{7,}\.[^ ]{7,}\z/
+      AUTO_DEPLOY_REGEX = /\A\d+\.\d+\.\d+[+-][^ ]{7,}\.[^ ]{7,}\z/.freeze
 
       # Default package repository to use if TAKEOFF_DEPLOY_REPO is undefined
       DEFAULT_REPO = 'gitlab/pre-release'
@@ -104,19 +104,19 @@ module Chatops
 
         unless version_valid?(prepared_version)
           return 'The specified version is invalid. ' \
-            'Versions must be in the format MAJOR.MINOR.PATCH(-rcN)'
+                 'Versions must be in the format MAJOR.MINOR.PATCH(-rcN)'
         end
 
         if target == 'release' && !prepared_version.match?(VERSION_REGEX)
           return 'The release environment is only allowed to receive ' \
-            'packages soon to be released.  Auto-deploys and RC\'s are ' \
-            'not allowed.'
+                 'packages soon to be released.  Auto-deploys and RC\'s are ' \
+                 'not allowed.'
         end
 
         if arguments.any?
           return "Unprocessed arguments detected: `#{arguments.inspect}`. " \
-            'You may have forgotten quotes around the message for ' \
-            '`--ignore-production-checks`?'
+                 'You may have forgotten quotes around the message for ' \
+                 '`--ignore-production-checks`?'
         end
 
         schedule_deploy(prepared_version, target)
@@ -193,18 +193,18 @@ module Chatops
 
         url = response.web_url
         "The deploy has been scheduled and can be viewed <#{url}|here>"
-      rescue StandardError => error
-        "The deploy could not be scheduled: #{error.message}"
+      rescue StandardError => e
+        "The deploy could not be scheduled: #{e.message}"
       end
 
       def environment_variables_for(version, target)
         vars = {
-          'DEPLOY_ENVIRONMENT': target,
-          'DEPLOY_VERSION': version,
-          'DEPLOY_REPO': repository,
-          'DEPLOY_USER': env['GITLAB_USER_NAME'],
-          'RELEASE_MANAGER': env['GITLAB_USER_LOGIN'],
-          'IGNORE_PRODUCTION_CHECKS': sanitize_reason(
+          DEPLOY_ENVIRONMENT: target,
+          DEPLOY_VERSION: version,
+          DEPLOY_REPO: repository,
+          DEPLOY_USER: env['GITLAB_USER_NAME'],
+          RELEASE_MANAGER: env['GITLAB_USER_LOGIN'],
+          IGNORE_PRODUCTION_CHECKS: sanitize_reason(
             options[:ignore_production_checks]
           )
         }
@@ -280,12 +280,12 @@ module Chatops
       def valid_intent?(env, intent)
         unlocked = Chef::Client.new.environment_unlocked?(env)
 
-        intent == 'unlock' && !unlocked || intent == 'lock' && unlocked
+        (intent == 'unlock' && !unlocked) || (intent == 'lock' && unlocked)
       end
 
       def inc_rollbacks_metric(environment)
         HTTP
-          .headers("X-Private-Token": delivery_metrics_token)
+          .headers('X-Private-Token': delivery_metrics_token)
           .post(
             "#{delivery_metrics_url}/api/deployment_rollbacks_started_total/inc",
             form: { labels: environment }

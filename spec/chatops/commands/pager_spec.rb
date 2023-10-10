@@ -20,9 +20,9 @@ describe Chatops::Commands::Pager do
 
     let(:env) do
       {
-        'CHAT_CHANNEL'      => 'C0123456',
-        'PAGERDUTY_TOKEN'   => 'pd_token',
-        'SLACK_TOKEN'       => 'slack_token',
+        'CHAT_CHANNEL' => 'C0123456',
+        'PAGERDUTY_TOKEN' => 'pd_token',
+        'SLACK_TOKEN' => 'slack_token',
         'GITLAB_USER_LOGIN' => 'tester'
       }
     end

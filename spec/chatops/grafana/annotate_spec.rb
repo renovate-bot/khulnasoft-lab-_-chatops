@@ -26,14 +26,14 @@ describe Chatops::Grafana::Annotate do
           'https://dashboards.gitlab.net/api/annotations',
           json: {
             text: 'some annotation',
-            tags: ['some-tag', 'another-tag']
+            tags: %w[some-tag another-tag]
           }
         )
         .and_return(success_response)
 
       result_json = annotate.annotate!(
         'some annotation',
-        tags: ['some-tag', 'another-tag']
+        tags: %w[some-tag another-tag]
       )
       expect(result_json).to eq('message' => 'Annotation added', 'id' => 1)
     end
@@ -45,7 +45,7 @@ describe Chatops::Grafana::Annotate do
           'https://dashboards.gitlab.net/api/annotations',
           json: {
             text: 'some annotation',
-            tags: ['some-tag', 'another-tag'],
+            tags: %w[some-tag another-tag],
             dashboardId: 42
           }
         )
@@ -53,7 +53,7 @@ describe Chatops::Grafana::Annotate do
 
       result_json = annotate.annotate!(
         'some annotation',
-        tags: ['some-tag', 'another-tag'],
+        tags: %w[some-tag another-tag],
         dashboard_id: 42
       )
 
@@ -74,7 +74,7 @@ describe Chatops::Grafana::Annotate do
           'https://dashboards.gitlab.net/api/annotations',
           json: {
             text: 'some annotation',
-            tags: ['some-tag', 'another-tag']
+            tags: %w[some-tag another-tag]
           }
         )
         .and_return(response)
@@ -82,7 +82,7 @@ describe Chatops::Grafana::Annotate do
       expect do
         annotate.annotate!(
           'some annotation',
-          tags: ['some-tag', 'another-tag']
+          tags: %w[some-tag another-tag]
         )
       end.to raise_error(RuntimeError)
     end

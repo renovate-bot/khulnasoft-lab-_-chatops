@@ -8,9 +8,9 @@ module Chatops
 
       DEFAULT_DATABASE = 'main'
       SLACK_MESSAGES = {
-        not_found: 'The migration %{version} does not exist on %{env}.',
-        error: 'Failed to mark the migration %{version} on %{env}, the error was: %{message}.',
-        ok: 'Migration %{version} was marked as successfully executed on %{env}.'
+        not_found: 'The migration %<version>s does not exist on %<env>s.',
+        error: 'Failed to mark the migration %<version>s on %<env>s, the error was: %<message>s.',
+        ok: 'Migration %<version>s was marked as successfully executed on %<env>s.'
       }.freeze
 
       usage "#{command_name} SUBCOMMAND [OPTIONS]"
@@ -20,7 +20,7 @@ module Chatops
       # All the available subcommands and the corresponding methods to invoke.
       COMMANDS = Set.new(%w[mark])
 
-      VERSION_REGEX = /\A\d{14}\z/
+      VERSION_REGEX = /\A\d{14}\z/.freeze
 
       options do |o|
         o.string(
@@ -67,7 +67,7 @@ module Chatops
 
         unless version
           return 'You must specify the version number of the migration. ' \
-            'For example: `migrations mark 20230428500000`'
+                 'For example: `migrations mark 20230428500000`'
         end
 
         unless version.match?(VERSION_REGEX)
@@ -113,8 +113,8 @@ module Chatops
         return [:not_found, nil] unless response
 
         [:ok, response.message]
-      rescue ::Gitlab::Error::ResponseError => ex
-        [:error, ex.response_message]
+      rescue ::Gitlab::Error::ResponseError => e
+        [:error, e.response_message]
       end
 
       def database

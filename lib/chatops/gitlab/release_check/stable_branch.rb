@@ -26,12 +26,12 @@ module Chatops
         end
 
         def name
-          @name ||=
-            if Projects::GITLAB_SECURITY == project
-              "#{version.tr('.', '-')}-stable-ee"
-            elsif Projects::OMNIBUS_SECURITY == project
-              "#{version.tr('.', '-')}-stable"
-            end
+          @name ||= case project
+                    when Projects::GITLAB_SECURITY
+                      "#{version.tr('.', '-')}-stable-ee"
+                    when Projects::OMNIBUS_SECURITY
+                      "#{version.tr('.', '-')}-stable"
+                    end
         end
 
         private

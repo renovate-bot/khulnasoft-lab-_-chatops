@@ -181,7 +181,7 @@ module Chatops
         user = production_client.find_user(name)
         return user_not_found_error(name) unless user
 
-        new_username = user.username + '_idle'
+        new_username = "#{user.username}_idle"
 
         begin
           production_client.edit_user(user.id, username: new_username)

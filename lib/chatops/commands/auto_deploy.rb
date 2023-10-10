@@ -301,6 +301,8 @@ module Chatops
         slack_message.send(blocks: blocks.as_json)
       end
 
+      # rubocop: disable Metrics/CyclomaticComplexity
+      # rubocop: disable Metrics/PerceivedComplexity
       def environment_status(role)
         rails = Gitlab::Deployments
           .new(production_client, RAILS_PROJECT)
@@ -321,6 +323,8 @@ module Chatops
           }
         end
       end
+      # rubocop: enable Metrics/CyclomaticComplexity
+      # rubocop: enable Metrics/PerceivedComplexity
 
       def auto_deploy_branches(ref)
         res = production_client

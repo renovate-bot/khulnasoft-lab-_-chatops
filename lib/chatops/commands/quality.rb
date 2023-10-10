@@ -123,7 +123,7 @@ module Chatops
           incidents_arr << "#{status} | #{service} | <#{incident.web_url}|#{incident.title}>"
         end
 
-        "\n" + Markdown::List.new(incidents_arr).to_s
+        "\n#{Markdown::List.new(incidents_arr)}"
       end
 
       def report
