@@ -79,7 +79,6 @@ module Chatops
       description 'Managing of GitLab feature flags.'
       enable_multi_environments
 
-      # rubocop: disable Metrics/BlockLength
       options do |o|
         o.string(
           '--match',
@@ -136,7 +135,6 @@ module Chatops
 
         o.separator("\nAvailable subcommands:\n\n#{available_subcommands}")
       end
-      # rubocop: enable Metrics/BlockLength
 
       def self.available_subcommands
         Markdown::List.new(COMMANDS.to_a.sort).to_s

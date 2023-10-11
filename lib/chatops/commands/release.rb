@@ -29,7 +29,6 @@ module Chatops
         ]
       )
 
-      # rubocop: disable Metrics/BlockLength
       options do |o|
         o.bool '--security',
                'Act as a security release',
@@ -130,7 +129,6 @@ module Chatops
               release process_security_target_issues --security
         HELP
       end
-      # rubocop: enable Metrics/BlockLength
 
       def self.available_subcommands
         Markdown::List.new(COMMANDS.to_a.sort).to_s
