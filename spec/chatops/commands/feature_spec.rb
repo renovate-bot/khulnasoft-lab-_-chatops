@@ -1680,7 +1680,7 @@ describe Chatops::Commands::Feature do
             'blobs',
             'foo f:.yml$'
           )
-          .and_return([{ path: feature_flag_definition_path }])
+          .and_return([{ 'path' => feature_flag_definition_path }])
         expect(client)
           .to receive(:file_contents)
           .with(
