@@ -146,6 +146,11 @@ module Chatops
                     title: 'Root Repository Size',
                     value: namespace.root_repository_size,
                     short: true
+                  },
+                  {
+                    title: 'Projects Count',
+                    value: namespace.projects_count,
+                    short: true
                   }
                 ]
               }

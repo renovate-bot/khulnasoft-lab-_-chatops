@@ -57,7 +57,8 @@ describe Chatops::Commands::Namespace do
         trial: false,
         trial_ends_on: '',
         extra_shared_runners_minutes_limit: 2000,
-        root_repository_size: 8675
+        root_repository_size: 8675,
+        projects_count: 309
       )
     end
 
@@ -74,7 +75,8 @@ describe Chatops::Commands::Namespace do
         trial: false,
         trial_ends_on: '',
         extra_shared_runners_minutes_limit: 2000,
-        root_repository_size: 8675
+        root_repository_size: 8675,
+        projects_count: 309
       )
     end
 
