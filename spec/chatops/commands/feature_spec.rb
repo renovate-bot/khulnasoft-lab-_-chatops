@@ -140,8 +140,8 @@ describe Chatops::Commands::Feature do
       expect(events_client)
         .to receive(:send_event)
         .with(
-          "Feature flag '#{log_feature_toggle_fields[:feature_name]}' " \
-          "has been set to '#{log_feature_toggle_fields[:feature_value]}' " \
+          "Feature flag `#{log_feature_toggle_fields[:feature_name]}` " \
+          "has been set to `#{log_feature_toggle_fields[:feature_value]}` " \
           "on #{environment.env_name}",
           fields: log_feature_toggle_fields
         )
@@ -1670,118 +1670,77 @@ describe Chatops::Commands::Feature do
       let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
       let(:rollout_issue_iid) { '423524' }
       let(:rollout_issue_url) { "https://gitlab.com/#{rollout_issue_project_path}/-/issues/#{rollout_issue_iid}" }
-      let(:feature_flag_definition_path) { 'config/feature_flags/development/foo.yml' }
-
-      def expect_ff_definition_file_api_calls(client, feature_flag_definition_path, rollout_issue_url)
-        expect(client)
-          .to receive(:search_in_project)
-          .with(
-            'gitlab-org/gitlab',
-            'blobs',
-            'foo f:.yml$'
-          )
-          .and_return([{ 'path' => feature_flag_definition_path }])
-        expect(client)
-          .to receive(:file_contents)
-          .with(
-            'gitlab-org/gitlab',
-            feature_flag_definition_path
-          )
-          .and_return({ rollout_issue_url: rollout_issue_url }.to_yaml)
-      end
-
-      it 'creates a closed issue' do
-        command = described_class.new(
-          [],
-          {},
+      let(:env) do
+        {
           'GITLAB_USER_LOGIN' => 'alice',
           'GITLAB_TOKEN' => 'foo',
           'GITLAB_STAGING_TOKEN' => '321',
           'GITLAB_STAGING_REF_TOKEN' => '654'
-        )
+        }
+      end
+      let(:client) { instance_double(Chatops::Gitlab::Client) }
+      let(:feature_definition) { instance_double(Chatops::Gitlab::FeatureDefinition) }
+      let(:issue) { instance_double('issue', project_id: 1, iid: 2) }
 
-        environment = command.environments.find(&:production?)
-        client = instance_double(Chatops::Gitlab::Client)
-        issue = instance_double('issue', project_id: 1, iid: 2)
+      shared_examples 'creates a closed issue' do |labels|
+        before do
+          allow(Chatops::Gitlab::FeatureDefinition).to receive(:new).with(name: 'foo', env: env).and_return(feature_definition)
+          allow(feature_definition).to receive(:rollout_issue_url).and_return(rollout_issue_url)
+          allow(command).to receive(:production_api_client).and_return(client)
+        end
 
-        expect(Chatops::GitlabEnvironments::Environment.production)
-          .to receive(:api_client)
-          .and_return(client)
+        it 'creates a closed issue with relevant labels' do
+          expect(client)
+            .to receive(:create_issue)
+            .with(
+              described_class::LOG_PROJECT,
+              an_instance_of(String),
+              labels: labels,
+              description: an_instance_of(String)
+            )
+            .and_return(issue)
+          expect(client).to receive(:close_issue).with(1, 2)
 
-        expect_ff_definition_file_api_calls(client, feature_flag_definition_path, rollout_issue_url)
-
-        expect(client)
-          .to receive(:create_issue)
-          .with(
-            described_class::LOG_PROJECT,
-            an_instance_of(String),
-            labels: 'host::gitlab.com, change',
-            description: an_instance_of(String)
-          )
-          .and_return(issue)
-        expect(client).to receive(:close_issue).with(1, 2)
-
-        expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
+          expect(command.log_feature_toggle('foo', 'bar', command.environments.find(&:production?))).to eq(issue)
+        end
       end
 
-      it 'adds a label when incidents are ignored' do
-        command = described_class.new(
-          [],
-          { ignore_production_check: true },
-          'GITLAB_USER_LOGIN' => 'alice',
-          'GITLAB_TOKEN' => 'foo',
-          'GITLAB_STAGING_TOKEN' => '321',
-          'GITLAB_STAGING_REF_TOKEN' => '654'
-        )
+      context 'when incidents are not ignored' do # rubocop:disable RSpec/NestedGroups
+        subject(:command) { described_class.new([], {}, env) }
 
-        environment = command.environments.find(&:production?)
-        client = instance_double(Chatops::Gitlab::Client)
-        issue = instance_double('issue', project_id: 1, iid: 2)
+        it_behaves_like 'creates a closed issue', 'host::gitlab.com, change'
+      end
 
-        expect(Chatops::GitlabEnvironments::Environment.production)
-          .to receive(:api_client)
-          .and_return(client)
+      context 'when incidents are ignored' do # rubocop:disable RSpec/NestedGroups
+        subject(:command) { described_class.new([], { ignore_production_check: true }, env) }
 
-        expect_ff_definition_file_api_calls(client, feature_flag_definition_path, rollout_issue_url)
-
-        expect(client)
-          .to receive(:create_issue)
-          .with(
-            described_class::LOG_PROJECT,
-            an_instance_of(String),
-            labels: 'host::gitlab.com, change, Production check ignored',
-            description: an_instance_of(String)
-          )
-          .and_return(issue)
-        expect(client).to receive(:close_issue).with(1, 2)
-
-        expect(command.log_feature_toggle('foo', 'bar', environment)).to eq(issue)
+        it_behaves_like 'creates a closed issue', 'host::gitlab.com, change, Production check ignored'
       end
     end
   end
 
   describe '#notify_and_link_rollout_issue' do
+    subject(:command) { described_class.new([], {}, env) }
+
     let(:feature_flag_name) { 'foo' }
     let(:log_issue) { instance_double('Gitlab::Issue', project_id: 42, iid: 12, title: 'log issue title', web_url: 'https://log-issue-web-url') }
     let(:client) { instance_double(Chatops::Gitlab::Client) }
-    let(:command) do
-      described_class.new(
-        [],
-        {},
+    let(:feature_definition) { instance_double(Chatops::Gitlab::FeatureDefinition) }
+    let(:env) do
+      {
         'GITLAB_USER_LOGIN' => 'alice',
         'GITLAB_TOKEN' => 'foo',
         'GITLAB_STAGING_TOKEN' => '321',
         'GITLAB_STAGING_REF_TOKEN' => '654'
-      )
+      }
     end
 
     before do
       # needed to initialize environments
       _ = command.environments
 
-      allow(Chatops::GitlabEnvironments::Environment.production)
-        .to receive(:api_client)
-        .and_return(client)
+      allow(Chatops::Gitlab::FeatureDefinition).to receive(:new).with(name: 'foo', env: env).and_return(feature_definition)
+      allow(command).to receive(:production_api_client).and_return(client) # rubocop:disable RSpec/SubjectStub:
     end
 
     context 'when issue can be parsed from the rollout_issue_url' do
@@ -1789,8 +1748,12 @@ describe Chatops::Commands::Feature do
       let(:rollout_issue_iid) { '423524' }
 
       before do
-        allow(command).to receive(:rollout_issue_project_path).with(feature_flag_name).and_return(rollout_issue_project_path)
-        allow(command).to receive(:rollout_issue_iid).with(feature_flag_name).and_return(rollout_issue_iid)
+        allow(feature_definition).to receive(:rollout_issue_project_path).and_return(rollout_issue_project_path)
+        allow(feature_definition).to receive(:rollout_issue_iid).and_return(rollout_issue_iid)
+
+        allow(Chatops::GitlabEnvironments::Environment.production)
+          .to receive(:api_client)
+          .and_return(client)
       end
 
       it 'creates an issue note in the rollout issue' do
@@ -1817,8 +1780,8 @@ describe Chatops::Commands::Feature do
 
     context 'when issue cannot be parsed from the rollout_issue_url' do
       before do
-        allow(command).to receive(:rollout_issue_project_path).with(feature_flag_name).and_return(nil)
-        allow(command).to receive(:rollout_issue_iid).with(feature_flag_name).and_return(nil)
+        allow(feature_definition).to receive(:rollout_issue_project_path).and_return(nil)
+        allow(feature_definition).to receive(:rollout_issue_iid).and_return(nil)
       end
 
       it 'does not create an issue note in the rollout issue' do
@@ -1829,36 +1792,6 @@ describe Chatops::Commands::Feature do
 
         command.__send__(:notify_and_link_rollout_issue, feature_flag_name, log_issue)
       end
-    end
-  end
-
-  describe '#rollout_issue_project_path' do
-    let(:feature_flag_name) { 'foo' }
-    let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
-    let(:rollout_issue_iid) { '423524' }
-    let(:rollout_issue_url) { "https://gitlab.com/#{rollout_issue_project_path}/-/issues/#{rollout_issue_iid}" }
-
-    it 'creates an issue note in the rollout issue' do
-      command = described_class.new
-
-      expect(command).to receive(:rollout_issue_url).with(feature_flag_name).and_return(rollout_issue_url)
-
-      expect(command.__send__(:rollout_issue_project_path, feature_flag_name)).to eq(rollout_issue_project_path)
-    end
-  end
-
-  describe '#rollout_issue_iid' do
-    let(:feature_flag_name) { 'foo' }
-    let(:rollout_issue_project_path) { 'gitlab-org/gitlab' }
-    let(:rollout_issue_iid) { '423524' }
-    let(:rollout_issue_url) { "https://gitlab.com/#{rollout_issue_project_path}/-/issues/#{rollout_issue_iid}" }
-
-    it 'creates an issue note in the rollout issue' do
-      command = described_class.new
-
-      expect(command).to receive(:rollout_issue_url).with(feature_flag_name).and_return(rollout_issue_url)
-
-      expect(command.__send__(:rollout_issue_iid, feature_flag_name)).to eq(rollout_issue_iid)
     end
   end
 

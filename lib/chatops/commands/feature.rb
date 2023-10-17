@@ -54,9 +54,6 @@ module Chatops
       # https://gitlab.com/gitlab-org/release-tools/-/blob/9358665fa14fd92b4296b11cb1fda88f97d27580/.gitlab/ci/auto-deploy.gitlab-ci.yml#L39
       AUTO_DEPLOY_CHECK_PRODUCTION_JOB = 'auto_deploy:check_production'
 
-      MONOLITH_PROJECT = 'gitlab-org/gitlab'
-      ISSUE_REGEXP = %r{gitlab\.com/(?<issue_project_path>.+)/-/issues/(?<issue_iid>\d+)}.freeze
-
       ISSUE_HEADER = <<~DESC
         * Changed by [`@%<username>s`](https://gitlab.com/%<username>s) at `%<now>s` (UTC)
         * Host: %<environment_host>s
@@ -601,8 +598,8 @@ module Chatops
       private
 
       def notify_and_link_rollout_issue(feature_flag_name, log_issue)
-        project = rollout_issue_project_path(feature_flag_name)
-        issue_iid = rollout_issue_iid(feature_flag_name)
+        project = feature_flag_definition(feature_flag_name).rollout_issue_project_path
+        issue_iid = feature_flag_definition(feature_flag_name).rollout_issue_iid
         return unless project && issue_iid
 
         production_api_client.create_issue_note(
@@ -643,12 +640,12 @@ module Chatops
       def log_title(name, value, environment, options)
         value = final_value(value, options)
 
-        title = ["Feature flag '#{name}'"]
+        title = ["Feature flag `#{name}`"]
         title <<
           if flag_was_deleted?(value)
             'has been deleted'
           else
-            "has been set to '#{value}'"
+            "has been set to `#{value}`"
           end
         title << 'of actors' if options[:actors]
         title << "on #{environment.env_name}"
@@ -678,7 +675,7 @@ module Chatops
           username: username,
           now: Time.now.utc.iso8601,
           environment_host: "https://#{environment.gitlab_host}",
-          rollout_issue_url: rollout_issue_url(name)
+          rollout_issue_url: feature_flag_definition(name).rollout_issue_url
         )
       end
 
@@ -694,63 +691,9 @@ module Chatops
         @feature_flag_definitions ||= {}
       end
 
-      def feature_flag_definition?(feature_flag_name)
-        feature_flag_definitions.key?(feature_flag_name)
-      end
-
       def feature_flag_definition(feature_flag_name)
-        return feature_flag_definitions[feature_flag_name] if feature_flag_definition?(feature_flag_name)
-
-        feature_flag_definitions[feature_flag_name] = {}
-        pattern = "#{feature_flag_name} f:\.yml$"
-        search_results = production_api_client.search_in_project(MONOLITH_PROJECT, 'blobs', pattern)
-
-        if search_results.any?
-          logger.info(
-            "Found #{search_results.size} files matching `#{pattern}`." \
-            " `#{search_results.first['path']}` will be fetched."
-          )
-          file_content = production_api_client.file_contents(MONOLITH_PROJECT, search_results.first['path'])
-
-          if file_content
-            feature_flag_definitions[feature_flag_name] = YAML.safe_load(
-              file_content,
-              permitted_classes: [Symbol],
-              symbolize_names: true
-            )
-          end
-        else
-          logger.info("Found no files matching `#{pattern}`!")
-        end
-
-        feature_flag_definitions[feature_flag_name]
-      end
-
-      def rollout_issue_url(feature_flag_name)
-        flag_definition = feature_flag_definition(feature_flag_name)
-        return unless flag_definition
-
-        flag_definition[:rollout_issue_url]
-      end
-
-      def rollout_issue_project_path(feature_flag_name)
-        issue_url = rollout_issue_url(feature_flag_name)
-        return unless issue_url
-
-        matches = issue_url.match(ISSUE_REGEXP)
-        return unless matches
-
-        matches[:issue_project_path]
-      end
-
-      def rollout_issue_iid(feature_flag_name)
-        issue_url = rollout_issue_url(feature_flag_name)
-        return unless issue_url
-
-        matches = issue_url.match(ISSUE_REGEXP)
-        return unless matches
-
-        matches[:issue_iid]
+        feature_flag_definitions[feature_flag_name] ||=
+          Chatops::Gitlab::FeatureDefinition.new(name: feature_flag_name, env: env)
       end
 
       def enable_feature_value?(value)
@@ -788,7 +731,11 @@ module Chatops
       def valid_actors_random_setting?(options)
         return true unless actors_or_random?(options)
 
-        options.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.none?
+        !scope_specified?(options)
+      end
+
+      def scope_specified?(options)
+        options.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.any?
       end
 
       def random_not_forced?(options)
