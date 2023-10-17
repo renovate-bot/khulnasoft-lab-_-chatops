@@ -398,8 +398,19 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when using a non-existing feature name' do
+      subject(:command) { described_class.new(%w[get foo], {}, env) }
+
+      let(:client) { instance_double(Chatops::Gitlab::Client) }
+      let(:feature_definition) { instance_double(Chatops::Gitlab::FeatureDefinition) }
+      let(:env) do
+        {
+          'GITLAB_TOKEN' => '123',
+          'GITLAB_STAGING_TOKEN' => '321',
+          'GITLAB_STAGING_REF_TOKEN' => '654'
+        }
+      end
+
       it 'returns an error message' do
-        command = described_class.new(%w[get foo], {}, 'GITLAB_TOKEN' => '123', 'GITLAB_STAGING_TOKEN' => '321', 'GITLAB_STAGING_REF_TOKEN' => '654')
         collection = instance_double('collection')
 
         expect(Chatops::Gitlab::FeatureCollection)
@@ -412,7 +423,11 @@ describe Chatops::Commands::Feature do
           .with('foo')
           .and_return(nil)
 
-        expect(command.get).to match('The feature "foo" does not exist.')
+        allow(Chatops::Gitlab::FeatureDefinition).to receive(:new).with(name: 'foo', env: env).and_return(feature_definition)
+        allow(command).to receive(:production_api_client).and_return(client) # rubocop:disable RSpec/SubjectStub:
+        allow(feature_definition).to receive(:default_enabled).and_return(true)
+
+        expect(command.get).to match('The feature `foo` does not exist on gprd, but is `default_enabled: true` in their YAML definition.')
       end
     end
 

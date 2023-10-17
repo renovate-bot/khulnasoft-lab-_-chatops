@@ -231,7 +231,14 @@ module Chatops
 
         feature = get_feature(feature_name, environment)
 
-        return "The feature #{feature_name.inspect} does not exist on #{environment.env_name}." unless feature
+        unless feature
+          message = ["The feature `#{feature_name}` does not exist on #{environment.env_name}"]
+          if feature_flag_definition(feature_name).default_enabled
+            message << ', but is `default_enabled: true` in their YAML definition'
+          end
+          message << '.'
+          return message.join
+        end
 
         send_feature_details(feature: feature, environment: environment)
       end
