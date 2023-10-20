@@ -197,6 +197,12 @@ module Chatops
         []
       end
 
+      def file_contents(project:, path:, ref: 'master')
+        internal_client.file_contents(project, path, ref)
+      rescue ::Gitlab::Error::NotFound
+        nil
+      end
+
       def_delegator :internal_client, :block_user
       def_delegator :internal_client, :unblock_user
       def_delegator :internal_client, :edit_user
@@ -246,7 +252,6 @@ module Chatops
       def_delegator :internal_client, :merge_requests
 
       def_delegator :internal_client, :branch
-      def_delegator :internal_client, :file_contents
 
       def_delegator :internal_client, :search_in_project
     end

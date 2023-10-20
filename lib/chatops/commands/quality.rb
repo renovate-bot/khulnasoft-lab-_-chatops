@@ -147,7 +147,10 @@ module Chatops
 
       def dri_schedule_yaml_data
         @dri_schedule_yaml_data ||=
-          YAML.safe_load(client.file_contents(PIPELINE_TRIAGE_PROJECT_ID, DRI_SCHEDULE_FILE_NAME), [Date])
+          YAML.safe_load(
+            client.file_contents(project: PIPELINE_TRIAGE_PROJECT_ID, path: DRI_SCHEDULE_FILE_NAME),
+            [Date]
+          )
       end
 
       def unsupported_command

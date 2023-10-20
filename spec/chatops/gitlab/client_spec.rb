@@ -505,6 +505,43 @@ describe Chatops::Gitlab::Client do
     end
   end
 
+  describe '#file_contents' do
+    %w[master main].each do |ref|
+      it "calls file_contents with ref: #{ref} argument" do
+        expect(client.internal_client)
+          .to receive(:file_contents)
+          .with('gitlab-org/gitlab', 'path', ref)
+          .and_return('file content')
+
+        result = client.file_contents(project: 'gitlab-org/gitlab', path: 'path', ref: ref)
+
+        expect(result).to eq('file content')
+      end
+    end
+
+    context 'when file is not found' do
+      let(:missing_response) do
+        instance_double(
+          'response',
+          code: 404,
+          request: instance_double('request', base_uri: 'foo', path: '', query: {}),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+        )
+      end
+
+      it 'calls file_contents and returns nil' do
+        expect(client.internal_client)
+          .to receive(:file_contents)
+          .with('gitlab-org/gitlab', 'path', 'master')
+          .and_raise(Gitlab::Error::NotFound.new(missing_response))
+
+        result = client.file_contents(project: 'gitlab-org/gitlab', path: 'path')
+
+        expect(result).to be_nil
+      end
+    end
+  end
+
   describe '#mark_database_migration_by_version' do
     let(:database) { 'main' }
     let(:query) { { query: { database: database } } }

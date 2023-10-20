@@ -82,21 +82,26 @@ module Chatops
             "Found #{search_results.size} files matching `#{pattern}`." \
             " `#{search_results.first['path']}` will be fetched."
           )
-          file_content = production_api_client.file_contents(MONOLITH_PROJECT, search_results.first['path'])
+
+          file_content = production_api_client.file_contents(
+            project: MONOLITH_PROJECT,
+            path: search_results.first['path']
+          )
 
           if file_content
-            YAML.safe_load(
+            return YAML.safe_load(
               file_content,
               permitted_classes: [Symbol],
               symbolize_names: true
             )
           else
-            logger.info("Feature flag definition `#{search_results.first['path']}` is empty!")
-            {}
+            logger.info("Feature flag definition `#{search_results.first['path']}` returned 404!")
           end
         else
           logger.info("Found no files matching `#{pattern}`!")
         end
+
+        {} # return an empty hash
       end
     end
   end
