@@ -137,11 +137,15 @@ describe Chatops::Commands::Feature do
         .with(any_args)
         .and_return(events_client)
 
+      scopes = command_opts.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.keys
+      scoped_to = scopes.any? ? "(scoped to #{scopes.join(', ')}) " : ''
+
       expect(events_client)
         .to receive(:send_event)
         .with(
           "Feature flag `#{log_feature_toggle_fields[:feature_name]}` " \
-          "has been set to `#{log_feature_toggle_fields[:feature_value]}` " \
+          "has been set to `#{log_feature_toggle_fields[:feature_value]}` " +
+          scoped_to +
           "on #{environment.env_name}",
           fields: log_feature_toggle_fields
         )

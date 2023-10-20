@@ -655,6 +655,7 @@ module Chatops
             "has been set to `#{value}`"
           end
         title << 'of actors' if options[:actors]
+        title << "(scoped to #{scope_keys(options).join(', ')})" if scope_specified?(options)
         title << "on #{environment.env_name}"
 
         title.join(' ')
@@ -741,8 +742,12 @@ module Chatops
         !scope_specified?(options)
       end
 
+      def scope_keys(options)
+        options.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.keys
+      end
+
       def scope_specified?(options)
-        options.slice(:project, :group, :feature_group, :namespace, :user, :repository).compact.any?
+        scope_keys(options).any?
       end
 
       def random_not_forced?(options)
