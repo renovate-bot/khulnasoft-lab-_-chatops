@@ -3,6 +3,16 @@
 This repository contains various scripts used to automate various tasks for
 GitLab.com such as getting the `EXPLAIN ANALYZE` output of a database query.
 
+## Issues
+
+This repository is not owned by one specific team, but rather is contributed to
+by many.  For issues specific to chatops development, technical debt, and/or
+implementation details, feel free to use this issue tracker.
+
+For procedures, processes, and abstracts associated with Chatops, one should
+find the team that owns the target implementation and leverage the that teams'
+specific issue tracker as necessary.
+
 # Requirements
 
 * Ruby 2.6
