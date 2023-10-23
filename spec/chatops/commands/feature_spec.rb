@@ -171,7 +171,7 @@ describe Chatops::Commands::Feature do
       expect(annotate)
         .to receive(:annotate!)
         .with(
-          "alice set feature flag #{log_feature_toggle_fields[:feature_name]} to #{log_feature_toggle_fields[:feature_value]}",
+          "alice set feature flag `#{log_feature_toggle_fields[:feature_name]}` to #{log_feature_toggle_fields[:feature_value]} #{scoped_to}".strip,
           tags: tag_env + ['feature-flag', log_feature_toggle_fields[:feature_name]]
         )
 

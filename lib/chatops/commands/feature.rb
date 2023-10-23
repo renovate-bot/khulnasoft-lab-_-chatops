@@ -396,7 +396,7 @@ module Chatops
       end
 
       def perform_side_effects(name, value, feature, environment, options)
-        annotate_feature_toggle(name, value, environment)
+        annotate_feature_toggle(name, value, environment, options)
         send_feature_toggle_event(name, value, environment, options)
         issue = log_feature_toggle(name, value, environment)
         notify_and_link_rollout_issue(name, issue)
@@ -624,10 +624,14 @@ module Chatops
         )
       end
 
-      def annotate_feature_toggle(name, value, environment)
+      def annotate_feature_toggle(name, value, environment, options = {})
+        title = ["#{username} set feature flag `#{name}` to #{final_value(value, options)}"]
+        title << 'of actors' if options[:actors]
+        title << "(scoped to #{scope_keys(options).join(', ')})" if scope_specified?(options)
+
         Grafana::Annotate.new(token: grafana_token)
           .annotate!(
-            "#{username} set feature flag #{name} to #{value}",
+            title.join(' '),
             tags: [environment.env_name, 'feature-flag', name]
           )
       end
