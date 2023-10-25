@@ -101,7 +101,10 @@ module Chatops
           logger.info("Found no files matching `#{pattern}`!")
         end
 
-        {} # return an empty hash
+        {} # fallback to an empty hash
+      rescue ::Gitlab::Error::InternalServerError => e
+        logger.info("The search for the `#{name}` flag definition file returned 500:\n#{e.message}")
+        {} # fallback to an empty hash
       end
     end
   end

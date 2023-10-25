@@ -76,6 +76,34 @@ describe Chatops::Gitlab::FeatureDefinition do
       end
     end
 
+    context 'with the search for a definition file returns 500' do
+      let(:internal_server_error_response) do
+        instance_double(
+          'response',
+          code: 500,
+          request: instance_double('request', base_uri: 'foo', path: ''),
+          parsed_response: Gitlab::ObjectifiedHash.new(message: 'error')
+        )
+      end
+
+      it 'returns nil for the field value' do
+        expect(feature_flag_definition.environment)
+          .to receive(:api_client)
+          .and_return(client)
+
+        expect(client)
+          .to receive(:search_in_project)
+          .with(
+            'gitlab-org/gitlab',
+            'blobs',
+            "#{feature_name} f:.yml$"
+          )
+          .and_raise(::Gitlab::Error::InternalServerError.new(internal_server_error_response))
+
+        expect(feature_flag_definition.public_send(field)).to eq(nil)
+      end
+    end
+
     context 'with a definition file that returns 404' do
       it 'returns nil for the field value' do
         expect(feature_flag_definition.environment)
