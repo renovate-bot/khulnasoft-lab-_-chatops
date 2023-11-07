@@ -146,7 +146,7 @@ describe Chatops::Commands::Feature do
           "Feature flag `#{log_feature_toggle_fields[:feature_name]}` " \
           "has been set to `#{log_feature_toggle_fields[:feature_value]}` " +
           scoped_to +
-          "on #{environment.env_name}",
+          "on **#{environment.env_name}**",
           fields: log_feature_toggle_fields
         )
 

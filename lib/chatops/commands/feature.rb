@@ -660,7 +660,7 @@ module Chatops
           end
         title << 'of actors' if options[:actors]
         title << "(scoped to #{scope_keys(options).join(', ')})" if scope_specified?(options)
-        title << "on #{environment.env_name}"
+        title << "on **#{environment.env_name}**"
 
         title.join(' ')
       end
