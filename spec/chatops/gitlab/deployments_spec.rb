@@ -13,7 +13,7 @@ describe Chatops::Gitlab::Deployments do
   end
 
   def deployment(messages)
-    stub = double('Gitlab::ObjectifiedHash', messages) # rubocop:disable RSpec/VerifiedDoubles
+    stub = double('Gitlab::ObjectifiedHash', messages)
 
     Chatops::Gitlab::Deployment.new(stub)
   end

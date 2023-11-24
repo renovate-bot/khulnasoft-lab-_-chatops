@@ -218,7 +218,6 @@ describe Chatops::Commands::Release, :release_command do
           .to eq('You must specify at least a single version')
       end
 
-      # rubocop: disable RSpec/ExampleLength
       it 'sends a message containing the build status for a given version' do
         instance = stubbed_instance('build_status', '1.0.0')
         ce_pipeline = instance_double(
@@ -274,7 +273,6 @@ describe Chatops::Commands::Release, :release_command do
 
         expect(instance.perform).to eq('')
       end
-      # rubocop: enable RSpec/ExampleLength
     end
 
     describe '#tag' do
@@ -397,7 +395,6 @@ describe Chatops::Commands::Release, :release_command do
   end
 
   describe '#pipeline_status_per_stage' do
-    # rubocop: disable RSpec/ExampleLength
     it 'returns the status per stage' do
       instance = stubbed_instance
       gitlab = instance_spy(Chatops::Gitlab::Client)
@@ -438,6 +435,5 @@ describe Chatops::Commands::Release, :release_command do
       expect(instance.send(:pipeline_status_per_stage, gitlab, pipeline))
         .to eq('foo' => 'failed', 'bar' => 'pending', 'baz' => 'success')
     end
-    # rubocop: enable RSpec/ExampleLength
   end
 end

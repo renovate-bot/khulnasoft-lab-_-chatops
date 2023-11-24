@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable RSpec/VerifiedDoubles
-
 # Helpers for working with the `gitlab` client gem
 module GitlabHelper
   # Simulate a `Gitlab::Error::Error` class
@@ -30,5 +28,3 @@ end
 RSpec.configure do |config|
   config.include GitlabHelper
 end
-
-# rubocop:enable RSpec/VerifiedDoubles

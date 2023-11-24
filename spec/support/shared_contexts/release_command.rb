@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable RSpec/ContextWording
 RSpec.shared_context 'release command #perform' do
   let(:stubbed_client) { double.as_null_object }
 
@@ -81,4 +80,3 @@ RSpec.shared_examples 'with a critical flag' do |input:|
     end
   end
 end
-# rubocop:enable RSpec/ContextWording

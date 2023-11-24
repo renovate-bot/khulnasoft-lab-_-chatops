@@ -4,14 +4,12 @@ require 'spec_helper'
 
 describe Chatops::Gitlab::Deployment do
   def api_response(ref: 'main', sha: SecureRandom.hex(20), status: 'success')
-    # rubocop:disable RSpec/VerifiedDoubles
     double(
       'Gitlab::ObjectifiedHash',
       ref: ref,
       sha: sha,
       status: status
     )
-    # rubocop:enable RSpec/VerifiedDoubles
   end
 
   it 'delegates to the API response object' do

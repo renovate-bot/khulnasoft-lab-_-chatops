@@ -53,10 +53,7 @@ describe Chatops::Commands::Mirror do
       ]
     end
 
-    # rubocop:disable RSpec/VerifiedDoubles
     let(:fake_client) { double('Chatops::Gitlab::Client').as_null_object }
-    # rubocop:enable RSpec/VerifiedDoubles
-
     before do
       stub_const('Chatops::Gitlab::Client', fake_client)
     end

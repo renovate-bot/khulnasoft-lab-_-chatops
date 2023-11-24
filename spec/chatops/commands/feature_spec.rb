@@ -59,8 +59,6 @@ describe Chatops::Commands::Feature do
     end
   end
 
-  # rubocop: disable RSpec/ExampleLength
-  # rubocop: disable RSpec/MultipleExpectations
   shared_examples 'valid feature flag update' do
     let(:feature_enabled) { true }
     let(:host) { 'gitlab.com' }
@@ -190,9 +188,6 @@ describe Chatops::Commands::Feature do
       command.set
     end
   end
-  # rubocop: enable RSpec/ExampleLength
-  # rubocop: enable RSpec/MultipleExpectations
-
   shared_context 'with feature name tables with backticks' do
     where(:feature_name, :expected_feature_name) do
       '`foo`' | 'foo'
@@ -428,7 +423,7 @@ describe Chatops::Commands::Feature do
           .and_return(nil)
 
         allow(Chatops::Gitlab::FeatureDefinition).to receive(:new).with(name: 'foo', env: env).and_return(feature_definition)
-        allow(command).to receive(:production_api_client).and_return(client) # rubocop:disable RSpec/SubjectStub:
+        allow(command).to receive(:production_api_client).and_return(client)
         allow(feature_definition).to receive(:default_enabled).and_return(true)
 
         expect(command.get).to match('The feature `foo` does not exist on gprd, but is `default_enabled: true` in their YAML definition.')
@@ -495,7 +490,6 @@ describe Chatops::Commands::Feature do
       end
     end
 
-    # rubocop: disable RSpec/NestedGroups
     context 'when not specifying --random or --actors for a percentage value' do
       context 'with a value of 0' do
         include_examples 'valid feature flag update' do
@@ -578,8 +572,6 @@ describe Chatops::Commands::Feature do
         end
       end
     end
-    # rubocop: enable RSpec/NestedGroups
-
     context 'when using a project feature gate together with --random' do
       it 'returns an error message' do
         opts = default_opts.merge(random: true, project: 'gitlab-org/gitaly')
@@ -885,7 +877,6 @@ describe Chatops::Commands::Feature do
       end
     end
 
-    # rubocop: disable RSpec/NestedGroups
     context 'when the flag is turned off in staging' do
       context 'when turning on production' do
         context 'when setting a boolean value' do
@@ -1048,8 +1039,6 @@ describe Chatops::Commands::Feature do
         end
       end
     end
-    # rubocop: enable RSpec/NestedGroups
-
     context 'when there is an ongoing incident' do
       it 'does not allow changing the feature flag state' do
         opts = default_opts.merge(random: true, ignore_random_deprecation_check: true)
@@ -1084,11 +1073,9 @@ describe Chatops::Commands::Feature do
         allow(described_class).to receive(:valid_value?).and_return(true)
       end
 
-      # rubocop: disable RSpec/NestedGroups
       context 'when the channel is production' do
         let(:slack_channel) { 'production' }
 
-        # rubocop: disable RSpec/MultipleExpectations
         it 'sends the set flag to Slack' do
           args = %w[set foo 10]
           command = described_class.new(args, options, env_vars)
@@ -1102,7 +1089,6 @@ describe Chatops::Commands::Feature do
 
           command.set
         end
-        # rubocop: enable RSpec/MultipleExpectations
       end
 
       context 'when the channel is not production' do
@@ -1116,7 +1102,6 @@ describe Chatops::Commands::Feature do
           command.set
         end
       end
-      # rubocop: enable RSpec/NestedGroups
     end
 
     context 'when the channel is not production and the target environment is not production' do
@@ -1615,7 +1600,6 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when using multi-environments' do
-      # rubocop:disable RSpec/MultipleExpectations
       it 'returns the value of GITLAB_DEV_TOKEN' do
         command = described_class.new(
           [],
@@ -1633,7 +1617,6 @@ describe Chatops::Commands::Feature do
         expect(command.environments[2]).to be_production
         expect(command.environments[2].gitlab_token).to eq('456')
       end
-      # rubocop:enable RSpec/MultipleExpectations
     end
   end
 
@@ -1724,15 +1707,13 @@ describe Chatops::Commands::Feature do
         end
       end
 
-      context 'when incidents are not ignored' do # rubocop:disable RSpec/NestedGroups
+      context 'when incidents are not ignored' do
         subject(:command) { described_class.new([], {}, env) }
-
         it_behaves_like 'creates a closed issue', 'host::gitlab.com, change'
       end
 
-      context 'when incidents are ignored' do # rubocop:disable RSpec/NestedGroups
+      context 'when incidents are ignored' do
         subject(:command) { described_class.new([], { ignore_production_check: true }, env) }
-
         it_behaves_like 'creates a closed issue', 'host::gitlab.com, change, Production check ignored'
       end
     end
@@ -1759,7 +1740,7 @@ describe Chatops::Commands::Feature do
       _ = command.environments
 
       allow(Chatops::Gitlab::FeatureDefinition).to receive(:new).with(name: 'foo', env: env).and_return(feature_definition)
-      allow(command).to receive(:production_api_client).and_return(client) # rubocop:disable RSpec/SubjectStub:
+      allow(command).to receive(:production_api_client).and_return(client)
     end
 
     context 'when issue can be parsed from the rollout_issue_url' do

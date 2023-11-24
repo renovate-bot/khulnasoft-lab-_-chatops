@@ -5,7 +5,6 @@ module Chatops
     # Common configuration and utilities for commands in release-tools.
     module Command
       # rubocop:disable Style/RegexpLiteral
-      # rubocop:disable Lint/MixedRegexpCaptureTypes
       VERSION_REGEX = %r{
         \A
         (?<major>\d+)\.
@@ -15,7 +14,6 @@ module Chatops
         \z
       }x.freeze
       # rubocop:enable Style/RegexpLiteral
-      # rubocop:enable Lint/MixedRegexpCaptureTypes
 
       TARGET_PROJECT = 'gitlab-org/release/tools'
       TARGET_REF = 'master'

@@ -659,7 +659,6 @@ describe Chatops::Commands::AutoDeploy do
     end
   end
 
-  # rubocop:disable RSpec/NestedGroups
   describe '#package_link' do
     context 'with valid package' do
       context 'with auto-deploy package' do
@@ -691,7 +690,6 @@ describe Chatops::Commands::AutoDeploy do
       end
     end
   end
-  # rubocop:enable RSpec/NestedGroups
 end
 
 # RSpec argument matcher for verifying the complex `block` Hash passed to
