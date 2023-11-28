@@ -114,42 +114,42 @@ module Chatops
                   },
                   {
                     title: 'Billable members',
-                    value: namespace.billable_members_count,
+                    value: namespace['billable_members_count'],
                     short: true
                   },
                   {
                     title: 'Seats in Use',
-                    value: namespace.seats_in_use,
+                    value: namespace['seats_in_use'],
                     short: true
                   },
                   {
                     title: 'Plan',
-                    value: namespace.plan,
+                    value: namespace['plan'],
                     short: true
                   },
                   {
                     title: 'Trial',
-                    value: namespace.trial,
+                    value: namespace['trial'],
                     short: true
                   },
                   {
                     title: 'Trial Ends On',
-                    value: namespace.trial_ends_on,
+                    value: namespace['trial_ends_on'],
                     short: true
                   },
                   {
                     title: 'Extra Shared Runners Minutes Limit',
-                    value: namespace.extra_shared_runners_minutes_limit,
+                    value: namespace['extra_shared_runners_minutes_limit'],
                     short: true
                   },
                   {
                     title: 'Root Repository Size',
-                    value: namespace.root_repository_size,
+                    value: namespace['root_repository_size'],
                     short: true
                   },
                   {
                     title: 'Projects Count',
-                    value: namespace.projects_count,
+                    value: namespace['projects_count'],
                     short: true
                   }
                 ]
