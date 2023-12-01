@@ -50,7 +50,7 @@ describe Chatops do
 
         expect(command)
           .to receive(:perform)
-          .with(%w[hello world], 'CHAT_INPUT' => 'hello world')
+          .with(%w[hello world], { 'CHAT_INPUT' => 'hello world' })
 
         described_class.run(%w[rspec], 'CHAT_INPUT' => 'hello world')
       end

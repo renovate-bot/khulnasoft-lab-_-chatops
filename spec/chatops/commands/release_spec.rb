@@ -308,7 +308,7 @@ describe Chatops::Commands::Release, :release_command do
         expect(instance).to receive(:trigger_release).with(
           version,
           'release:tag',
-          STABLE_BRANCH_SOURCE_COMMITS: 'gitaly=123abc,gitlab=456def'
+          { STABLE_BRANCH_SOURCE_COMMITS: 'gitaly=123abc,gitlab=456def' }
         )
 
         instance.perform

@@ -398,12 +398,14 @@ describe Chatops::Commands::Deploy do
             'foo',
             '123',
             :master,
-            'DEPLOY_ENVIRONMENT': 'gstg',
-            'DEPLOY_VERSION': '11.3.0-rc1.ee.0',
-            'DEPLOY_REPO': 'gitlab/pre-release',
-            'DEPLOY_USER': 'Alice',
-            'RELEASE_MANAGER': 'alice42',
-            'IGNORE_PRODUCTION_CHECKS': 'false'
+            {
+              'DEPLOY_ENVIRONMENT': 'gstg',
+              'DEPLOY_VERSION': '11.3.0-rc1.ee.0',
+              'DEPLOY_REPO': 'gitlab/pre-release',
+              'DEPLOY_USER': 'Alice',
+              'RELEASE_MANAGER': 'alice42',
+              'IGNORE_PRODUCTION_CHECKS': 'false'
+            }
           )
           .and_return(response)
 
