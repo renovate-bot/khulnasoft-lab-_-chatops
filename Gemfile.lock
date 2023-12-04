@@ -227,7 +227,7 @@ GEM
     rubyntlm (0.6.2)
     rubyzip (2.3.0)
     safe_yaml (1.0.5)
-    semantic_logger (4.14.0)
+    semantic_logger (4.15.0)
       concurrent-ruby (~> 1.0)
     simplecov (0.22.0)
       docile (~> 1.1)
