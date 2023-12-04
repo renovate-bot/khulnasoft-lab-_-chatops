@@ -5,7 +5,7 @@ include:
   # Upgrades dependencies on a schedule
   # see https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/renovate-bot.md
   - project: 'gitlab-com/gl-infra/common-ci-tasks'
-    ref: v2.1.1 # renovate:managed
+    ref: v2.1.2 # renovate:managed
     file: renovate-bot.yml
     rules:
       - if: '$CI_SERVER_HOST == "gitlab.com"'
@@ -213,4 +213,4 @@ migrations:
 # the image version
 .base_renovate_image:
   image:
-    name: registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks/renovate:v2.1.1
+    name: registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks/renovate:v2.1.2
