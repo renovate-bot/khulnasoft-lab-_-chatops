@@ -6,7 +6,7 @@ GitLab.com such as getting the `EXPLAIN ANALYZE` output of a database query.
 ## Issues
 
 This repository is not owned by one specific team, but rather is contributed to
-by many.  For issues specific to chatops development, technical debt, and/or
+by many. For issues specific to chatops development, technical debt, and/or
 implementation details, feel free to use this issue tracker.
 
 For procedures, processes, and abstracts associated with Chatops, one should
@@ -15,11 +15,11 @@ specific issue tracker as necessary.
 
 # Requirements
 
-* Ruby 2.6
-* Bundler
-* GitLab EE Ultimate for chatops support
-* A Slack API token for a bot integration
-* A Grafana API token
+- Ruby 3.0
+- Bundler
+- GitLab EE Ultimate for chatops support
+- A Slack API token for a bot integration
+- A Grafana API token
 
 # Setting Up
 
@@ -33,12 +33,14 @@ As an alternative, you have the option of [executing the chatops executable from
 1. [Launch GitPod in GitLab](https://docs.gitlab.com/ee/integration/gitpod.html#launch-gitpod-in-gitlab) for this Chatops project.
 
 2. Once the GDK in your Gitpod workspace is ready, login and change your password.
+
    1. Login to GDK with `root` as your username and `5iveL!fe` as the password.
    2. Change your password when it asks you to. This is important because this Gitpod workspace has an
-   open 3000 port, which allows anyone on the internet to attempt to login to this GDK instance. The port
-   needs to be open to allow Slack to connect to the GDK instance.
+      open 3000 port, which allows anyone on the internet to attempt to login to this GDK instance. The port
+      needs to be open to allow Slack to connect to the GDK instance.
 
 3. Import the Chatops project into GDK.
+
    1. On the projects page of GDK, click on "New Project".
    2. Click on "Import project".
    3. Select "Repository by URL".
@@ -49,14 +51,14 @@ As an alternative, you have the option of [executing the chatops executable from
 4. Follow https://slack.com/intl/en-in/help/articles/206845317-Create-a-Slack-workspace to create your own Slack workspace.
 
 5. Follow https://docs.gitlab.com/ee/user/project/integrations/slack_slash_commands.html to setup the slash commands configuration
-for the Chatops project.
+   for the Chatops project.
 
 6. Then try running a command in Slack: `/chatops run help`. It should ask you to "Connect your GitLab account". After you do
-that, you can run the chatops command again, and it should create a CI job under the chatops project in the GDK.
+   that, you can run the chatops command again, and it should create a CI job under the chatops project in the GDK.
 
 7. After making changes to the Chatops project under `/workspace/chatops` (on the GitPod disk, not in GDK), or pulling
-the latest code from gitlab.com, you need to upload a new chatops image to the Container Registry of the chatops project in
-GDK. Execute the following commands on the GitPod terminal:
+   the latest code from gitlab.com, you need to upload a new chatops image to the Container Registry of the chatops project in
+   GDK. Execute the following commands on the GitPod terminal:
 
    1. `docker login`
 
@@ -74,24 +76,24 @@ Notes:
 ## Using GDK/GCK
 
 1. To use this repository with GitLab Chatops you need to have a GitLab EE Ultimate
-instance (like [GDK](https://gitlab.com/gitlab-org/gitlab-development-kit) or [GCK](https://gitlab.com/gitlab-org/gitlab-compose-kit))
-that is somehow publicly reachable. If you're using a development
-environment you can use [localtunnel](https://localtunnel.github.io/www/) to
-expose your development environment.
+   instance (like [GDK](https://gitlab.com/gitlab-org/gitlab-development-kit) or [GCK](https://gitlab.com/gitlab-org/gitlab-compose-kit))
+   that is somehow publicly reachable. If you're using a development
+   environment you can use [localtunnel](https://localtunnel.github.io/www/) to
+   expose your development environment.
 
 1. Once your environment is reachable you'll need to import this repository into
-your environment so you can easily test your changes. Once done you need to set
-up slash Commands integration following the guide at [Slack slash
-commands](https://docs.gitlab.com/ee/user/project/integrations/slack_slash_commands.html).
-You can [create your own workspace](https://slack.com/intl/en-in/help/articles/206845317-Create-a-Slack-workspace)
-(unrelated to the GitLab workspace) in Slack, for testing purposes.
+   your environment so you can easily test your changes. Once done you need to set
+   up slash Commands integration following the guide at [Slack slash
+   commands](https://docs.gitlab.com/ee/user/project/integrations/slack_slash_commands.html).
+   You can [create your own workspace](https://slack.com/intl/en-in/help/articles/206845317-Create-a-Slack-workspace)
+   (unrelated to the GitLab workspace) in Slack, for testing purposes.
 
 1. When Slash commands are set up you need to set up the CI runner in your local
-environment. The easiest way of setting this up is by using the shell executor
-as this removes the need for also setting up Docker.
+   environment. The easiest way of setting this up is by using the shell executor
+   as this removes the need for also setting up Docker.
 
 1. You also need to build and push a chatops container image into the Container Registry
-of your local chatops project.
+   of your local chatops project.
 
    This can be done with the following commands:
 
@@ -194,9 +196,10 @@ like any other CLI application. These options are defined using
 compared to Ruby's own OptionParser class.
 
 ## Local Testing
+
 You can run the chatops command locally if you specify the proper environment variables. For example, the following will run a user find command on a user name. You may need other environment variables depending on the command.
 
-``` bash
+```bash
 env SLACK_TOKEN='SLACK_XXX' GITLAB_TOKEN='GITLAB_XXX' CHAT_INPUT='find cmcfarland' CHAT_CHANNEL='SLACK_CHANNEL_ID' bundle exec ./bin/chatops user
 ```
 
@@ -211,7 +214,7 @@ git push ops branch-name
 ```
 
 2. On the ChatOps ops repository, protect your branch by going to Settings > Repository > Protected branches. This allows
-existing environment variables to be used in your branch.
+   existing environment variables to be used in your branch.
 3. Ensure you're logged into the container registry in Ops:
 
 ```bash
@@ -231,10 +234,11 @@ docker push registry.ops.gitlab.net/gitlab-com/chatops:feature-test
 ```
 
 6. Temporarily modify the CI job configuration in your branch to:
-    - Use the image created instead of `latest`
-    - Run when an environment variable is present
+   - Use the image created instead of `latest`
+   - Run when an environment variable is present
 
 Example:
+
 ```yml
 mirror:
   image: $CI_REGISTRY_IMAGE:feature-test
@@ -244,7 +248,7 @@ mirror:
 ```
 
 7. Trigger a pipeline by going to https://ops.gitlab.net/gitlab-com/chatops/-/pipelines, selecting your branch, and adding
-`PERFORMING_TEST` as environment variable and `true` as value.
+   `PERFORMING_TEST` as environment variable and `true` as value.
 8. After performing the test, don't forget to remove the container registry image, unprotect your branch and delete it from the ops instance.
 
 ## Logging
@@ -271,10 +275,10 @@ end
 You can use the following existing commands as examples/reference material when
 adding new commands:
 
-* [broadcast](/lib/chatops/commands/broadcast.rb)
-* [explain](/lib/chatops/commands/explain.rb)
-* [feature](/lib/chatops/commands/feature.rb)
-* [user](/lib/chatops/commands/user.rb)
+- [broadcast](/lib/chatops/commands/broadcast.rb)
+- [explain](/lib/chatops/commands/explain.rb)
+- [feature](/lib/chatops/commands/feature.rb)
+- [user](/lib/chatops/commands/user.rb)
 
 # License
 

@@ -47,9 +47,9 @@ Style/Documentation:
 # Cop supports --auto-correct.
 Style/IfUnlessModifier:
   Exclude:
-    - 'lib/chatops/commands/feature.rb'
-    - 'lib/chatops/commands/migrations.rb'
-    - 'lib/chatops/gitlab_environments.rb'
+    - "lib/chatops/commands/feature.rb"
+    - "lib/chatops/commands/migrations.rb"
+    - "lib/chatops/gitlab_environments.rb"
 
 # Offense count: 70
 # Cop supports --auto-correct.
