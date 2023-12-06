@@ -43,7 +43,7 @@ module Chatops
         end
       end
 
-      #:nocov:
+      # :nocov:
       def raw_features
         @client.features
       end

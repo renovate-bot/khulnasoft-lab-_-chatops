@@ -65,7 +65,7 @@ module Chatops
         command = arguments[0]
 
         if COMMANDS.include?(command)
-          public_send(command, *arguments[1..-1])
+          public_send(command, *arguments[1..])
         else
           unsupported_command
         end

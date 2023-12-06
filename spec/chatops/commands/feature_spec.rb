@@ -189,6 +189,7 @@ describe Chatops::Commands::Feature do
     end
   end
   shared_context 'with feature name tables with backticks' do
+    # rubocop:disable Lint/BinaryOperatorWithIdenticalOperands
     where(:feature_name, :expected_feature_name) do
       '`foo`' | 'foo'
       '`foo'  | '`foo'
@@ -197,6 +198,7 @@ describe Chatops::Commands::Feature do
       'foo'   | 'foo'
       '`drop_sidekiq_jobs_ComplianceManagement::Standards::Gitlab::AtLeastTwoApprovalsWorker`' | 'drop_sidekiq_jobs_ComplianceManagement::Standards::Gitlab::AtLeastTwoApprovalsWorker'
     end
+    # rubocop:enable Lint/BinaryOperatorWithIdenticalOperands
   end
 
   describe '.perform' do
