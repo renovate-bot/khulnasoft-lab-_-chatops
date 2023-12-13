@@ -70,10 +70,10 @@ module Chatops
 
         When a value is empty, it means the scope does not apply. If none of these scopes are set it means the feature flag applies globally.
       MARKDOWN
-      ISSUE_FOOTER = <<~MARKDOWN
+      ISSUE_FOOTER = <<~MARKDOWN.freeze
         <hr>
 
-        :robot: This issue was generated using [GitLab Chatops](https://gitlab.com/gitlab-com/chatops/).
+        :robot: This issue was generated using [GitLab Chatops](https://gitlab.com/gitlab-com/chatops/) through #{ENV['CI_JOB_URL']}.
       MARKDOWN
 
       description 'Managing of GitLab feature flags.'
