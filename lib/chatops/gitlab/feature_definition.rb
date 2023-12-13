@@ -8,7 +8,7 @@ module Chatops
       include ::SemanticLogger::Loggable
 
       MONOLITH_PROJECT = 'gitlab-org/gitlab'
-      ISSUE_REGEXP = %r{gitlab\.com/(?<issue_project_path>.+)/-/issues/(?<issue_iid>\d+)}.freeze
+      ISSUE_REGEXP = %r{gitlab\.com/(?<issue_project_path>.+)/-/issues/(?<issue_iid>\d+)}
 
       attr_reader :name
 

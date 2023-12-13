@@ -7,10 +7,10 @@ module Chatops
         include ::SemanticLogger::Loggable
 
         # 14-8-auto-deploy-2022020906
-        GITLAB_AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/.freeze
+        GITLAB_AUTO_DEPLOY_BRANCH_REGEX = /^\d+-\d+-auto-deploy-\d+$/
 
         # 14.8.202202082218+113b5654b3c.d8c9987d59d
-        OMNIBUS_AUTO_DEPLOY_TAG_REGEX = /^\d+\.\d+\.\d+\+\h+\.\h+$/.freeze
+        OMNIBUS_AUTO_DEPLOY_TAG_REGEX = /^\d+\.\d+\.\d+\+\h+\.\h+$/
 
         def initialize(client, project, commit_sha)
           @client = client

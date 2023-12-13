@@ -273,7 +273,7 @@ module Chatops
 
       private
 
-      TAG_REGEX = /\Av\d+\.\d+\.\d+(-rc\d+)?\z/.freeze
+      TAG_REGEX = /\Av\d+\.\d+\.\d+(-rc\d+)?\z/
 
       def tag_params
         params = {}

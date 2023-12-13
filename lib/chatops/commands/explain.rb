@@ -45,7 +45,7 @@ module Chatops
 
       # A regex indicating clearly dangerous queries that should never be
       # executed.
-      UNSAFE_PATTERN = /\A(DELETE|DROP|ALTER|UPDATE|INSERT|CREATE)/i.freeze
+      UNSAFE_PATTERN = /\A(DELETE|DROP|ALTER|UPDATE|INSERT|CREATE)/i
 
       # The host to use for visualising query plans.
       EXPLAIN_HOST = 'https://explain.depesz.com'

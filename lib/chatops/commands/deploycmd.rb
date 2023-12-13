@@ -10,7 +10,7 @@ module Chatops
       include Command
       include YamlCmd
 
-      COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/.freeze
+      COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/
 
       usage "#{command_name} [COMMAND NAME] [ROLE] [OPTIONS]"
       description 'Runs ansible commands across roles in our fleet.'

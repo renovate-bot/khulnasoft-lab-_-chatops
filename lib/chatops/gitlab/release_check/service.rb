@@ -4,7 +4,7 @@ module Chatops
   module Gitlab
     module ReleaseCheck
       class Service
-        MONTHLY_RELEASE_VERSION_REGEX = /\A(?<major>\d+)\.(?<minor>\d+)\z/.freeze
+        MONTHLY_RELEASE_VERSION_REGEX = /\A(?<major>\d+)\.(?<minor>\d+)\z/
 
         ALLOWED_MR_PROJECTS = [
           Projects::GITLAB_CANONICAL, Projects::GITLAB_SECURITY,

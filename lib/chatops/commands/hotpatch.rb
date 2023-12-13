@@ -9,7 +9,7 @@ module Chatops
       PATCH_ENVS = %w[gprd gprd-cny gstg gstg-cny].freeze
       GITLAB_HOST = 'ops.gitlab.net'
       PROD_PROJECT = 'https://gitlab.com/gitlab-com/gl-infra/production'
-      PATCHER_PROJECT = "https://#{GITLAB_HOST}/#{PATCHER_PATH}"
+      PATCHER_PROJECT = "https://#{GITLAB_HOST}/#{PATCHER_PATH}".freeze
 
       usage "#{command_name} [OPTIONS]"
       description 'Prepares a hotpatch for GitLab.com'

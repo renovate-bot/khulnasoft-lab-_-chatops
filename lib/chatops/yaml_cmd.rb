@@ -2,7 +2,7 @@
 
 module Chatops
   module YamlCmd
-    COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/.freeze
+    COMMAND_FILE_PATTERN = /\A(\w+)\.yml\z/
 
     def list_commands
       <<~HELP.strip

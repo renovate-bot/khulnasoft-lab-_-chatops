@@ -2,7 +2,7 @@
 
 module Chatops
   class MergeRequestURLParser
-    MR_URL_REGEX = %r{https://gitlab.com/(?<project>.+)/-/merge_requests/(?<iid>\d+)}.freeze
+    MR_URL_REGEX = %r{https://gitlab.com/(?<project>.+)/-/merge_requests/(?<iid>\d+)}
 
     attr_reader :mr_url
 

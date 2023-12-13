@@ -13,7 +13,7 @@ module Chatops
         (?<patch>\d+)
         (-rc(?<rc>\d+))?
         \z
-      }x.freeze
+      }x
       # rubocop:enable Style/RegexpLiteral
       # rubocop:enable Lint/MixedRegexpCaptureTypes
 

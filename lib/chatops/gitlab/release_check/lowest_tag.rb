@@ -7,10 +7,10 @@ module Chatops
         # We ignore RCs since RCs are created from the stable branch,
         # and we already check the stable branch.
         # v14.7.0-ee
-        GITLAB_TAG_REGEX = /\Av(?<version>\d+\.\d+\.\d+)-ee\z/.freeze
+        GITLAB_TAG_REGEX = /\Av(?<version>\d+\.\d+\.\d+)-ee\z/
 
         # 14.7.0+ee.0
-        OMNIBUS_TAG_REGEX = /\A(?<version>\d+\.\d+\.\d+)\+ee\.\d+\z/.freeze
+        OMNIBUS_TAG_REGEX = /\A(?<version>\d+\.\d+\.\d+)\+ee\.\d+\z/
 
         def initialize(client, project, commit_sha)
           @client = client

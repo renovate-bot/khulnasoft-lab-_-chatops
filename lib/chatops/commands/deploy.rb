@@ -20,16 +20,16 @@ module Chatops
       ].freeze
 
       # The regular expression to use for verifying release candidate versions.
-      RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/.freeze
+      RC_VERSION_REGEX = /\A\d+\.\d+\.\d+-rc\d+?\.ee\.\d+\z/
 
       # The regular expression to use for verifying regular release versions.
-      VERSION_REGEX = /\A\d+\.\d+\.\d+-ee\.\d+\z/.freeze
+      VERSION_REGEX = /\A\d+\.\d+\.\d+-ee\.\d+\z/
 
       # The regular expression to use for verifying auto-deploy versions
       #   The auto-deploy version may change due to
       #   https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/343
       #   this regex allows for both options
-      AUTO_DEPLOY_REGEX = /\A\d+\.\d+\.\d+[+-][^ ]{7,}\.[^ ]{7,}\z/.freeze
+      AUTO_DEPLOY_REGEX = /\A\d+\.\d+\.\d+[+-][^ ]{7,}\.[^ ]{7,}\z/
 
       # Default package repository to use if TAKEOFF_DEPLOY_REPO is undefined
       DEFAULT_REPO = 'gitlab/pre-release'

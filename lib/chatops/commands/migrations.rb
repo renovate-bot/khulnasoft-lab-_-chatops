@@ -20,7 +20,7 @@ module Chatops
       # All the available subcommands and the corresponding methods to invoke.
       COMMANDS = Set.new(%w[mark])
 
-      VERSION_REGEX = /\A\d{14}\z/.freeze
+      VERSION_REGEX = /\A\d{14}\z/
 
       options do |o|
         o.string(
