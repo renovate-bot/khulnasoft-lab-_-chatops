@@ -4,44 +4,20 @@ require:
   - rubocop-rspec
 
 AllCops:
-  NewCops: enable
-  TargetRubyVersion: 3.0
-
-Style/Documentation:
-  Enabled: false
-
-Metrics/MethodLength:
-  Max: 50
-
-Metrics/ClassLength:
-  Max: 1000
-
-Metrics/BlockLength:
+  # TODO (rpereira2): Change this to enabled and fix or ignore the resulting cop failures
+  NewCops: disable
+  TargetRubyVersion: <%= RUBY_VERSION[/^\d+\.\d+/, 0] %>
+  DisplayStyleGuide: true
   Exclude:
-    - spec/**/*
+    - Rakefile
+    - 'spec/fixtures/**/*'
+    - 'vendor/**/*'
 
 Metrics/AbcSize:
   Max: 30
 
-Layout/LineLength:
-  Max: 120
-  Exclude:
-    - spec/**/*
-
 Metrics/ParameterLists:
   Max: 10
-
-RSpec/MultipleExpectations:
-  Max: 5
-
-RSpec/ExampleLength:
-  Max: 30
-
-RSpec/MessageSpies:
-  Enabled: false
-
-Layout/MultilineMethodCallIndentation:
-  EnforcedStyle: indented
 
 Style/MethodCallWithArgsParentheses:
   Exclude:
@@ -61,3 +37,129 @@ Style/MethodCallWithArgsParentheses:
 
 Style/MethodCallWithoutArgsParentheses:
   Enabled: true
+
+# Gems in consecutive lines should be alphabetically sorted
+Bundler/OrderedGems:
+  Enabled: true
+
+# Layout ######################################################################
+
+Layout/LineLength:
+  Enabled: false
+  IgnoreCopDirectives: true
+  Max: 120
+
+Layout/MultilineMethodCallIndentation:
+  Enabled: false
+
+# Lint ########################################################################
+
+Lint/MissingSuper:
+  Enabled: false
+
+# Perfectly reasonable to only name specific captures we care about
+Lint/MixedRegexpCaptureTypes:
+  Enabled: false
+
+# Metrics #####################################################################
+
+Metrics/BlockLength:
+  CountAsOne: ['array', 'hash', 'heredoc']
+  Exclude:
+    - 'spec/**/*'
+    - 'lib/tasks/**/*'
+
+Metrics/ClassLength:
+  CountAsOne: ['array', 'hash', 'heredoc']
+
+Metrics/ModuleLength:
+  CountAsOne: ['array', 'hash', 'heredoc']
+
+Metrics/MethodLength:
+  CountAsOne: ['array', 'hash', 'heredoc']
+  Exclude:
+    - 'spec/**/*'
+
+# Naming ######################################################################
+
+Naming/HeredocDelimiterNaming:
+  Enabled: false
+
+Naming/MethodParameterName:
+  MinNameLength: 2
+
+Naming/RescuedExceptionsVariableName:
+  PreferredName: ex
+
+# RSpec #######################################################################
+
+RSpec/ContextWording:
+  Enabled: false
+
+RSpec/DescribeClass:
+  Exclude:
+    - 'spec/lib/tasks/**/*'
+
+RSpec/ExampleLength:
+  Enabled: false
+
+# Reason: We support boths mocks and spies.
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Max: 5
+
+RSpec/StubbedMock:
+  Enabled: false
+
+RSpec/SubjectStub:
+  Enabled: false
+
+# Style #######################################################################
+
+# Sometimes separating `attr_reader`s can improve readability
+Style/AccessorGrouping:
+  Enabled: false
+
+Style/CommentAnnotation:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/HashSyntax:
+  EnforcedShorthandSyntax: either
+
+# This often interferes with MaxLineLength, and we care about that more.
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/PercentLiteralDelimiters:
+  Enabled: false
+
+Style/RaiseArgs:
+  Enabled: false
+
+Style/RegexpLiteral:
+  Enabled: false
+
+Style/SafeNavigation:
+  Enabled: false
+
+Style/SlicingWithRange:
+  Enabled: false
+
+Style/StringLiterals:
+  Enabled: false
+
+Style/SymbolArray:
+  Exclude:
+    - Rakefile
+    - 'lib/tasks/**/*.rake'
