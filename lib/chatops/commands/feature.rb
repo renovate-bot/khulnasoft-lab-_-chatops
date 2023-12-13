@@ -320,8 +320,8 @@ module Chatops
 
         feature = Gitlab::Feature.from_api_response(response)
         perform_side_effects(feature_name, value, feature, environment, options)
-      rescue ProductionCheckTimeout => e
-        "#{e.message} #{check_failure_resp}"
+      rescue ProductionCheckTimeout => ex
+        "#{ex.message} #{check_failure_resp}"
       end
       # rubocop: enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
@@ -548,9 +548,9 @@ module Chatops
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(**slack_args)
-      rescue Slack::Message::MessageError => e
+      rescue Slack::Message::MessageError => ex
         'The following Slack message could not be posted to channel ' \
-        "'#{channel}': #{slack_args}\n\nError: #{e.message}"
+        "'#{channel}': #{slack_args}\n\nError: #{ex.message}"
       end
 
       def attachment_fields_per_state(environment)

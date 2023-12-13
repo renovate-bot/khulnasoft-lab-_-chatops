@@ -36,8 +36,8 @@ module Chatops
 
       def parse_response_body(response)
         JSON.parse(response.body.to_s)
-      rescue JSON::ParserError => e
-        raise "Failed to parse Grafana response #{response}; reason: #{e}"
+      rescue JSON::ParserError => ex
+        raise "Failed to parse Grafana response #{response}; reason: #{ex}"
       end
     end
   end

@@ -188,6 +188,7 @@ describe Chatops::Commands::Feature do
       command.set
     end
   end
+
   shared_context 'with feature name tables with backticks' do
     # rubocop:disable Lint/BinaryOperatorWithIdenticalOperands
     where(:feature_name, :expected_feature_name) do
@@ -574,6 +575,7 @@ describe Chatops::Commands::Feature do
         end
       end
     end
+
     context 'when using a project feature gate together with --random' do
       it 'returns an error message' do
         opts = default_opts.merge(random: true, project: 'gitlab-org/gitaly')
@@ -1041,6 +1043,7 @@ describe Chatops::Commands::Feature do
         end
       end
     end
+
     context 'when there is an ongoing incident' do
       it 'does not allow changing the feature flag state' do
         opts = default_opts.merge(random: true, ignore_random_deprecation_check: true)
@@ -1711,11 +1714,13 @@ describe Chatops::Commands::Feature do
 
       context 'when incidents are not ignored' do
         subject(:command) { described_class.new([], {}, env) }
+
         it_behaves_like 'creates a closed issue', 'host::gitlab.com, change'
       end
 
       context 'when incidents are ignored' do
         subject(:command) { described_class.new([], { ignore_production_check: true }, env) }
+
         it_behaves_like 'creates a closed issue', 'host::gitlab.com, change, Production check ignored'
       end
     end

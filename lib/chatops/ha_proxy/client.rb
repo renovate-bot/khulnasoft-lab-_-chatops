@@ -42,14 +42,14 @@ module Chatops
           retries = 0
           begin
             single_server_data = fetch_server_data(lb_ip: lb_ip)
-          rescue Errno::ECONNRESET => e
+          rescue Errno::ECONNRESET => ex
             if (retries += 1) < HA_PROXY_RETRIES
               sleep(RETRY_SLEEP)
               retry
             end
 
             puts "Giving up on LB #{lb_ip} after #{retries} retries"
-            raise e
+            raise ex
           end
           server_data += single_server_data
         end
