@@ -11,7 +11,7 @@ require 'gitlab'
 require 'semantic_logger'
 require 'shellwords'
 require 'json'
-require 'slack/block_kit'
+require 'slack-ruby-block-kit'
 
 require 'chatops/chatops'
 require 'chatops/command'
