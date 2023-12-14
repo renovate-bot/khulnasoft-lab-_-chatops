@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'vcr'
+require 'rexml/document' # Without this, we get an "uninitialized constant REXML::ParseException"
 
 VCR.configure do |c|
   c.cassette_library_dir = File.expand_path('../fixtures', __dir__)
