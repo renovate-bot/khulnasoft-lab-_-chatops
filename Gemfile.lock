@@ -1,8 +1,8 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.7.0)
-      public_suffix (>= 2.0.2, < 5.0)
+    addressable (2.8.6)
+      public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
     bcrypt_pbkdf (1.1.0)
     binding_of_caller (1.0.0)
@@ -68,8 +68,8 @@ GEM
     climate_control (1.2.0)
     coderay (1.1.3)
     concurrent-ruby (1.2.2)
-    crack (0.4.3)
-      safe_yaml (~> 1.0.0)
+    crack (0.4.5)
+      rexml
     debug_inspector (1.1.0)
     diff-lcs (1.3)
     docile (1.4.0)
@@ -111,7 +111,7 @@ GEM
     gyoku (1.4.0)
       builder (>= 2.1.2)
       rexml (~> 3.0)
-    hashdiff (1.0.0)
+    hashdiff (1.0.1)
     hashie (4.1.0)
     highline (2.1.0)
     http (4.4.1)
@@ -226,7 +226,7 @@ GEM
     pry-byebug (3.6.0)
       byebug (~> 10.0)
       pry (~> 0.10)
-    public_suffix (4.0.5)
+    public_suffix (4.0.7)
     racc (1.7.3)
     rack (2.2.8)
     rainbow (3.1.1)
@@ -284,7 +284,6 @@ GEM
     ruby2_keywords (0.0.5)
     rubyntlm (0.6.3)
     rubyzip (2.3.2)
-    safe_yaml (1.0.5)
     semantic_logger (4.15.0)
       concurrent-ruby (~> 1.0)
     semverse (3.0.2)
@@ -350,10 +349,10 @@ GEM
       parser (>= 3.2.2.4)
     uuidtools (2.2.0)
     vcr (6.2.0)
-    webmock (3.5.1)
-      addressable (>= 2.3.6)
+    webmock (3.19.1)
+      addressable (>= 2.8.0)
       crack (>= 0.3.2)
-      hashdiff
+      hashdiff (>= 0.4.0, < 2.0.0)
     webrick (1.8.1)
     winrm (2.3.6)
       builder (>= 2.1.2)
@@ -401,7 +400,7 @@ DEPENDENCIES
   timecop
   tty-table
   vcr (~> 6.2.0)
-  webmock (~> 3.5.0)
+  webmock (~> 3.19.0)
 
 BUNDLED WITH
    2.4.22
