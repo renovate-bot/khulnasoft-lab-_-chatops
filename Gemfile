@@ -8,7 +8,7 @@ gem 'gitlab', '~> 4.19'
 gem 'http'
 gem 'pg'
 gem 'semantic_logger'
-gem 'slack-ruby-block-kit', '~> 0.14.0'
+gem 'slack-ruby-block-kit', '~> 0.23.0'
 gem 'slop'
 gem 'tty-table'
 
