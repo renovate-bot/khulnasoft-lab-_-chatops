@@ -55,9 +55,9 @@ stages:
 
 build:image:
   services:
-    - docker:dind
+    - docker:24.0.6-dind
   stage: build
-  image: docker:git
+  image: docker:24.0.6-git
   rules:
     - if: '$CI_PIPELINE_SOURCE == "pipeline"'
       when: 'never'
