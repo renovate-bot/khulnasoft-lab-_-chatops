@@ -324,7 +324,7 @@ describe Chatops::Gitlab::Client do
     it 'creates an indexed namespace for the shard' do
       expect(client.internal_client)
         .to receive(:put)
-        .with('/admin/zoekt/shards/123/indexed_namespaces/456')
+        .with('/admin/zoekt/shards/123/indexed_namespaces/456?search=true')
         .and_return(indexed_namespace)
 
       result = client.zoekt_shard_indexed_namespaces_create(shard_id: 123, namespace_id: 456)
@@ -332,11 +332,24 @@ describe Chatops::Gitlab::Client do
       expect(result.id).to eq(999)
     end
 
+    context 'when creating an indexed namespace but disabling search' do
+      it 'creates an indexed namespace for the shard with search disabled' do
+        expect(client.internal_client)
+          .to receive(:put)
+          .with('/admin/zoekt/shards/123/indexed_namespaces/456?search=false')
+          .and_return(indexed_namespace)
+
+        result = client.zoekt_shard_indexed_namespaces_create(shard_id: 123, namespace_id: 456, search: false)
+
+        expect(result.id).to eq(999)
+      end
+    end
+
     context 'when the response is 404' do
       it 'returns nil' do
         expect(client.internal_client)
           .to receive(:put)
-          .with('/admin/zoekt/shards/123/indexed_namespaces/456')
+          .with('/admin/zoekt/shards/123/indexed_namespaces/456?search=true')
           .and_raise(::Gitlab::Error::NotFound.new(missing_response))
 
         result = client.zoekt_shard_indexed_namespaces_create(shard_id: 123, namespace_id: 456)
