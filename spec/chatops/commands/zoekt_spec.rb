@@ -4,8 +4,10 @@ require 'spec_helper'
 
 RSpec.describe Chatops::Commands::Zoekt do
   subject(:perform) do
-    described_class.new(subcommand, {}, 'GITLAB_TOKEN' => 'the-token', 'CHAT_CHANNEL' => 'foo').perform
+    described_class.new(subcommand, command_opts, 'GITLAB_TOKEN' => 'the-token', 'CHAT_CHANNEL' => 'foo').perform
   end
+
+  let(:command_opts) { {} }
 
   let(:env_options) { { dev: false, ops: false, pre: false, production: false, staging: false, staging_ref: false } }
   let(:gitlab_client) { instance_double(Chatops::Gitlab::Client) }
@@ -37,10 +39,28 @@ RSpec.describe Chatops::Commands::Zoekt do
 
       expect(gitlab_client)
         .to receive(:zoekt_shard_indexed_namespaces_create)
-        .with(shard_id: 123, namespace_id: 456)
+        .with(shard_id: 123, namespace_id: 456, search: true)
         .and_return(instance_double('indexed_namespace', zoekt_shard_id: 123, namespace_id: 456))
 
       expect(perform).to eq('Successfully created indexed namespace for shard 123 and namespace 456')
+    end
+
+    context 'when creating an indexed namespace but disabling search' do
+      let(:command_opts) { { disable_search: true } }
+
+      it 'creates the indexed namespace with search disabled' do
+        expect(Chatops::Gitlab::Client)
+          .to receive(:new)
+          .with(token: 'the-token', host: 'gitlab.com')
+          .and_return(gitlab_client)
+
+        expect(gitlab_client)
+          .to receive(:zoekt_shard_indexed_namespaces_create)
+          .with(shard_id: 123, namespace_id: 456, search: false)
+          .and_return(instance_double('indexed_namespace', zoekt_shard_id: 123, namespace_id: 456))
+
+        expect(perform).to eq('Successfully created indexed namespace for shard 123 and namespace 456')
+      end
     end
 
     context 'when creation fails' do
@@ -52,7 +72,7 @@ RSpec.describe Chatops::Commands::Zoekt do
 
         expect(gitlab_client)
           .to receive(:zoekt_shard_indexed_namespaces_create)
-          .with(shard_id: 123, namespace_id: 456)
+          .with(shard_id: 123, namespace_id: 456, search: true)
           .and_return(nil)
 
         expect(perform).to eq('Failed to create the indexed namespace for shard 123 and namespace 456')

@@ -16,7 +16,7 @@ module Chatops
 
           Adding a namespace to be indexed in a shard
 
-            indexed_namespace_create <shard_id> <namespace_id>
+            indexed_namespace_create <shard_id> <namespace_id> [--disable-search]
 
           Force indexing for a project
 
@@ -28,6 +28,8 @@ module Chatops
       EXAMP
 
       options do |o|
+        o.bool('--disable-search', 'Disable search for this indexed namespace')
+
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
@@ -60,7 +62,9 @@ module Chatops
         shard_id = required_integer_argument(1, :shard_id)
         namespace_id = required_integer_argument(2, :namespace_id)
 
-        result = gitlab_client.zoekt_shard_indexed_namespaces_create(shard_id: shard_id, namespace_id: namespace_id)
+        result = gitlab_client.zoekt_shard_indexed_namespaces_create(
+          shard_id: shard_id, namespace_id: namespace_id, search: !options[:disable_search]
+        )
 
         if result
           'Successfully created indexed namespace for ' \

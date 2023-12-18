@@ -131,8 +131,8 @@ module Chatops
         internal_client.post('/broadcast_messages', body: body)
       end
 
-      def zoekt_shard_indexed_namespaces_create(shard_id:, namespace_id:)
-        internal_client.put("/admin/zoekt/shards/#{shard_id}/indexed_namespaces/#{namespace_id}")
+      def zoekt_shard_indexed_namespaces_create(shard_id:, namespace_id:, search: true)
+        internal_client.put("/admin/zoekt/shards/#{shard_id}/indexed_namespaces/#{namespace_id}?search=#{search}")
       rescue ::Gitlab::Error::NotFound
         nil
       end
