@@ -39,7 +39,7 @@ module Chatops
 
           Examples:
 
-            Mark a database migration as successful.
+            Mark a database migration as successful. The usage of this command is exclusive for Release Managers.
 
               migrations mark 20230428500000
               migrations mark 20230428500000 --database ci
