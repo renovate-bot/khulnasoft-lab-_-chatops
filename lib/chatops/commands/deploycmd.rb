@@ -60,8 +60,8 @@ module Chatops
 
         "Command `#{command_name}` was issued to "\
           "`#{role}` in `#{environment}`: <#{response.web_url}>"
-      rescue StandardError => e
-        "The command could not be run: #{e.message}"
+      rescue StandardError => ex
+        "The command could not be run: #{ex.message}"
       end
 
       def client

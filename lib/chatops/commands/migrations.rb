@@ -113,8 +113,8 @@ module Chatops
         return [:not_found, nil] unless response
 
         [:ok, response.message]
-      rescue ::Gitlab::Error::ResponseError => e
-        [:error, e.response_message]
+      rescue ::Gitlab::Error::ResponseError => ex
+        [:error, ex.response_message]
       end
 
       def database

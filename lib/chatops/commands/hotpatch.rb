@@ -75,8 +75,8 @@ module Chatops
       def create_branch
         resp = gitlab_client.create_branch(PATCHER_PATH, branch_name, 'master')
         ":git-branch: <#{resp.web_url}|#{branch_name}>"
-      rescue ::Gitlab::Error::BadRequest => e
-        raise if e.response_status != 400
+      rescue ::Gitlab::Error::BadRequest => ex
+        raise if ex.response_status != 400
 
         ":information_source: Branch `#{branch_name}` already exists"
       end
@@ -93,8 +93,8 @@ module Chatops
         "*#{env_text(env)}*: "\
           "<#{PATCHER_PROJECT}/-/tree/#{branch_name}/#{resp.file_path}|" \
           'patch directory>'
-      rescue ::Gitlab::Error::BadRequest => e
-        raise if e.response_status != 400
+      rescue ::Gitlab::Error::BadRequest => ex
+        raise if ex.response_status != 400
 
         ":information_source: *#{env_text(env)}*: "\
           "Directory <#{PATCHER_PROJECT}/-/tree/#{branch_name}/#{file_path}|" \
@@ -111,8 +111,8 @@ module Chatops
           description: merge_request_description
         )
         ":mr: MR <#{resp.web_url}|!#{resp.iid}>"
-      rescue ::Gitlab::Error::Conflict => e
-        ":information_source: #{e.response_message.join(' ')}"
+      rescue ::Gitlab::Error::Conflict => ex
+        ":information_source: #{ex.response_message.join(' ')}"
       end
 
       def branch_name

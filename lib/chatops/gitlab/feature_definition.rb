@@ -102,8 +102,8 @@ module Chatops
         end
 
         {} # fallback to an empty hash
-      rescue ::Gitlab::Error::InternalServerError => e
-        logger.info("The search for the `#{name}` flag definition file returned 500:\n#{e.message}")
+      rescue ::Gitlab::Error::InternalServerError => ex
+        logger.info("The search for the `#{name}` flag definition file returned 500:\n#{ex.message}")
         {} # fallback to an empty hash
       end
     end

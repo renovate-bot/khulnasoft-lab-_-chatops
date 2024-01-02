@@ -93,10 +93,6 @@ describe Chatops::Gitlab::TestsPipeline do
       it { expect(tests_pipeline.should_trigger?).to eq true }
     end
 
-    context 'when env is gstg and group, project and user are not specified' do
-      it { expect(tests_pipeline.should_trigger?).to eq true }
-    end
-
     context 'when feature_value is false' do
       let(:feature_value) { 'false' }
 

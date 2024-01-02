@@ -85,7 +85,7 @@ module Chatops
         minutes_updated(name, minutes)
       end
 
-      def submit_namespace_details(namespace) # rubocop:disable Metrics/MethodLength
+      def submit_namespace_details(namespace)
         Slack::Message
           .new(token: slack_token, channel: channel)
           .send(

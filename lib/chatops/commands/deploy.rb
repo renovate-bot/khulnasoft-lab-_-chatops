@@ -193,8 +193,8 @@ module Chatops
 
         url = response.web_url
         "The deploy has been scheduled and can be viewed <#{url}|here>"
-      rescue StandardError => e
-        "The deploy could not be scheduled: #{e.message}"
+      rescue StandardError => ex
+        "The deploy could not be scheduled: #{ex.message}"
       end
 
       def environment_variables_for(version, target)

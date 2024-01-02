@@ -31,8 +31,8 @@ module Chatops
                                           trigger_variables)
 
         response.web_url
-      rescue StandardError => e
-        "Failed to trigger end-to-end test pipeline: #{e.message}"
+      rescue StandardError => ex
+        "Failed to trigger end-to-end test pipeline: #{ex.message}"
       end
 
       def should_trigger?

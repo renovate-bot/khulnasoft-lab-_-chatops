@@ -181,6 +181,16 @@ describe Chatops::Commands::Deploy do
 
         command.perform
       end
+
+      it 'deploys from the pre-release repository' do
+        command = described_class.new(%w[11.3.0-rc1.ee.0 gprd-cny])
+
+        expect(command)
+          .to receive(:schedule_deploy)
+          .with('11.3.0-rc1.ee.0', 'gprd-cny')
+
+        command.perform
+      end
     end
 
     context 'with a valid stable version' do
@@ -190,18 +200,6 @@ describe Chatops::Commands::Deploy do
         expect(command)
           .to receive(:schedule_deploy)
           .with('11.3.0-ee.0', 'gstg-ref')
-
-        command.perform
-      end
-    end
-
-    context 'with a valid RC version' do
-      it 'deploys from the pre-release repository' do
-        command = described_class.new(%w[11.3.0-rc1.ee.0 gprd-cny])
-
-        expect(command)
-          .to receive(:schedule_deploy)
-          .with('11.3.0-rc1.ee.0', 'gprd-cny')
 
         command.perform
       end

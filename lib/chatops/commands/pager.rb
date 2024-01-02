@@ -119,14 +119,14 @@ module Chatops
         window = nil
         begin
           window = client.start_maintenance_window(services, start_time, end_time, reason)
-        rescue Chatops::PagerDuty::ExtendedClient::Error => e
-          respond("Fatal: #{e.message}")
-          puts "Fatal: #{e.message}"
+        rescue Chatops::PagerDuty::ExtendedClient::Error => ex
+          respond("Fatal: #{ex.message}")
+          puts "Fatal: #{ex.message}"
           exit(1)
-        rescue StandardError => e
-          respond("Unexpected error: #{e.message}")
-          puts "Unexpected error: #{e.message}"
-          e.backtrace.each { |t| puts t }
+        rescue StandardError => ex
+          respond("Unexpected error: #{ex.message}")
+          puts "Unexpected error: #{ex.message}"
+          ex.backtrace.each { |t| puts t }
           exit(1)
         end
         notice(build_notice('Pages paused (maintenance window started) ' \
@@ -146,14 +146,14 @@ module Chatops
           updated_window = nil
           begin
             updated_window = client.terminate_maintenance_window(window)
-          rescue Chatops::PagerDuty::ExtendedClient::Error => e
-            respond("Fatal: #{e.message}")
-            puts "Fatal: #{e.message}"
+          rescue Chatops::PagerDuty::ExtendedClient::Error => ex
+            respond("Fatal: #{ex.message}")
+            puts "Fatal: #{ex.message}"
             exit(1)
-          rescue StandardError => e
-            respond("Unexpected error: #{e.message}")
-            puts "Unexpected error: #{e.message}"
-            e.backtrace.each { |t| puts t }
+          rescue StandardError => ex
+            respond("Unexpected error: #{ex.message}")
+            puts "Unexpected error: #{ex.message}"
+            ex.backtrace.each { |t| puts t }
             exit(1)
           end
           notice(build_notice('Pager resumed (maintenance window ended) ' \

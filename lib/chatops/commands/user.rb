@@ -142,8 +142,8 @@ module Chatops
         begin
           add_email(user, new_email)
           remove_old_email(user, old_email)
-        rescue ::Gitlab::Error::Error => e
-          return "Failed to update user: #{e.response_message}"
+        rescue ::Gitlab::Error::Error => ex
+          return "Failed to update user: #{ex.response_message}"
         end
 
         find(new_email)
@@ -165,8 +165,8 @@ module Chatops
 
         begin
           production_client.edit_user(user.id, note: new_note)
-        rescue ::Gitlab::Error::ResponseError => e
-          return "Failed to update user: #{e.response_message}"
+        rescue ::Gitlab::Error::ResponseError => ex
+          return "Failed to update user: #{ex.response_message}"
         end
 
         find(name)
@@ -185,8 +185,8 @@ module Chatops
 
         begin
           production_client.edit_user(user.id, username: new_username)
-        rescue ::Gitlab::Error::ResponseError => e
-          return "Failed to update username: #{e.response_message}"
+        rescue ::Gitlab::Error::ResponseError => ex
+          return "Failed to update username: #{ex.response_message}"
         end
 
         find(new_username)
@@ -216,7 +216,6 @@ module Chatops
         end
       end
 
-      # rubocop: disable Metrics/MethodLength
       def submit_user_details(user, user_secondary_emails = [])
         Slack::Message
           .new(token: slack_token, channel: channel)
@@ -299,7 +298,6 @@ module Chatops
             ]
           )
       end
-      # rubocop: enable Metrics/MethodLength
 
       def unsupported_command
         vals = COMMANDS.to_a.sort.map { |name| Markdown::Code.new(name) }

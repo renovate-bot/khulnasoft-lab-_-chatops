@@ -54,6 +54,7 @@ describe Chatops::Commands::Mirror do
     end
 
     let(:fake_client) { double('Chatops::Gitlab::Client').as_null_object }
+
     before do
       stub_const('Chatops::Gitlab::Client', fake_client)
     end

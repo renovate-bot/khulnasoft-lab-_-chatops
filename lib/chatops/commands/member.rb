@@ -53,10 +53,10 @@ module Chatops
         else
           unsupported_command
         end
-      rescue ::Gitlab::Error::ResponseError => e
-        "Failed to #{command} #{username!}: #{e.response_message}"
-      rescue ArgumentError => e
-        "Failed to #{command} #{username!}: #{e.message}"
+      rescue ::Gitlab::Error::ResponseError => ex
+        "Failed to #{command} #{username!}: #{ex.response_message}"
+      rescue ArgumentError => ex
+        "Failed to #{command} #{username!}: #{ex.message}"
       end
 
       def unsupported_command
