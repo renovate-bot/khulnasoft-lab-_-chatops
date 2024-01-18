@@ -149,7 +149,7 @@ module Chatops
         @dri_schedule_yaml_data ||=
           YAML.safe_load(
             client.file_contents(project: PIPELINE_TRIAGE_PROJECT_ID, path: DRI_SCHEDULE_FILE_NAME),
-            [Date]
+            permitted_classes: [Date]
           )
       end
 
