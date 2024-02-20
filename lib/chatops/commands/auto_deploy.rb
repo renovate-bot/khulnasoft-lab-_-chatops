@@ -131,11 +131,13 @@ module Chatops
       end
 
       def security_status
+        mr_id_to_ignore = 3799 # Ignored due to https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/19951
         query = { state: 'merged', target_branch: 'master', per_page: 50 }
 
         merged = production_client.merge_requests(RAILS_PROJECT, query).map(&:to_h)
         deployed = production_client.merge_requests(RAILS_PROJECT, query.merge(environment: 'gprd')).map(&:to_h)
         diff = merged - deployed
+        diff.reject! { |mr| mr['iid'] == mr_id_to_ignore }
 
         if diff.empty?
           ":white_check_mark: All merged MRs in `#{RAILS_PROJECT}` have been deployed to Production."
