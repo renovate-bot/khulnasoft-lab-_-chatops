@@ -577,11 +577,32 @@ describe Chatops::Commands::AutoDeploy do
       expect(fake_client).to receive(:merge_requests)
         .with(anything, hash_excluding(environment: 'gprd'))
         .and_return([merged, deployed])
+
       expect(fake_client).to receive(:merge_requests)
         .with(anything, hash_including(environment: 'gprd'))
         .and_return([deployed])
 
       expect_slack_message(blocks: SecurityStatusBlockMatcher.new(merged.web_url))
+
+      command.perform
+    end
+
+    it 'ignores removed mr' do
+      command = described_class.new(%w[security_status], *env)
+
+      mr_merged1 = merge_request_stub(iid: 3799, web_url: 'example.com/mr/3799', references: { full: 'foo/bar!3799' })
+      mr_merged2 = merge_request_stub(web_url: 'example.com/mr/1', references: { full: 'foo/bar!1' })
+
+      expect(fake_client).to receive(:merge_requests)
+        .with(anything, hash_excluding(environment: 'gprd'))
+        .and_return([mr_merged1, mr_merged2])
+
+      expect(fake_client).to receive(:merge_requests)
+        .with(anything, hash_including(environment: 'gprd'))
+        .and_return([mr_merged2])
+
+      expect(Chatops::Slack::Message)
+        .not_to receive(:new)
 
       command.perform
     end
