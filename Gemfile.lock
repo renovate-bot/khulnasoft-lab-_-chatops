@@ -5,6 +5,7 @@ GEM
       public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
     bcrypt_pbkdf (1.1.0)
+    bigdecimal (3.1.6)
     binding_of_caller (1.0.0)
       debug_inspector (>= 0.0.1)
     builder (3.2.4)
@@ -68,7 +69,8 @@ GEM
     climate_control (1.2.0)
     coderay (1.1.3)
     concurrent-ruby (1.2.2)
-    crack (0.4.5)
+    crack (0.4.6)
+      bigdecimal
       rexml
     debug_inspector (1.1.0)
     diff-lcs (1.3)
@@ -110,7 +112,7 @@ GEM
     gyoku (1.4.0)
       builder (>= 2.1.2)
       rexml (~> 3.0)
-    hashdiff (1.0.1)
+    hashdiff (1.1.0)
     hashie (4.1.0)
     highline (2.1.0)
     http (5.1.1)
@@ -347,7 +349,7 @@ GEM
       parser (>= 3.2.2.4)
     uuidtools (2.2.0)
     vcr (6.2.0)
-    webmock (3.19.1)
+    webmock (3.23.0)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
@@ -399,7 +401,7 @@ DEPENDENCIES
   timecop
   tty-table
   vcr (~> 6.2.0)
-  webmock (~> 3.19.0)
+  webmock (~> 3.23.0)
 
 BUNDLED WITH
    2.4.22
