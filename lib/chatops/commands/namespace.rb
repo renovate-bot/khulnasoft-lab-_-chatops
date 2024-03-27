@@ -113,6 +113,11 @@ module Chatops
                     short: true
                   },
                   {
+                    title: 'Full path',
+                    value: namespace.full_path,
+                    short: true
+                  },
+                  {
                     title: 'Billable members',
                     value: namespace['billable_members_count'],
                     short: true
