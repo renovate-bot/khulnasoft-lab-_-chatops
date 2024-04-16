@@ -12,7 +12,8 @@ module Chatops
         'C0GQHHPGW', # frontend
         'C0XM5UU6B', # releases
         'CMA7DQJRX', # g_engineering_productivity
-        'CBQ76ND6W' # g_runner
+        'CBQ76ND6W', # g_runner
+        'C025LECQY0M' # g_dedicated_team
       ].freeze
 
       usage "#{command_name} [MESSAGE] [OPTIONS]"
