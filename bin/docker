@@ -8,6 +8,6 @@ docker build -t "$image_name" -f ./docker/chatops.Dockerfile .
 # Check if we at least can run the help command
 docker run --env CHAT_INPUT=help "$image_name" bundle exec bin/chatops help | grep 'The following commands are available'
 
-echo "$CI_JOB_TOKEN" | docker login --password-stdin -u "$CI_REGISTRY_USER" "$CI_REGISTRY"
+echo "$CI_REGISTRY_PASSWORD" | docker login --password-stdin -u "$CI_REGISTRY_USER" "$CI_REGISTRY"
 docker push "$image_name"
 docker logout "$CI_REGISTRY"
