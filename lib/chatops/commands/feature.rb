@@ -403,7 +403,8 @@ module Chatops
         output << send_feature_details(
           feature: feature,
           text: 'The feature flag value has been updated!',
-          environment: environment
+          environment: environment,
+          issue: issue
         )
 
         trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(environment.env_name, options, name, value)
@@ -483,7 +484,8 @@ module Chatops
       # feature - A `Chatops::Gitlab::Feature` instance containing the details
       #           we want to send back.
       # text - Optional text to include in the message.
-      def send_feature_details(feature:, environment:, text: nil)
+      # Rollout Issue - Link to the feature rollout issue
+      def send_feature_details(feature:, environment:, issue:, text: nil)
         send_slack_message_safely(
           slack_token: slack_token,
           channel: channel,
@@ -502,6 +504,10 @@ module Chatops
                     title: 'State',
                     value: feature.state_label,
                     short: true
+                  },
+                  {
+                    title: 'Log Issue',
+                    value: issue.web_url
                   },
                   *feature.attachment_fields_for_gates
                 ],

@@ -178,7 +178,8 @@ describe Chatops::Commands::Feature do
         .with(
           feature: an_instance_of(Chatops::Gitlab::Feature),
           text: 'The feature flag value has been updated!',
-          environment: environment
+          environment: environment,
+          issue: issue
         )
 
       expect(command)
@@ -1318,6 +1319,14 @@ describe Chatops::Commands::Feature do
   end
 
   describe '#send_feature_details' do
+    let(:issue) do
+      instance_double(
+        'GitLab::Issue',
+        title: 'Issue title',
+        web_url: 'http://gitlab.example.org/issues/1'
+      )
+    end
+
     it 'sends the details of a single feature back to Slack' do
       command = described_class
         .new([], {}, 'SLACK_TOKEN' => '123', 'CHAT_CHANNEL' => '456')
@@ -1340,7 +1349,7 @@ describe Chatops::Commands::Feature do
         .with(a_hash_including(text: 'Hello'))
 
       environment = command.environments.find(&:production?)
-      command.send_feature_details(feature: feature, text: 'Hello', environment: environment)
+      command.send_feature_details(feature: feature, text: 'Hello', environment: environment, issue: issue)
     end
   end
 
