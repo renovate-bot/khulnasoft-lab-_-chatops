@@ -483,7 +483,8 @@ module Chatops
       # feature - A `Chatops::Gitlab::Feature` instance containing the details
       #           we want to send back.
       # text - Optional text to include in the message.
-      def send_feature_details(feature:, environment:, text: nil)
+      # Issue - Link to the log issue URL
+      def send_feature_details(feature:, environment:, issue: nil, text: nil)
         send_slack_message_safely(
           slack_token: slack_token,
           channel: channel,
@@ -502,6 +503,10 @@ module Chatops
                     title: 'State',
                     value: feature.state_label,
                     short: true
+                  },
+                  {
+                    title: 'Issue',
+                    value: issue&.web_url || "No issue linked"
                   },
                   *feature.attachment_fields_for_gates
                 ],

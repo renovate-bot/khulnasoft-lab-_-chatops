@@ -13,7 +13,7 @@ gem 'slop'
 gem 'tty-table'
 
 group :development do
-  gem 'byebug'
+  gem 'byebug', '~> 11.1', '>= 11.1.3'
   gem 'climate_control'
   gem 'pry'
   gem 'pry-byebug'

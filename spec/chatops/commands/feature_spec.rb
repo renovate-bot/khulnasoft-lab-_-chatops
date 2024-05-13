@@ -1318,16 +1318,24 @@ describe Chatops::Commands::Feature do
   end
 
   describe '#send_feature_details' do
-    it 'sends the details of a single feature back to Slack' do
-      command = described_class
-        .new([], {}, 'SLACK_TOKEN' => '123', 'CHAT_CHANNEL' => '456')
-
-      feature = Chatops::Gitlab::Feature.new(
-        name: 'foo',
-        state: 'on',
-        gates: [{ 'key' => 'boolean', 'value' => false }]
+    let(:issue) do
+      instance_double(
+        'GitLab::Issue',
+        title: 'Issue title',
+        web_url: 'http://gitlab.example.org/issues/1'
       )
+    end
 
+    command = described_class
+    .new([], {}, 'SLACK_TOKEN' => '123', 'CHAT_CHANNEL' => '456')
+
+    feature = Chatops::Gitlab::Feature.new(
+      name: 'foo',
+      state: 'on',
+      gates: [{ 'key' => 'boolean', 'value' => false }]
+    )
+
+    it 'sends the details of a single feature back to Slack when issue URL is not included' do
       message = instance_double('message')
 
       expect(Chatops::Slack::Message)
@@ -1341,6 +1349,22 @@ describe Chatops::Commands::Feature do
 
       environment = command.environments.find(&:production?)
       command.send_feature_details(feature: feature, text: 'Hello', environment: environment)
+    end
+
+    it 'sends the details of a single feature back to Slack when issue URL is included' do
+      message = instance_double('message')
+
+      expect(Chatops::Slack::Message)
+        .to receive(:new)
+        .with(token: '123', channel: '456')
+        .and_return(message)
+
+      expect(message)
+        .to receive(:send)
+        .with(a_hash_including(text: 'Hello'))
+
+      environment = command.environments.find(&:production?)
+      command.send_feature_details(feature: feature, text: 'Hello', environment: environment, issue: issue)
     end
   end
 
