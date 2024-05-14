@@ -178,7 +178,8 @@ describe Chatops::Commands::Feature do
         .with(
           feature: an_instance_of(Chatops::Gitlab::Feature),
           text: 'The feature flag value has been updated!',
-          environment: environment
+          environment: environment,
+          issue: issue
         )
 
       expect(command)

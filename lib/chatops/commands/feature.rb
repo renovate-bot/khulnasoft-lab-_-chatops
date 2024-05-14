@@ -403,7 +403,8 @@ module Chatops
         output << send_feature_details(
           feature: feature,
           text: 'The feature flag value has been updated!',
-          environment: environment
+          environment: environment,
+          issue: issue
         )
 
         trigger_tests_response = Chatops::Gitlab::TestsPipeline.new(environment.env_name, options, name, value)
