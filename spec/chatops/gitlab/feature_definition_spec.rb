@@ -34,7 +34,7 @@ describe Chatops::Gitlab::FeatureDefinition do
       .with(
         'gitlab-org/gitlab',
         'blobs',
-        "#{feature_name} file:^(config/feature_flags/|ee/config/feature_flags/)"
+        "/#{feature_name}.yml$ file:^(config/feature_flags/|ee/config/feature_flags/)"
       )
       .and_return(search_results)
 
@@ -96,7 +96,7 @@ describe Chatops::Gitlab::FeatureDefinition do
           .with(
             'gitlab-org/gitlab',
             'blobs',
-            "#{feature_name} file:^(config/feature_flags/|ee/config/feature_flags/)"
+            "/#{feature_name}.yml$ file:^(config/feature_flags/|ee/config/feature_flags/)"
           )
           .and_raise(::Gitlab::Error::InternalServerError.new(internal_server_error_response))
 

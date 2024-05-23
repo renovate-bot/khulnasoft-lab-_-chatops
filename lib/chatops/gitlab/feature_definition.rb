@@ -74,7 +74,7 @@ module Chatops
       end
 
       def fetch_definition
-        pattern = "#{name} file:^(config/feature_flags/|ee/config/feature_flags/)"
+        pattern = "/#{name}.yml$ file:^(config/feature_flags/|ee/config/feature_flags/)"
         search_results = production_api_client.search_in_project(MONOLITH_PROJECT, 'blobs', pattern)
 
         if search_results.any?
