@@ -140,9 +140,6 @@ deploy:
 member:
   <<: *chatops
 
-oncall:
-  <<: *chatops
-
 canary:
   <<: *chatops
 
