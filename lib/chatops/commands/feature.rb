@@ -38,7 +38,7 @@ module Chatops
 
       # IDs of QA channels to send message each time a feature flag is set
       QA_CHANNELS = {
-        STAGING_HOST => 'CBS3YKMGD',       # `#qa-staging`
+        STAGING_HOST => 'CBS3YKMGD',       # `#e2e-run-staging`
         STAGING_REF_HOST => 'C02JGFF2EAZ', # `#e2e-run-staging-ref`
         PRODUCTION_HOST => 'CCNNKFP8B',    # `#qa-production`
         PRE_HOST => 'CR7QH0RV1'            # `#e2e-run-preprod`
