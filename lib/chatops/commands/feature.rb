@@ -40,7 +40,7 @@ module Chatops
       QA_CHANNELS = {
         STAGING_HOST => 'CBS3YKMGD',       # `#qa-staging`
         STAGING_REF_HOST => 'C02JGFF2EAZ', # `#e2e-run-staging-ref`
-        PRODUCTION_HOST => 'CCNNKFP8B',    # `#qa-production`
+        PRODUCTION_HOST => 'CCNNKFP8B',    # `#e2e-run-production`
         PRE_HOST => 'CR7QH0RV1'            # `#e2e-run-preprod`
       }.freeze
 
