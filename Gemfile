@@ -4,6 +4,7 @@ source 'https://rubygems.org'
 
 gem 'chef'
 gem 'chronic'
+gem 'diplomat'
 gem 'gitlab', '~> 4.19'
 gem 'http'
 gem 'pg'

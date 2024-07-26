@@ -38,7 +38,7 @@ default:
       when: 'always'
     - when: 'never'
   tags:
-    - chatops
+    - chatops 
   script:
     - cd /app
     - bundle exec ruby /app/bin/chatops $CI_JOB_NAME
@@ -221,3 +221,6 @@ migrations:
 .base_renovate_image:
   image:
     name: registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks/renovate:v2.8.0
+
+orchestrator:
+  <<: *chatops
