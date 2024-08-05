@@ -677,6 +677,7 @@ module Chatops
         value
       end
 
+      # rubocop: disable Metrics/CyclomaticComplexity
       def scoped_skip_consistency_check?(options)
         return true if options[:user]
         return true if options[:project]
@@ -693,6 +694,7 @@ module Chatops
 
         false
       end
+      # rubocop: enable Metrics/CyclomaticComplexity
 
       def event_scopes_hash(options)
         {
