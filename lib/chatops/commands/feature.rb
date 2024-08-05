@@ -376,6 +376,8 @@ module Chatops
       def feature_flag_consistency_check?(value, environment)
         return true if options[:ignore_feature_flag_consistency_check]
 
+        return true if scoped_skip_consistency_check?(options)
+
         if environment.staging? && disable_feature_value?(value)
           prod_options = options.dup
           prod_options.delete(:staging)
@@ -673,6 +675,23 @@ module Chatops
         return "#{value}%" if options[:actors]
 
         value
+      end
+
+      def scoped_skip_consistency_check?(options)
+        return true if options[:user]
+        return true if options[:project]
+        return true if options[:repository]
+
+        # require group nesting level > 1
+        return true if options[:group] && options[:group].split('/').size > 1
+
+        # namespace could refer to user or group, we only support group here, for user, use --user instead
+        return true if options[:namespace] && options[:namespace].split('/').size > 1
+
+        # not skipping for feature_group since it is quite coarse grained currently
+        # https://docs.gitlab.com/ee/development/feature_flags/index.html#feature-groups
+
+        false
       end
 
       def event_scopes_hash(options)
