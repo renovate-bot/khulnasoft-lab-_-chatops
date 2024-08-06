@@ -70,7 +70,7 @@ Metrics/BlockLength:
     - 'lib/tasks/**/*'
 
 Metrics/ClassLength:
-  CountAsOne: ['array', 'hash', 'heredoc']
+  Enabled: false
 
 Metrics/ModuleLength:
   CountAsOne: ['array', 'hash', 'heredoc']

@@ -886,8 +886,8 @@ describe Chatops::Commands::Feature do
       context 'when turning on production' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { default_opts.merge(user: 'myuser') }
-          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+          let(:command_opts) { default_opts }
+          let(:gates) { [{ 'value' => true }] }
 
           include_examples 'invalid feature flag update'
         end
@@ -902,7 +902,31 @@ describe Chatops::Commands::Feature do
 
         context 'when the ignore_feature_flag_consistency_check is true' do
           let(:command_args) { %w[set foo true] }
-          let(:command_opts) { default_opts.merge(user: 'myuser', ignore_feature_flag_consistency_check: true) }
+          let(:command_opts) { default_opts.merge(ignore_feature_flag_consistency_check: true) }
+          let(:gates) { [{ 'value' => true }] }
+          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_actors: 'false' } }
+          let(:set_feature_params) do
+            [
+              'foo',
+              'true',
+              {
+                project: nil,
+                group: nil,
+                feature_group: nil,
+                namespace: nil,
+                user: nil,
+                repository: nil,
+                actors: false
+              }
+            ]
+          end
+
+          include_examples 'valid feature flag update'
+        end
+
+        context 'when the flag is scoped to user' do
+          let(:command_args) { %w[set foo true] }
+          let(:command_opts) { default_opts.merge(user: 'myuser') }
           let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
           let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser', feature_scope_actors: 'false' } }
           let(:set_feature_params) do
@@ -923,6 +947,38 @@ describe Chatops::Commands::Feature do
 
           include_examples 'valid feature flag update'
         end
+
+        context 'when the flag is scoped to top-level group' do
+          let(:value) { 'true' }
+          let(:command_opts) { default_opts.merge(group: 'gitlab-org') }
+          let(:gates) { [{ 'group' => 'gitlab-org', 'value' => true }] }
+
+          include_examples 'invalid feature flag update'
+        end
+
+        context 'when the flag is scoped to nested group' do
+          let(:command_args) { %w[set foo true] }
+          let(:command_opts) { default_opts.merge(group: 'gitlab-org/plan-stage/test-group work_items_epics_show_assignees') }
+          let(:gates) { [{ 'group' => 'gitlab-org/plan-stage/test-group work_items_epics_show_assignees', 'value' => true }] }
+          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_group: 'gitlab-org/plan-stage/test-group work_items_epics_show_assignees', feature_scope_actors: 'false' } }
+          let(:set_feature_params) do
+            [
+              'foo',
+              'true',
+              {
+                project: nil,
+                group: 'gitlab-org/plan-stage/test-group work_items_epics_show_assignees',
+                feature_group: nil,
+                namespace: nil,
+                user: nil,
+                repository: nil,
+                actors: false
+              }
+            ]
+          end
+
+          include_examples 'valid feature flag update'
+        end
       end
     end
 
@@ -930,8 +986,8 @@ describe Chatops::Commands::Feature do
       context 'when turning on production' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { default_opts.merge(user: 'myuser') }
-          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+          let(:command_opts) { default_opts }
+          let(:gates) { [{ 'value' => true }] }
 
           include_examples 'invalid feature flag update' do
             let(:feature) { nil }
@@ -946,8 +1002,8 @@ describe Chatops::Commands::Feature do
 
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { default_opts.merge(user: 'myuser') }
-          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+          let(:command_opts) { default_opts }
+          let(:gates) { [{ 'value' => true }] }
 
           include_examples 'invalid feature flag update'
         end
@@ -962,9 +1018,9 @@ describe Chatops::Commands::Feature do
 
         context 'when the ignore_feature_flag_consistency_check is true' do
           let(:command_args) { %w[set foo true] }
-          let(:command_opts) { default_opts.merge(user: 'myuser', ignore_feature_flag_consistency_check: true, staging: true) }
-          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
-          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_user: 'myuser', feature_scope_actors: 'false' } }
+          let(:command_opts) { default_opts.merge(ignore_feature_flag_consistency_check: true, staging: true) }
+          let(:gates) { [{ 'value' => true }] }
+          let(:log_feature_toggle_fields) { { feature_name: 'foo', feature_value: 'true', feature_scope_actors: 'false' } }
           let(:set_feature_params) do
             [
               'foo',
@@ -974,7 +1030,7 @@ describe Chatops::Commands::Feature do
                 group: nil,
                 feature_group: nil,
                 namespace: nil,
-                user: 'myuser',
+                user: nil,
                 repository: nil,
                 actors: false
               }
@@ -1030,13 +1086,13 @@ describe Chatops::Commands::Feature do
     end
 
     context 'when the feature flag does not exist in production' do
-      let(:command_opts) { default_opts.merge(user: 'myuser', staging: true) }
+      let(:command_opts) { default_opts.merge(staging: true) }
 
       context 'when turning on staging' do
         context 'when setting a boolean value' do
           let(:value) { 'true' }
-          let(:command_opts) { default_opts.merge(user: 'myuser') }
-          let(:gates) { [{ 'user' => 'myuser', 'value' => true }] }
+          let(:command_opts) { default_opts }
+          let(:gates) { [{ 'value' => true }] }
 
           include_examples 'invalid feature flag update' do
             let(:feature) { nil }
