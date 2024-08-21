@@ -619,7 +619,8 @@ module Chatops
           project,
           issue_iid,
           "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}. " \
-            'Message generated through [`chatops`](https://gitlab.com/gitlab-com/chatops/-/blob/master/lib/chatops/gitlab/feature.rb).'
+            'Message generated through [`chatops`](https://gitlab.com/gitlab-com/chatops/-/blob/master/lib/chatops/gitlab/feature.rb).',
+          { internal: true }
         )
 
         production_api_client.create_issue_link(
