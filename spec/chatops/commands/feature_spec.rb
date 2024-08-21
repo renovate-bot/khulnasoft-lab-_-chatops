@@ -1851,8 +1851,7 @@ describe Chatops::Commands::Feature do
             rollout_issue_project_path,
             rollout_issue_iid,
             "#{log_issue.title}. Feature flag state change log issue: #{log_issue.web_url}. " \
-            'Message generated through [`chatops`](https://gitlab.com/gitlab-com/chatops/-/blob/master/lib/chatops/gitlab/feature.rb).',
-            { internal: true }
+            'Message generated through [`chatops`](https://gitlab.com/gitlab-com/chatops/-/blob/master/lib/chatops/gitlab/feature.rb).'
           )
         expect(client)
           .to receive(:create_issue_link)
