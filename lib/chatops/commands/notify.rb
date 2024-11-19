@@ -7,11 +7,10 @@ module Chatops
 
       CHANNELS = [
         'C02PF508L', # development
-        'C3JJET4Q6', # quality
+        'C3JJET4Q6', # test-platform
         'C8HG8D9MY', # backend
         'C0GQHHPGW', # frontend
         'C0XM5UU6B', # releases
-        'CMA7DQJRX', # g_engineering_productivity
         'CBQ76ND6W', # g_runner
         'C025LECQY0M' # g_dedicated_team
       ].freeze
