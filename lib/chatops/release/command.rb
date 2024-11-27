@@ -58,8 +58,6 @@ module Chatops
       end
 
       def run_task(task_name, version, params = {})
-        params[:SECURITY] = 'critical' if security_critical?
-
         run_trigger(
           params.merge(
             RELEASE_VERSION: version,
@@ -97,10 +95,6 @@ module Chatops
 
       def chatops_job?(jobs)
         jobs.count == 1 && jobs.first.name == 'chatops'
-      end
-
-      def security_critical?
-        options[:security] && options[:critical]
       end
     end
   end

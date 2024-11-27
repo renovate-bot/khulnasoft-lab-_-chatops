@@ -55,28 +55,3 @@ RSpec.shared_examples 'with a dry-run flag' do |input:|
     end
   end
 end
-
-RSpec.shared_examples 'with a critical flag' do |input:|
-  context 'with `--security` and `--critical` options' do
-    it 'sets the `SECURITY` trigger variable' do
-      instance = stubbed_instance(*input, security: true, critical: true)
-
-      expect(stubbed_client).to receive(:run_trigger)
-        .with(anything, anything, anything,
-              a_hash_including(SECURITY: 'critical'))
-
-      instance.perform
-    end
-  end
-
-  context 'with only a `--critical` option' do
-    it 'does not set the `SECURITY` trigger variable' do
-      instance = stubbed_instance(*input, critical: true)
-
-      expect(stubbed_client).not_to receive(:run_trigger)
-        .with(anything, anything, anything,
-              a_hash_including(SECURITY: 'critical'))
-      instance.perform
-    end
-  end
-end

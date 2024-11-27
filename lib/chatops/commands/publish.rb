@@ -14,7 +14,7 @@ module Chatops
       description 'Publish packages for a specified version.'
 
       options do |o|
-        o.bool '--security', 'Act as a security release', default: false
+        o.bool '--security', 'Act as a patch release', default: false
         o.bool '--dry-run', 'Operate in dry-run mode, which will avoid making changes', default: false
       end
 
