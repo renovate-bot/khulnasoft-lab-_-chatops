@@ -24,7 +24,6 @@ describe Chatops::Commands::Release, :release_command do
     include_examples 'with a valid chatops job',    input: %w[issue 10.9.0]
     include_examples 'with an invalid chatops job', input: %w[issue 10.9.0]
     include_examples 'with a dry-run flag',         input: %w[issue 10.9.0]
-    include_examples 'with a critical flag',        input: %w[issue 10.9.0]
 
     context 'when using a valid subcommand' do
       it 'executes the subcommand' do
@@ -65,7 +64,7 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
 
-      it 'triggers a security release' do
+      it 'triggers a patch release' do
         instance = stubbed_instance('issue', version, security: true)
 
         expect(instance).to receive(:validate_version!).with(version)
@@ -94,7 +93,7 @@ describe Chatops::Commands::Release, :release_command do
         expect(instance.perform).to eq('This command is only available with the --security option')
       end
 
-      it 'triggers a security release' do
+      it 'triggers a patch release' do
         instance = stubbed_instance('merge', nil, security: true, master: false)
 
         expect(instance).not_to receive(:validate_version!)
@@ -107,7 +106,7 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
 
-      it 'triggers a security release with a `--master` flag' do
+      it 'triggers a patch release with a `--master` flag' do
         instance = stubbed_instance('merge', nil, security: true, master: true)
 
         expect(instance).not_to receive(:validate_version!)
@@ -120,7 +119,7 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
 
-      it 'triggers a security release with a `--default-branch` flag' do
+      it 'triggers a patch release with a `--default-branch` flag' do
         instance = stubbed_instance(
           'merge',
           nil,
@@ -160,7 +159,7 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
 
-      it 'triggers a security release' do
+      it 'triggers a patch release' do
         instance = stubbed_instance('prepare', nil, security: true)
 
         expect(instance).not_to receive(:validate_version!)
@@ -199,7 +198,7 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
 
-      it 'triggers status for a security release' do
+      it 'triggers status for a patch release' do
         instance = stubbed_instance('status', nil, security: true)
 
         expect(instance).not_to receive(:validate_version!)
@@ -286,7 +285,7 @@ describe Chatops::Commands::Release, :release_command do
         instance.perform
       end
 
-      it 'triggers a security release' do
+      it 'triggers a patch release' do
         instance = stubbed_instance('tag', version, security: true)
 
         expect(instance).to receive(:validate_version!).with(version)
@@ -316,7 +315,7 @@ describe Chatops::Commands::Release, :release_command do
     end
 
     describe '#sync_remotes' do
-      it 'triggers sync_remotes in a security release' do
+      it 'triggers sync_remotes in a patch release' do
         instance = stubbed_instance('sync_remotes', nil, security: true)
 
         expect(instance).to receive(:trigger_release)
@@ -327,7 +326,7 @@ describe Chatops::Commands::Release, :release_command do
     end
 
     describe '#close_issues' do
-      it 'triggers close_issues in a security release' do
+      it 'triggers close_issues in a patch release' do
         instance = stubbed_instance('close_issues', nil, security: true)
 
         expect(instance).to receive(:trigger_release)
@@ -338,7 +337,7 @@ describe Chatops::Commands::Release, :release_command do
     end
 
     describe '#tracking_issue' do
-      it 'triggers tracking_issue in a security release' do
+      it 'triggers tracking_issue in a patch release' do
         instance = stubbed_instance('tracking_issue', nil, security: true)
 
         expect(instance).to receive(:trigger_release)

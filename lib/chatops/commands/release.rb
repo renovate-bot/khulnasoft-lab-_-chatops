@@ -31,11 +31,7 @@ module Chatops
 
       options do |o|
         o.bool '--security',
-               'Act as a security release',
-               default: false
-
-        o.bool '--critical',
-               'Act as a critical security release',
+               'Act as a patch release',
                default: false
 
         o.bool '--default-branch',
@@ -100,11 +96,11 @@ module Chatops
 
               release prepare 1.2.0
 
-            Prepare for a security release
+            Prepare for a patch release
 
               release prepare --security
 
-            Tag 1.2.3 as a security release
+            Tag 1.2.3 as a patch release
 
               release tag --security 1.2.3
 
@@ -112,19 +108,19 @@ module Chatops
 
               release tag --gitaly-sha 123abc 1.2.3
 
-            Sync default and auto-deploy branches after a security release
+            Sync default and auto-deploy branches after a patch release
 
               release sync_remotes --security
 
-            Close security implementation issues associated with the Security Release Tracking Issue
+            Close security implementation issues associated with the Security Tracking Issue
 
               release close_issues --security
 
-            Create a Security Release Tracking Issue
+            Create a Security Tracking Issue
 
               release tracking_issue --security
 
-            Process security-target issues for a security release
+            Process security-target issues for a patch release
 
               release process_security_target_issues --security
         HELP
