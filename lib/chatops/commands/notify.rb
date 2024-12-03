@@ -12,7 +12,9 @@ module Chatops
         'C0GQHHPGW', # frontend
         'C0XM5UU6B', # releases
         'CBQ76ND6W', # g_runner
-        'C025LECQY0M' # g_dedicated_team
+        'C025LECQY0M', # g_dedicated_team
+        'CNZPN8BT3', # sec-appsec
+        'C248YCNCW' # security
       ].freeze
 
       usage "#{command_name} [MESSAGE] [OPTIONS]"
