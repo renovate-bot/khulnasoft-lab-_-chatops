@@ -21,7 +21,7 @@ group :development do
   gem 'rake'
   gem 'rspec'
   gem 'rspec-parameterized', require: false
-  gem 'rubocop', '~> 1.53'
+  gem 'rubocop'
   gem 'rubocop-rspec'
   gem 'simplecov'
   gem 'timecop'
