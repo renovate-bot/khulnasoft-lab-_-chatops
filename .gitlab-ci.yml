@@ -65,9 +65,9 @@ default:
 
 build:image:
   services:
-    - docker:24.0.6-dind
+    - docker:24.0.9-dind
   stage: build
-  image: docker:24.0.6-git
+  image: docker:24.0.9-git
   rules:
     - if: '$CI_PIPELINE_SOURCE == "pipeline"'
       when: 'never'
