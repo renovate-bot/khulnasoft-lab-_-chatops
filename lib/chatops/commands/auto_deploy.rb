@@ -9,7 +9,7 @@ module Chatops
       include ::SemanticLogger::Loggable
 
       COMMANDS =
-        Set.new(%w[pause prepare status security_status tag unpause blockers lock unlock])
+        Set.new(%w[pause prepare status security_status tag unpause blockers lock unlock pipeline])
 
       SOURCE_HOST = 'https://gitlab.com'
 
@@ -61,6 +61,10 @@ module Chatops
             Check if there are any ongoing issues that may block a deploy
 
               blockers
+
+            Trigger deployment pipeline for the given version
+
+              pipeline 17.7.202412040601
         HELP
       end
 
@@ -179,6 +183,10 @@ module Chatops
         Gitlab::AutoDeploy.new(ops_client).unpause_prepare
 
         'Preparing of auto-deploy branches has been resumed'
+      end
+
+      def pipeline(version)
+        trigger_release(version, 'auto_deploy:deploy_version')
       end
 
       private
