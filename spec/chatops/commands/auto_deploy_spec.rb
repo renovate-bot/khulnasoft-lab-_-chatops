@@ -560,6 +560,19 @@ describe Chatops::Commands::AutoDeploy do
     end
   end
 
+  describe '#pipeline', :release_command do
+    let(:version) { '17.0' }
+
+    it 'triggers `auto_deploy:deploy_version`' do
+      instance = stubbed_instance('pipeline', version)
+
+      expect(instance).to receive(:trigger_release)
+        .with(version, 'auto_deploy:deploy_version')
+
+      instance.perform
+    end
+  end
+
   describe '#security_status' do
     def merge_request_stub(values = {})
       # HACK: `stringify_keys` without requiring ActiveSupport
