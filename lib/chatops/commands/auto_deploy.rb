@@ -21,6 +21,10 @@ module Chatops
                'Include production checks in `status` output',
                default: false
 
+        o.bool '--dry-run',
+               'Operate in dry-run mode, which will avoid making changes',
+               default: false
+
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
