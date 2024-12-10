@@ -26,6 +26,7 @@ module Chatops
           tracking_issue
           build_status
           check
+          internal
         ]
       )
 
@@ -60,6 +61,12 @@ module Chatops
 
         o.string '--helm-sha',
                  'The SHA to use for creating the Helm stable branch'
+
+        o.integer(
+          '--iteration',
+          'The iteration number to use for the internal release',
+          default: nil
+        )
 
         o.separator <<~AVAIL.chomp
 
@@ -123,6 +130,14 @@ module Chatops
             Process security-target issues for a patch release
 
               release process_security_target_issues --security
+
+            Start the internal release process
+
+              release internal
+
+            Start the internal release process with a specific iteration
+
+              release internal --iteration=1
         HELP
       end
 
@@ -265,6 +280,15 @@ module Chatops
 
       def tracking_issue(version = nil)
         trigger_release(version, "#{namespace}:finalize:update_#{__method__}")
+      end
+
+      def internal
+        iteration = options[:iteration]
+        trigger_release(
+          nil,
+          "internal:issue",
+          'ITERATION' => iteration
+        )
       end
 
       private

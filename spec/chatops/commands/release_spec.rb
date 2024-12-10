@@ -435,4 +435,30 @@ describe Chatops::Commands::Release, :release_command do
         .to eq('foo' => 'failed', 'bar' => 'pending', 'baz' => 'success')
     end
   end
+
+  describe '#internal' do
+    it 'triggers release internal without iteration' do
+      instance = stubbed_instance('internal')
+
+      expect(instance).to receive(:trigger_release).with(
+        nil,
+        'internal:issue',
+        'ITERATION' => nil
+      )
+
+      instance.perform
+    end
+
+    it 'triggers release internal with iteration' do
+      instance = stubbed_instance('internal', iteration: 5)
+
+      expect(instance).to receive(:trigger_release).with(
+        nil,
+        'internal:issue',
+        'ITERATION' => 5
+      )
+
+      instance.perform
+    end
+  end
 end
