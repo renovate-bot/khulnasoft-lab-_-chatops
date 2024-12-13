@@ -567,9 +567,20 @@ describe Chatops::Commands::AutoDeploy do
       instance = stubbed_instance('pipeline', version)
 
       expect(instance).to receive(:trigger_release)
-        .with(version, 'auto_deploy:deploy_version')
+        .with(version, 'auto_deploy:deploy_version', {})
 
       instance.perform
+    end
+
+    context 'with --force' do
+      it 'sets FORCE_DEPLOY_VERSION' do
+        instance = stubbed_instance('pipeline', version, { force: true })
+
+        expect(instance).to receive(:trigger_release)
+          .with(version, 'auto_deploy:deploy_version', { FORCE_DEPLOY_VERSION: true })
+
+        instance.perform
+      end
     end
   end
 

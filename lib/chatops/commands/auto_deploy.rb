@@ -25,6 +25,10 @@ module Chatops
                'Operate in dry-run mode, which will avoid making changes',
                default: false
 
+        o.bool '--force',
+               'Force the deployment pipeline to start by skipping most automated checks',
+               default: false
+
         o.separator <<~AVAIL.chomp
 
           Available subcommands:
@@ -190,7 +194,10 @@ module Chatops
       end
 
       def pipeline(version)
-        trigger_release(version, 'auto_deploy:deploy_version')
+        params = {}
+        params[:FORCE_DEPLOY_VERSION] = true if options[:force]
+
+        trigger_release(version, 'auto_deploy:deploy_version', params)
       end
 
       private
