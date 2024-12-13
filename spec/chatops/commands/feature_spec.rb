@@ -1521,28 +1521,6 @@ describe Chatops::Commands::Feature do
       )
     end
 
-    context 'when environment is staging-ref' do
-      let(:username) { 'alice' }
-      let(:command) do
-        described_class.new(
-          [],
-          { staging_ref: true },
-          'SLACK_TOKEN' => '123',
-          'CHAT_CHANNEL' => '456',
-          'GITLAB_USER_LOGIN' => username
-        )
-      end
-
-      include_examples(
-        'message sent to the relevant Slack QA channel with no pipeline link',
-        described_class::QA_CHANNELS[described_class::STAGING_REF_HOST]
-      )
-      include_examples(
-        'message sent to the relevant Slack QA channel with pipeline link',
-        described_class::QA_CHANNELS[described_class::STAGING_REF_HOST]
-      )
-    end
-
     context 'when environment is pre' do
       let(:command) do
         described_class.new(
