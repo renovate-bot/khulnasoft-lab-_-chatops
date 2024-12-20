@@ -14,7 +14,8 @@ module Chatops
         'CBQ76ND6W', # g_runner
         'C025LECQY0M', # g_dedicated_team
         'CNZPN8BT3', # sec-appsec
-        'C248YCNCW' # security
+        'C248YCNCW', # security
+        'CCBJYEWAW' # support_team-chat
       ].freeze
 
       usage "#{command_name} [MESSAGE] [OPTIONS]"
