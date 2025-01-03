@@ -6,8 +6,8 @@ module Chatops
       # The project where the end-to-end test full pipeline will be triggered for run against staging.gitlab.com canary
       STAGING_QUALITY_PROJECT = 'gitlab-org/quality/staging-canary'
 
-      # The project where the end-to-end test smoke pipeline will be triggered for run against gitlab.com
-      PRODUCTION_QUALITY_PROJECT = 'gitlab-org/quality/production'
+      # The project where the end-to-end test smoke pipeline will be triggered for run against gitlab.com canary
+      PRODUCTION_QUALITY_PROJECT = 'gitlab-org/quality/canary'
 
       def initialize(environment, options, feature_name, feature_value)
         @environment = environment
@@ -69,10 +69,11 @@ module Chatops
 
       def ops_e2e_trigger_token
         if staging?
-          # Pipeline is started against staging-canary when FF is turned ON on staging
+          # Pipeline is started against staging-canary when FF is turned ON in staging
           ENV.fetch('STAGING_CANARY_OPS_E2E_TRIGGER_TOKEN')
         elsif production?
-          ENV.fetch('PROD_OPS_E2E_TRIGGER_TOKEN')
+          # Pipeline is started against canary when FF is turned ON in production
+          ENV.fetch('CANARY_OPS_E2E_TRIGGER_TOKEN')
         else
           raise 'No e2e test pipeline trigger token available for this environment'
         end
