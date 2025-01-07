@@ -29,7 +29,7 @@ describe Chatops::Gitlab::TestsPipeline do
       ClimateControl.modify(
         GITLAB_USER_LOGIN: username,
         GITLAB_OPS_TOKEN: ops_token,
-        PROD_OPS_E2E_TRIGGER_TOKEN: trigger_token,
+        CANARY_OPS_E2E_TRIGGER_TOKEN: trigger_token,
         CHAT_USER_ID: chat_user_id,
         TRIGGER_E2E_TESTS: 'true'
       ) { example.run }
