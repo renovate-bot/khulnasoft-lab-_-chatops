@@ -65,7 +65,7 @@ default:
 
 build:image:
   services:
-    - docker:24.0.9-dind
+    - docker:28.4.0-dind
   stage: build
   image: docker:24.0.9-git
   rules:
