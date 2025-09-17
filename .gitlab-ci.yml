@@ -1,5 +1,5 @@
 ---
-image: ruby:3.0-alpine
+image: ruby:3.4-alpine
 
 include:
   # Upgrades dependencies on a schedule

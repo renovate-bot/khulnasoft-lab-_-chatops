@@ -1,4 +1,4 @@
-FROM ruby:3.1-alpine
+FROM ruby:3.4-alpine
 
 COPY Gemfile .
 COPY Gemfile.lock .
